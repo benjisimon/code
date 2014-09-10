@@ -45,7 +45,7 @@ function shell() {
   </head>
   <body>
    <p>
-    This code implments this very slick <A href='http://www.levitated.net/daily/levInvaderFractal.html'>concept</a>. All credits goes to
+    This code implements this very slick <A href='http://www.levitated.net/daily/levInvaderFractal.html'>concept</a>. All credits goes to
     that author.
    </p>
    <script type='text/javascript'>
