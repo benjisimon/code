@@ -49,6 +49,7 @@
     (list-ref+1 haystack index)))
  
  
+; Main function
  (define (bmh password)
    (let* ((input (init password))
           (first-step (step (first input) (last input))))
@@ -59,16 +60,3 @@
            (reverse answer)
            (let ((next-step (step last (car input))))
              (loop (cdr input) next-step (cons next-step answer)))))))
-             
-                 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
-  
