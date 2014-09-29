@@ -1,3 +1,4 @@
+; Blums Mental Hash
 ; http://programmingpraxis.com/2014/09/26/blums-mental-hash/
 
 ; Private Keys
