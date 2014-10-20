@@ -1,3 +1,4 @@
+;;; http://programmingpraxis.codepad.org/hZnG9BCP/raw.scm
 ;;; standard prelude
 
 
