@@ -44,10 +44,19 @@
          (display buffer out)
          (newline out)
          (loop word))
-       (loop (++ line word)))))
+       (begin
+         (loop (++ line word))))))
+
 
 (define (fmt in out opts)
-  (let ((width (g opts 'width 40)))
+  (call-with-input-file in
+    (lambda (pin)
+      (call-with-output-file out
+        (lambda (pout)
+          (format pin pout opts))))))
+
+(define (format in out opts)
+  (let ((width (g opts 'width 60)))
     (let loop ((buffer ""))
       (let ((next (read-token in)))
         (case (car next)
@@ -64,10 +73,12 @@
                 (loop ""))
                ((eof) (display buffer out))
                ((word)
-                (handle-word (cdr peek) buffer out width loop))))))))))
+                (handle-word (cdr peek) buffer out width loop))
+               (else (error "Unknown peek token:" peek)))))
+          (else (error "Unknown token:" next)))))))
 
-(define in (open-input-file "/sdcard/Documents/input.txt"))
-(define out (open-output-file "/sdcard/Documents/output.txt"))
+(define in "/sdcard/Documents/input.txt")
+(define out  "/sdcard/Documents/output.txt")
 (define opts '((width . 30)))
 
 (define (range low high)
