@@ -64,7 +64,17 @@
          (else
            (let ((m (car entities)))
             (loop (replace-string (car m) (cdr m) html) (cdr entities)))))))
-
+            
+(define (url-decode content)
+ (let loop ((chars (string->list content)) (buffer ""))
+  (cond ((null? chars) buffer)
+        ((equal? (car chars) #\+) (loop (cdr chars) (string-append buffer " ")))
+        ((equal? (car chars) #\%)
+         (let* ((val (string->number
+                      (string (cadr chars) (caddr chars)) 16)))
+         (loop (cdddr chars)            
+               (string-append buffer (string (integer->char val))))))                              
+        (else (loop (cdr chars) (string-append buffer (string (car chars))))))))
 
 ; web
 (define web-codes
