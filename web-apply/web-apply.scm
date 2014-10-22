@@ -36,6 +36,36 @@
 (define (filter-out pred? items)
  (filter (lambda (item) (not (pred? item))) items))
 
+(define (index-of needle haystack . start)
+ (let loop ((i (if (null? start) 0 (car start))))
+  (cond ((> (+ i (string-length needle)) (string-length haystack)) #f)
+        ((equal? needle (substring haystack i (+ i (string-length needle)))) i)
+        (else (loop (+ 1 i))))))
+        
+(define (explode sep text)
+ (let loop ((offset 0) (results '()))
+  (let ((pivot (index-of sep text offset)))
+   (cond (pivot (loop (+ pivot (string-length sep))
+                      (cons (substring text offset pivot) results)))
+         (else
+          (reverse (cons (substring text offset (string-length text))
+                         results)))))))
+                         
+(define (replace-string from to text)
+ (implode to (explode from text)))
+
+(define html-entities '(("&" . "&amp;")
+                        ("<" . "&lt;")
+                        (">" . "&gt;")))
+                        
+(define (html-encode html)
+ (let loop ((html html) (entities html-entities))
+   (cond ((null? entities) html)
+         (else
+           (let ((m (car entities)))
+            (loop (replace-string (car m) (cdr m) html) (cdr entities)))))))
+
+
 ; web
 (define web-codes
  '((200 . "OK")
