@@ -69,7 +69,9 @@
 
 (define html-entities '(("&" . "&amp;")
                         ("<" . "&lt;")
-                        (">" . "&gt;")))
+                        (">" . "&gt;")
+                        ("\"" . "&quot;") ; "
+                        ("'" . "&#39;")))
                         
 (define (html-encode html)
  (let loop ((html html) (entities html-entities))
@@ -135,13 +137,27 @@
     (params . ,(parse-qs (i uri 1 "")))
     (args . ,(parse-args (i uri 1 ""))))))
  
-(define (web-form req body)
+(define (web-inputs req converters)
+ (let loop ((index 0) (converters converters) (results '()))
+  (cond ((null? converters) (apply ++ (reverse results)))
+        (else
+         (let ((v (html-encode (g (g req 'params) (++ "p" index) ""))))
+           (loop (+ 1 index) (cdr converters)
+                 (cons (++ "<input type='text' "
+                           "  style='width: 90%'"
+                           "  name='p" index "' "
+                           "  value='" v "'/><br/> ")
+                       results)))))))
+                           
+ 
+(define (web-form req converters body)
  (++ "<!DOCTYPE html>\n"
      "<html>"
      " <head><title>(" (g req 'path) " ...)</title></head>"
      " <body>"
      "  <form method='GET' action='" (g req 'path) "'>"
      "   (" (g req 'path) "<br/>"
+         (web-inputs req converters)
      "   ) <input type='submit' value='Apply'/>"
      "  </form>"
      "  <hr/>"
@@ -149,7 +165,7 @@
      " </body>"
      "</html>")) 
  
-(define (web-fmt req body)
+(define (web-fmt req converters body)
  (let ((output (string->symbol (g (g req 'params) "output" "html"))))
    (case output
     ((write)
@@ -160,7 +176,7 @@
      (display body))
     ((html)
      (web-res 200 '((Content-Type . text/html)) "")
-     (display (web-form req body)))
+     (display (web-form req converters body)))
     (else (error "Unknown output type:" output)))))
     
     
@@ -179,7 +195,7 @@
                          (else (error "Invalid conversion: "
                                       convert value))))
                   converters params)))
-          (else (++ "Invalid number of arguments provided: " req)))))
+          (else ""))))
                    
   
 (define (web-fn-dispatcher mapping)
@@ -195,7 +211,8 @@
             (web-res 400 '() (++ "D'oh, we only understand GET")))
            ((assoc (g req 'path) mapping) =>
             (lambda (mapping)
-             (web-fmt req (web-apply (cdr mapping) req))))
+             (web-fmt req (cddr mapping)
+                      (web-apply (cdr mapping) req))))
            (else
              (web-res 404 '() (++ "No function mapping found")))))))))
              
