@@ -76,7 +76,8 @@
    (cond ((null? entities) html)
          (else
            (let ((m (car entities)))
-            (loop (replace-string (car m) (cdr m) html) (cdr entities)))))))
+            (loop (replace-string (car m) (cdr m) html)
+                  (cdr entities)))))))
             
 (define (url-decode content)
  (let loop ((chars (string->list content)) (buffer ""))
@@ -134,6 +135,36 @@
     (params . ,(parse-qs (i uri 1 "")))
     (args . ,(parse-args (i uri 1 ""))))))
  
+(define (web-form req body)
+ (++ "<!DOCTYPE html>\n"
+     "<html>"
+     " <head><title>(" (g req 'path) " ...)</title></head>"
+     " <body>"
+     "  <form method='GET' action='" (g req 'path) "'>"
+     "   (" (g req 'path) "<br/>"
+     "   ) <input type='submit' value='Apply'/>"
+     "  </form>"
+     "  <hr/>"
+     "  <pre>" (html-encode (++ body)) "</pre>"
+     " </body>"
+     "</html>")) 
+ 
+(define (web-fmt req body)
+ (let ((output (string->symbol (g (g req 'params) "output" "html"))))
+   (case output
+    ((write)
+     (web-res 200 '((Content-Type . text/plain)) "")
+     (write body))
+    ((display)
+     (web-res 200 '((Content-Type . text/plain)) "")
+     (display body))
+    ((html)
+     (web-res 200 '((Content-Type . text/html)) "")
+     (display (web-form req body)))
+    (else (error "Unknown output type:" output)))))
+    
+    
+ 
 (define (web-apply spec req)
  (let ((fn (car spec))
        (converters (cdr spec))
@@ -164,7 +195,7 @@
             (web-res 400 '() (++ "D'oh, we only understand GET")))
            ((assoc (g req 'path) mapping) =>
             (lambda (mapping)
-             (web-res 200 '() (web-apply (cdr mapping) req))))
+             (web-fmt req (web-apply (cdr mapping) req))))
            (else
              (web-res 404 '() (++ "No function mapping found")))))))))
              
