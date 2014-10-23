@@ -1,3 +1,8 @@
+;;
+;; web-apply allows you to make a series of functions callable
+;; over the web with ease.
+;;
+
 ; utils
 (define (empty? x)
  (cond ((string? x) (= 0 (string-length x)))
@@ -163,24 +168,4 @@
            (else
              (web-res 404 '() (++ "No function mapping found")))))))))
              
-(define (string-reverse x)
- (apply string
-        (reverse (string->list x)))) 
-
-(define (tip-calc amt)
- (map (lambda (percent)
-       (cons percent (exact->inexact (+ amt (* (/ percent 100) amt)))))
-      '(10 15 20)))
- 
-
-(define (bind!)
- (tcp-service-register!
-   (list server-address: "*"
-    port-number: 9000
-    eol-encoding: 'cr-lf)
-  (web-fn-dispatcher `(("/rev" . (,string-reverse #t))
-                       ("/tip" . (,tip-calc number)))))) 
-                            
-(define (unbind!)
- (tcp-service-unregister! "*:9000"))
   
