@@ -150,7 +150,8 @@
  (lambda ()
   (with-exception-catcher
    (lambda (ex)
-    (web-res 400 '() (++ "Error! " ex)))
+    (web-res 400 '() (++ "Error!"))
+    (display-exception ex))
    (lambda ()
     (let* ((input (read-line))
            (req (web-parse-req input)))
