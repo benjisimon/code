@@ -25,6 +25,14 @@
             (error "Missing attr:" key data)
             (car default)))))
 
+(define (i items index . fallback)
+ (cond ((< index (length items))
+        (list-ref items index))
+       (else
+        (if (null? fallback)
+            (error "index access error:" index items)
+            (car fallback)))))
+
 (define (filter pred? items)
  (let loop ((items items) (results '()))
   (cond ((null? items) (reverse results))
@@ -76,6 +84,23 @@
                (string-append buffer (string (integer->char val))))))                              
         (else (loop (cdr chars) (string-append buffer (string (car chars))))))))
 
+(define (parse-qs qs)
+ (let loop ((params (explode "&" qs)) (results '()))
+  (cond ((null? params) results)
+        (else
+         (let ((kv (explode "=" (car params))))
+          (loop (cdr params)
+                (cons (cons (url-decode (i kv 0))
+                            (url-decode (i kv 1 "")))
+                      results)))))))
+
+(define (parse-args qs)
+ (let ((params (parse-qs qs)))
+  (let loop ((index 0) (results '()))
+   (cond ((assoc (++ "p" index) params) =>
+          (lambda (match)
+           (loop (+ index 1) (cons (cdr match) results))))
+         (else (reverse results))))))
 ; web
 (define web-codes
  '((200 . "OK")
@@ -96,22 +121,65 @@
  (web-out)
  (display body))
  
+(define (web-parse-req line)
+ (let* ((parts (explode " " line))
+        (uri (explode "?" (i parts 1))))
+  `((verb . ,(i parts 0))
+    (path . ,(i uri 0))
+    (params . ,(parse-qs (i uri 1 "")))
+    (args . ,(parse-args (i uri 1 ""))))))
+ 
+(define (web-apply spec req)
+ (let ((fn (car spec))
+       (converters (cdr spec))
+       (params (g req 'args)))
+   (cond ((= (length params) (length converters))
+          (apply fn
+                 (map
+                  (lambda (convert value)
+                   (cond ((procedure? convert) (convert value))
+                         ((eq? convert 'number) (string->number value))
+                         ((eq? convert #t) value)
+                         (else (error "Invalid conversion: "
+                                      convert value))))
+                  converters params)))
+          (else (++ "Invalid number of arguments provided: " req)))))
+                   
+  
 (define (web-fn-dispatcher mapping)
  (lambda ()
-  (let ((input (read-line)))
-   (web-res 200 '() (++ "You said: " input)))))
-
+  (with-exception-catcher
+   (lambda (ex)
+    (web-res 400 '() (++ "Error! " ex)))
+   (lambda ()
+    (let* ((input (read-line))
+           (req (web-parse-req input)))
+     (cond ((not (equal? (g req 'verb) "GET"))
+            (web-res 400 '() (++ "D'oh, we only understand GET")))
+           ((assoc (g req 'path) mapping) =>
+            (lambda (mapping)
+             (web-res 200 '() (web-apply (cdr mapping) req))))
+           (else
+             (web-res 404 '() (++ "No function mapping found")))))))))
+             
 (define (string-reverse x)
  (apply string
         (reverse (string->list x)))) 
+
+(define (tip-calc amt)
+ (map (lambda (percent)
+       (cons percent (exact->inexact (+ amt (* (/ percent 100) amt)))))
+      '(10 15 20)))
+ 
 
 (define (bind!)
  (tcp-service-register!
    (list server-address: "*"
     port-number: 9000
     eol-encoding: 'cr-lf)
-  (web-fn-dispatcher `(("/" . (,string-reverse #t)))))) 
+  (web-fn-dispatcher `(("/rev" . (,string-reverse #t))
+                       ("/tip" . (,tip-calc number)))))) 
                             
 (define (unbind!)
- (tpc-service-unregister! "*:9000"))
+ (tcp-service-unregister! "*:9000"))
   
