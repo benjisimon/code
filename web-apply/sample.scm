@@ -7,7 +7,9 @@
 
 (define (tip-calc amt)
  (map (lambda (percent)
-       (cons percent (exact->inexact (+ amt (* (/ percent 100) amt)))))
+       (list percent
+             (exact->inexact (* (/ percent 100) amt))
+             (exact->inexact (+ amt (* (/ percent 100) amt)))))
       '(10 15 20)))
 
 (define (random-within x y)

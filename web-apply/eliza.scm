@@ -58,7 +58,6 @@
 ;;;
 
 (define (pattern-match pattern input substs)
-
   (define (match-variable var input substs)
     (let ((subst (assoc var substs)))
       (cond ((equal? subst #f)
@@ -85,7 +84,6 @@
                     (if (equal? b2 'failed)
 			(segment-match pattern input substs (+ pos 1))
 			b2)))))))
-
   (cond
     ((equal? substs 'failed) 'failed)
     ((equal? pattern input) substs)
