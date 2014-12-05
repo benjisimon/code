@@ -6,7 +6,7 @@
 ;; 
 
 (define (a->i letter)
- (- 65 (char->integer letter)))
+ (- (char->integer letter) 65))
   
 (define (i->a index)
  (integer->char (+ 65 index)))
@@ -17,6 +17,16 @@
 (define (range low high)
  (if (> low high) '() (cons low (range (+ 1 low) high))))
  
+(define (head items)
+ (let loop ((i 0) (items items) (accum '()))
+  (cond ((or (null? items) (= i 5)) (reverse accum))
+        (else
+         (loop (+ i 1) (cdr items) (cons (car items) accum))))))
+
+(define (tail items)
+ (reverse (head (reverse items))))
+ 
+
 (define (make-pad rows cols)
  (define (make-block)
   (apply string (map (lambda (i) (rand-char)) (range 1 5))))
@@ -29,4 +39,24 @@
              (make-row) (newline))
            (range 1 rows)))
 
-            
+(define (tri-row i)
+ (reverse (map (lambda (pos)
+                 (i->a (modulo (- pos i) 26)))
+          (range 0 25))))
+
+(define (tri-encrypt key plain)
+ (let loop ((key (string->list key))
+            (plain (string->list plain))
+            (coded '()))
+  (cond ((null? plain) (apply string (reverse coded)))
+        ((equal? #\space (car plain))
+         (loop (cdr key) (cdr plain)
+               (cons #\space coded)))
+        (else
+         (let ((row (a->i (car plain)))
+               (col (a->i (car key))))
+           (loop (cdr key) (cdr plain) 
+                 (cons (list-ref (tri-row row) col) coded)))))))          
+(define k "ASDFA POUYK")
+(define p "HELLO WORLD")
+  
