@@ -44,7 +44,7 @@
                  (i->a (modulo (- pos i) 26)))
           (range 0 25))))
 
-(define (tri-encrypt key plain)
+(define (tri-lookup key plain)
  (let loop ((key (string->list key))
             (plain (string->list plain))
             (coded '()))
