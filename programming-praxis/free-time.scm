@@ -1,6 +1,4 @@
-;;
-;; Scheduling exercise
-;;
+;; http://programmingpraxis.com/2014/12/05/free-time/
 
 (define (div x y)
  (inexact->exact (floor (exact->inexact (/ x y)))))
