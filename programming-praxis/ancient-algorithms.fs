@@ -49,13 +49,29 @@
  
 \ -----------------------------------------------------
  
+0.0001e0 fconstant fsqrt-epsilon
+
+: fwithin? { F: x F: y F: error }
+ x y f- fabs
+ error f< ;
+
+: fsqrt-needs-refining? { F: x F: n F: x' -- x n x' continue? }
+ x' n x'
+ x x' fsqrt-epsilon fwithin? IF
+  false
+ else
+  true
+ endif ;
+
 : fsqrt-step { F: n F: x -- n x' }
  n
  x n x f/ f+ 2e0 f/ ;
- 
-: fsqrt { n -- sqrt-n }
- n 1e0
- 20 1 u+do
+
+
+: fsqrt { F: n -- x }
+ n 1e0 ftuck
+ begin
   fsqrt-step
- loop ;
-  
+  fsqrt-needs-refining? while
+ repeat
+ fnip fnip ;  
