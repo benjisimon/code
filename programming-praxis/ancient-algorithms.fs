@@ -34,7 +34,7 @@
    0
  endif ;
 
-: pmult { lhs rhs -- prod }
+: product { lhs rhs -- prod }
  lhs rhs pinit
  begin
   pstep
@@ -43,7 +43,7 @@
  2nip ;
 
 : .mul { lhs rhs -- prod1 prod2 }
- lhs rhs pmult
+ lhs rhs product
  lhs rhs *
  .s clearstack ;
  
@@ -74,4 +74,36 @@
   fsqrt-step
   fsqrt-needs-refining? while
  repeat
- fnip fnip ;  
+ fnip fnip ; 
+ 
+\ -----------------------------------------------------
+
+: ^2 ( n1 -- n2 )
+ dup * ;
+
+: *3 ( n1 n2 n3 -- n4 )
+ * * ;
+ 
+: triple { m n -- a b c }
+ m ^2  n ^2  -
+ 2 m n *3
+ m ^2 n ^2 + ; 
+ 
+\ -----------------------------------------------------
+
+: gcd-step { m n -- m' n' }
+ n 0= if
+  m 0
+ else
+  n m n mod
+ endif ;
+ 
+: gcd ( m n -- d )
+ begin
+  gcd-step
+  dup 0<> while
+ repeat
+ drop ;
+
+\ -----------------------------------------------------
+ 
