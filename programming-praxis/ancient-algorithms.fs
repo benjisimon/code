@@ -1,5 +1,7 @@
 \ http://programmingpraxis.com/2014/12/23/ancient-algorithms/
 
+\ -----------------------------------------------------
+
 : odd? ( n -- b )
  1 and 0<> ;
  
@@ -44,3 +46,16 @@
  lhs rhs pmult
  lhs rhs *
  .s clearstack ;
+ 
+\ -----------------------------------------------------
+ 
+: fsqrt-step { F: n F: x -- n x' }
+ n
+ x n x f/ f+ 2e0 f/ ;
+ 
+: fsqrt { n -- sqrt-n }
+ n 1e0
+ 20 1 u+do
+  fsqrt-step
+ loop ;
+  
