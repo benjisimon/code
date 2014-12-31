@@ -49,7 +49,7 @@
  
 \ -----------------------------------------------------
  
-0.0001e0 fconstant fsqrt-epsilon
+0.00000001e0 fconstant fsqrt-epsilon
 
 : fwithin? { F: x F: y F: error }
  x y f- fabs
@@ -106,4 +106,22 @@
  drop ;
 
 \ -----------------------------------------------------
+
+: fpi-init ( -- outer inner )
+ 3e0 3e0 fsqrt f*
+ fdup 2e0 f/ ;
  
+: finv ( x -- 1/x )
+ 1e0 fswap f/ ;
+ 
+: fpi-step { F: outer F: inner -- outer' inner' }
+ 2e0 outer finv inner finv f+ f/
+ fdup inner f* fsqrt ;
+
+: fpi { n -- approx }
+ fpi-init
+ n 1 u+do
+  fpi-step
+ loop fdrop ;
+
+  
