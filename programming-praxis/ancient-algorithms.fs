@@ -126,6 +126,7 @@
 
 \ -----------------------------------------------------
 
+
 : siv-addr ( s index -- addr )
  1 - cells + ;
 
@@ -143,12 +144,43 @@
  upper 1 + 2 u+do
   true s i siv!
  loop s ;
+
+: siv-range { s start-index -- to from }
+ s siv-upper 1 +
+ start-index ;
  
 : siv.s { s -- }
- s siv-upper 1 + 2 u+do
+ s 2 siv-range u+do
   cr i . ." :" s i siv@ .
  loop cr ;
 
 : new-siv { upper -- s }
  here upper cells allot
  upper siv-init ;
+
+
+: siv-mark { s index -- }
+ true s index siv!
+ s index 2 * siv-range u+do
+  false s i siv!
+ index +loop ;
+ 
+: siv-primes { s -- s }
+ s 2 siv-range u+do
+  s i siv@ if
+   s i siv-mark
+  endif
+ loop s ;
+
+: prime? ( n -- b )
+ dup
+ n new-siv siv-primes
+ swap siv@ ;
+ 
+: primes { lower upper -- p1 p2 ... }
+ upper new-siv siv-primes { s }
+ upper 1+  lower u+do
+  s i siv@ if
+   i
+  endif
+ loop ; 
