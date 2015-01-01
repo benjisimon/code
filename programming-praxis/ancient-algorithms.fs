@@ -124,4 +124,31 @@
   fpi-step
  loop fdrop ;
 
+\ -----------------------------------------------------
+
+: siv-addr ( s index -- addr )
+ 1 - cells + ;
+
+: siv-upper ( s -- n )
+ @ ;
+ 
+: siv! ( value s index -- )
+ siv-addr ! ;
   
+: siv@ ( s index -- value )
+ siv-addr @ ; 
+  
+: siv-init { s upper -- s }
+ upper s !
+ upper 1 + 2 u+do
+  true s i siv!
+ loop s ;
+ 
+: siv.s { s -- }
+ s siv-upper 1 + 2 u+do
+  cr i . ." :" s i siv@ .
+ loop cr ;
+
+: new-siv { upper -- s }
+ here upper cells allot
+ upper siv-init ;
