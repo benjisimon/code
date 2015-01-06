@@ -174,7 +174,7 @@
 
 : prime? ( n -- b )
  dup
- n new-siv siv-primes
+ new-siv siv-primes
  swap siv@ ;
  
 : primes { lower upper -- p1 p2 ... }
