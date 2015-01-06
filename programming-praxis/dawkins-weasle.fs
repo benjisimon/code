@@ -46,15 +46,12 @@ Constant GOAL-STRING
 
 GOAL-STRING GOAL-LENGTH cmove
 
-25 Constant MUTATE-PERCENT
-
+5 Constant MUTATE-PERCENT
+GOAL-LENGTH Constant GOAL-SCORE
 
 : make-attempt ( -- addr )
  GOAL-LENGTH rand-string drop ;
  
-: .attempt ( addr -- )
- GOAL-LENGTH type ;
-
 : clone-attempt ( addr -- new-addr )
  GOAL-LENGTH clone-string ;
 
@@ -68,17 +65,44 @@ GOAL-STRING GOAL-LENGTH cmove
   drop
  endif ;
  
-: mutate-attempt { addr -- addr }
+: mutate-attempt { addr -- }
  GOAL-LENGTH 0 u+do
    addr i + mutate-char
- loop addr ;
+ loop ;
+ 
+: spawn-attempt ( addr -- new-addr )
+ clone-attempt dup mutate-attempt ;
+ 
 
-: .x-attempts { n -- }
- make-attempt
- n 0 u+do
-  dup
-  cr
-  clone-attempt
-  mutate-attempt
-  .attempt
- loop ; 
+: score-attempt-char { addr index -- score }
+ addr index + c@
+ GOAL-STRING index + c@
+ = if 1 else 0 endif ;
+
+: score-attempt { addr -- score }
+ 0 GOAL-LENGTH 0 u+do
+  addr i score-attempt-char +
+ loop ;  
+
+: .attempt ( addr -- )
+ dup score-attempt . ." : "
+ GOAL-LENGTH type ;
+
+10 Constant WORKSPACE-SIZE
+
+: workspace-range ( ws-addr )
+ dup WORKSPACE-SIZE cells + swap ;
+
+: fill-workspace { ws-addr attempt-addr -- }
+ ws-addr workspace-range u+do
+  attempt-addr spawn-attempt i ! 
+ cell +loop ;
+
+: make-workspace { addr -- }
+ here WORKSPACE-SIZE cells allot
+ dup addr fill-workspace ;
+
+: .workspace ( ws-addr -- )
+ cr workspace-range u+do
+  i @ .attempt cr
+ cell +loop ; 
