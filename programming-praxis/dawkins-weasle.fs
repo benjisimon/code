@@ -84,6 +84,12 @@ GOAL-LENGTH Constant GOAL-SCORE
   addr i score-attempt-char +
  loop ;  
 
+: attempt-winner { attempt1 attempt2 -- winner }
+ attempt1 score-attempt
+ attempt2 score-attempt
+ > if attempt1 else attempt2 endif ;
+
+
 : .attempt ( addr -- )
  dup score-attempt . ." : "
  GOAL-LENGTH type ;
@@ -102,7 +108,30 @@ GOAL-LENGTH Constant GOAL-SCORE
  here WORKSPACE-SIZE cells allot
  dup addr fill-workspace ;
 
+: workspace-attempt ( ws-addr index -- attempt-addr )
+  cells + @ ;
+  
+: workspace-winner { ws-addr -- attemp-addr }
+ ws-addr 0 workspace-attempt
+ WORKSPACE-SIZE 0 u+do
+   ws-addr i workspace-attempt attempt-winner
+  loop ;
+
 : .workspace ( ws-addr -- )
  cr workspace-range u+do
   i @ .attempt cr
- cell +loop ; 
+ cell +loop ;
+ 
+: tick ( generation attempt -- generation+1 improved-atttempt )
+ make-workspace workspace-winner
+ swap 1+ swap ;
+: .tick ( gen attempt )
+ swap ." G:" . .attempt cr ;
+
+: bang! ( -- )
+ 0 make-attempt
+ begin
+  tick 2dup .tick
+  dup score-attempt
+  GOAL-SCORE <> while
+ repeat .tick ;  
