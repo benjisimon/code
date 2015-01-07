@@ -1,4 +1,7 @@
 require random.fs
+
+: 3dup ( x y z -- x y z x y z )
+ 2 pick 2 pick 2 pick ;
  
 : between? { x lower upper -- bool }
  x lower >= and
@@ -37,6 +40,9 @@ require random.fs
  addr new-addr length cmove
  new-addr ;
 
+: overwrite-string ( from to length -- to )
+ cmove ;
+
 \ -------------------------------------
 s" METHINKS IT IS LIKE A WEASEL"
 Constant GOAL-LENGTH
@@ -55,6 +61,9 @@ GOAL-LENGTH Constant GOAL-SCORE
 : clone-attempt ( addr -- new-addr )
  GOAL-LENGTH clone-string ;
 
+: overwrite-attempt ( from to -- )
+ GOAL-LENGTH overwrite-string ;
+ 
 : mutate? ( -- yes-or-no )
  MUTATE-PERCENT rand-bool ;
 
@@ -72,8 +81,11 @@ GOAL-LENGTH Constant GOAL-SCORE
  
 : spawn-attempt ( addr -- new-addr )
  clone-attempt dup mutate-attempt ;
- 
 
+: install-attempt { from to -- }
+ from to overwrite-attempt
+ to mutate-attempt ;
+   
 : score-attempt-char { addr index -- score }
  addr index + c@
  GOAL-STRING index + c@
@@ -94,7 +106,7 @@ GOAL-LENGTH Constant GOAL-SCORE
  dup score-attempt . ." : "
  GOAL-LENGTH type ;
 
-10 Constant WORKSPACE-SIZE
+100 Constant WORKSPACE-SIZE
 
 : workspace-range ( ws-addr )
  dup WORKSPACE-SIZE cells + swap ;
@@ -104,9 +116,14 @@ GOAL-LENGTH Constant GOAL-SCORE
   attempt-addr spawn-attempt i ! 
  cell +loop ;
 
-: make-workspace { addr -- }
+: install-workspace { workspace attempt -- }
+ workspace workspace-range u+do
+  attempt i @ install-attempt
+ cell +loop ;
+
+: make-workspace { attempt -- }
  here WORKSPACE-SIZE cells allot
- dup addr fill-workspace ;
+ dup attempt fill-workspace ;
 
 : workspace-attempt ( ws-addr index -- attempt-addr )
   cells + @ ;
@@ -122,16 +139,28 @@ GOAL-LENGTH Constant GOAL-SCORE
   i @ .attempt cr
  cell +loop ;
  
-: tick ( generation attempt -- generation+1 improved-atttempt )
- make-workspace workspace-winner
- swap 1+ swap ;
-: .tick ( gen attempt )
- swap ." G:" . .attempt cr ;
+ 
+: make-tick ( -- workspace generation attempt )
+ make-attempt
+ dup make-workspace
+ swap 0 swap  ;
+ 
+: tick { workspace generation attempt -- workspace gen+1 attempt }
+ workspace
+ generation 1+
+ workspace attempt install-workspace
+ workspace workspace-winner ;
+ 
+: .tick ( workspace gen attempt )
+ swap ." G:" . .attempt cr drop ;
 
+: keep-ticking? ( workspace gen attempt -- workspace gen attempt )
+ dup score-attempt
+ GOAL-SCORE <> ;
+ 
 : bang! ( -- )
- 0 make-attempt
+ make-tick
  begin
-  tick 2dup .tick
-  dup score-attempt
-  GOAL-SCORE <> while
- repeat .tick ;  
+  tick 3dup .tick
+  keep-ticking? while
+ repeat ;  
