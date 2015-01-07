@@ -154,6 +154,9 @@ GOAL-LENGTH Constant GOAL-SCORE
 : .tick ( workspace gen attempt )
  swap ." G:" . .attempt cr drop ;
 
+: ..tick ( workspace gen attempt -- workspace gen attempt )
+ 3dup .tick ;
+
 : keep-ticking? ( workspace gen attempt -- workspace gen attempt )
  dup score-attempt
  GOAL-SCORE <> ;
@@ -161,6 +164,6 @@ GOAL-LENGTH Constant GOAL-SCORE
 : bang! ( -- )
  make-tick
  begin
-  tick 3dup .tick
+  tick ..tick
   keep-ticking? while
  repeat ;  
