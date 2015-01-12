@@ -1,9 +1,15 @@
 ; A Turning Machine Impl
+; Inspired by:
+;  http://aturingmachine.com/examplesSyntax.php
 
 (define (range lower upper)
- (if (> lower upper) '()
+ (if (>= lower upper) '()
      (cons lower (range (+ 1 lower) upper)))) 
 
+(define (show . words)
+ (for-each display words))
+
+(define tape-cell '#(_))
 (define tape-padding '#(_ _ _ _ _))
 
 (define (make-tape contents)
@@ -28,8 +34,9 @@
                   ((> R) 1)
                   ((- N) 0)
                   (else (error "Unknown tape movement: " direction))))))
-  (cond ((< index 0)
-         (error "Attempt to move off the left side of the tape: " index))
+  (cond ((= index -1)
+         (set-cdr! t (vector-append tape-cell (tape-items t)))
+         (set! index 0))
         ((= index (vector-length (tape-items t)))
          (set-cdr! t (vector-append (tape-items t) tape-padding))))
   (set-car! t index)
@@ -39,17 +46,54 @@
  (for-each (lambda (i)
             (let ((v (vector-ref (tape-items t) i)))
               (cond ((= i (tape-head t))
-                     (display "[")
-                     (display v)
-                     (display "]"))
-                    (else (display v)))
-              (display " ")))
-           (range 0 (- (vector-length (tape-items t)) 1))))
+                     (show "[" v "]"))
+                    (else (show v)))
+              (show " ")))
+           (range 0 (vector-length (tape-items t)))))
+
+(define (tm-find state tape rules)
+ (let ((needle (list state (tape-read tape))))
+  (let loop ((rules rules))
+   (cond ((null? rules) #f)
+         ((equal? needle (caar rules)) (cadar rules))
+         (else
+          (loop (cdr rules))))))) 
             
-(define (foo)
- (let ((t (make-tape '(a b c))))
-  (tape-write t 'x)
-  (tape-move t 'R)
-  (tape-move t 'R)
-  (tape-write t 'y)
-  (display-tape t)))
+(define (make-tm initial-state initial-tape halting-states rules)
+ (let ((state initial-state)
+       (tape (make-tape initial-tape)))
+ (lambda (cycles)
+  (let loop ((cycle 0))
+   (show state ": ")
+   (display-tape tape)
+   (newline)
+   (cond ((= cycle cycles) #t)
+         ((member state halting-states) state)
+         ((tm-find state tape rules) =>
+          (lambda (dest)
+           (let* ((new-state (car dest))
+                  (new-symbol (cadr dest))
+                  (new-direction (caddr dest)))
+             (set! state new-state)
+             (tape-write tape new-symbol)
+             (tape-move tape new-direction)
+             (loop (+ 1 cycle)))))
+          (else 'no-matching-rules))))))
+
+; Binary Counting - http://aturingmachine.com/examples.php
+(define r0 '(((walk  0) (walk  0 >))
+             ((walk  1) (walk  1 >))
+             ((walk  _) (count _ <))
+             ((count 0) (walk  1 >))
+             ((count 1) (count 0 <))
+             ((count _) (walk  1 >))))
+             
+(define tm0 (make-tm 'walk '(0) '() r0))
+
+; Turning's First Example 
+;  http://en.m.wikipedia.org/wiki/Turing_machine_examples
+(define r1 '(((b _) (c 0 >))
+             ((c _) (e _ >))
+             ((e _) (f 1 >))
+             ((f _) (b _ >))))
+(define tm1 (make-tm 'b '() '() r1))
