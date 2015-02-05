@@ -30,7 +30,9 @@
                (if (null? accum)
                    (list (car parts))
                    (append accum (list sep (car parts)))))))))
-                   
+
+(define (string-implode sep parts)
+ (apply && (implode sep parts)))       
                    
 (define (morse-normalize c)
  (case c
@@ -55,15 +57,75 @@
   ((p3) "P,P,P")
   ((p7) "P,P,P,P,P,P,P")))
   
+(define (rtttl title notes)
+ (string-append title ": d=4, o=5, b=400: " notes "\n"))
 
-(define (rtttl text)
+(define (morse-rtttl text)
  (let* ((morse (morse-flatten (morse-string text)))
         (song (apply string-append
                      (implode "," (map morse->note morse)))))
-  (string-append
-   text ": d=4, o=5, b=400: " song "\n")))
+  (rtttl text song)))
    
-(define (rtttl-save filename text)
- (call-with-output-file filename
+(define (save filename contents)
+ (call-with-output-file (string-append "/sdcard/Documents/" filename)
   (lambda (out)
-   (display (rtttl text) out)))) 
+   (display contents out)))) 
+
+(define (&& . any)
+ (apply string-append
+        (map (lambda (x)
+              (cond ((number? x) (number->string x))
+                    ((symbol? x) (symbol->string x))
+                    (else x)))
+             any)))
+             
+             
+(define (string-reverse text)
+ (apply string
+        (reverse (string->list text))))
+        
+(define (range low high)
+ (if (> low high) '() (cons low (range (+ 1 low) high))))
+ 
+(define (random-elt items)
+ (list-ref items (random-integer (length items))))
+ 
+(define (random-note)
+ (random-elt '(C D E F G A P)))
+ 
+(define (random-name)
+ (&& (random-note) (random-note) (random-note) (random-note)))
+ 
+(define (random-notes)
+ (let loop ((count (random-integer 20)) (accum '()))
+  (cond ((= count 0) accum)
+        (else (loop (- count 1) (cons (random-note) accum))))))
+
+(define (make-buffer)
+ (let ((buffer '()))
+  (lambda (x)
+   (if (equal? x 'items)
+       (reverse buffer)
+       (set! buffer (cons x buffer))))))
+       
+(define (random-song)
+ (let ((notes (random-notes))
+       (buffer (make-buffer)))
+  (for-each (lambda (duration)
+              (for-each (lambda (note)
+                          (buffer (&& duration note)))
+                        notes))
+            '(1 2 4 8 16 32))
+    (string-append 
+      (rtttl (random-name)
+             (string-implode "," 
+               (append
+                (buffer 'items)
+                (reverse (buffer 'items))))))))
+              
+
+(save "hw.rtttl" (morse-rtttl "Hello World"))
+(save "random.rtttl" (random-song))
+
+
+ 
