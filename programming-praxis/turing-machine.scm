@@ -9,11 +9,10 @@
 (define (show . words)
  (for-each display words))
 
-(define tape-cell '#(_))
-(define tape-padding '#(_ _ _ _ _))
+(define tape-blank '#(_))
 
 (define (make-tape contents)
- (cons 0 (vector-append (list->vector contents) tape-padding)))
+ (cons 0 (vector-append (list->vector contents) tape-blank)))
 
 (define (tape-head t)
  (car t)) 
@@ -35,10 +34,10 @@
                   ((- N) 0)
                   (else (error "Unknown tape movement: " direction))))))
   (cond ((= index -1)
-         (set-cdr! t (vector-append tape-cell (tape-items t)))
+         (set-cdr! t (vector-append tape-blank (tape-items t)))
          (set! index 0))
         ((= index (vector-length (tape-items t)))
-         (set-cdr! t (vector-append (tape-items t) tape-padding))))
+         (set-cdr! t (vector-append (tape-items t) tape-blank))))
   (set-car! t index)
   t))
 
@@ -96,4 +95,18 @@
              ((c _) (e _ >))
              ((e _) (f 1 >))
              ((f _) (b _ >))))
+             
 (define tm1 (make-tm 'b '() '() r1))
+
+; http://programmingpraxis.com/2009/3/27/a-turing-machine-simulator/
+(define r2 '(((0 1) (0 1 R))
+             ((0 +) (1 1 R))
+             ((1 1) (1 1 R))
+             ((1 _) (2 _ L))
+             ((2 1) (H 1 N))))
+(define tm2
+ (make-tm 0
+         '(1 1 1 + 1 1 1 1)
+         '(H)
+         r2))
+         
