@@ -1,0 +1,26 @@
+#!/bin/perl
+
+##
+## Perl to the rescue:
+## http://search.cpan.org/dist/SMS-Ringtone-RTTTL-MIDI/lib/SMS/Ringtone/RTTTL/MIDI.pm
+##
+
+use SMS::Ringtone::RTTTL::Parser;
+use SMS::Ringtone::RTTTL::MIDI qw(rtttl_to_midi);
+
+my $rtttl = do { local $/; <STDIN> };
+
+my $p = new SMS::Ringtone::RTTTL::Parser($rtttl);
+
+# Check for errors
+if ($p->has_errors()) {
+    print STDERR "The following RTTTL errors were found:\n";
+    foreach (@{$p->get_errors()}) {
+        print STDERR "$_\n";
+    }
+    exit;
+}
+
+# Convert RTTTL to MIDI
+my $midi = rtttl_to_midi($p);
+print $midi;
