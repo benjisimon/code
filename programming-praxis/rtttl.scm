@@ -102,45 +102,47 @@
 (define (random-elt items)
  (list-ref items (random-integer (length items))))
  
-(define (random-note)
- (random-elt '(C D E F G A P)))
+(define (random-between low high)
+ (+ low (random-integer (- high low))))
  
+(define (random-note)
+ (let ((note (random-elt '(c c c c d d e f g a p)))
+       (len  (random-elt '(1 2 4 8 16)))
+       (oct  (random-elt '(5 6))))
+       
+  (if (eq? note 'p)
+      (&& len note)
+      (&& len note oct))))
+      
 (define (random-name)
  (&& (random-note) (random-note) (random-note) (random-note)))
  
 (define (random-notes)
- (let loop ((count (random-integer 20)) (accum '()))
-  (cond ((= count 0) accum)
-        (else (loop (- count 1) (cons (random-note) accum))))))
+ (implode
+  ","
+  (map (lambda (i)
+        (random-note))
+       (range 0 (random-integer 100)))))
+               
 
 (define (make-buffer)
  (let ((buffer '()))
   (lambda (x)
-   (if (equal? x 'items)
-       (reverse buffer)
+   (if (equal? x 'get)
+       (implode "," (reverse buffer))
        (set! buffer (cons x buffer))))))
        
 (define (random-song)
- (let ((notes (random-notes))
+ (let ((chorus (random-notes))
        (buffer (make-buffer)))
-  (for-each (lambda (duration)
-              (for-each (lambda (note)
-                          (buffer (&& duration note)))
-                        notes))
-            '(1 2 4 8 16 32))
-    (string-append 
-      (rtttl (random-name)
-             (implode "," 
-               (append
-                (buffer 'items)
-                (reverse (buffer 'items))))))))
-              
+   (for-each (lambda (i)
+              (buffer (random-notes))
+              (buffer chorus))
+             (range 1 (random-between 5 10)))
+   (buffer (random-notes))
+   (rtttl "Music By Scheme" (buffer 'get))))
+          
 (save "hw.rtttl" (morse-rtttl "Hello World"))
 (save "sos.rtttl" (morse-rtttl "SOS"))
-
-(for-each (lambda (i)
-           (save (&& "rand-" i ".rtttl") (random-song)))
-          (range 100 0))
-
-
+(save "random.rtttl" (random-song))
  
