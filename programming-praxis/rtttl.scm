@@ -3,74 +3,6 @@
 ;;
 
 
-(define morse-map
- '((a * -) (b - * * *) (c - * - *) (d - * *) (e *)
-   (f * * - *) (g - - *) (h * * * *) (i * *) (j * - - -)
-   (k * - * -) (l * - * *) (m - -) (n - *) (o - - -)
-   (p * - * -) (q - - * -) (r * - *) (s * * *)
-   (t -) (u * * -) (v * * * -) (w * -) (x - * * -)
-   (y - * - -) (z - - * *)))
-
-(define (morse-char x)
- (cond ((equal? x #\space) '(p7))
-       (else
-         (let* ((c (char-downcase x))
-                (s (string->symbol (string c))))
-          (cond ((assoc s morse-map) => cdr)
-                (else (morse-char #\x)))))))
-                
-(define (morse-string word)
- (map morse-char (string->list word)))
- 
-(define (implode sep parts)  
- (let loop ((parts parts) (accum '()))
-  (cond ((null? parts) accum)
-        (else
-         (loop (cdr parts)
-               (if (null? accum)
-                   (list (car parts))
-                   (append accum (list sep (car parts)))))))))
-
-(define (string-implode sep parts)
- (apply && (implode sep parts)))       
-                   
-(define (morse-normalize c)
- (case c
-  ((*) 's1)
-  ((-) 's3)
-  (else c)))
-            
-(define (morse-flatten letters)
- (apply append
-        (implode '(p3)
-           (map (lambda (letter)
-                 (implode 'p1 (map morse-normalize letter)))
-                letters))))
-
-(define hw (morse-string "Hello World"))
-
-(define (morse->note sym)
- (case sym
-  ((s1) "C")
-  ((s3) "C,C,C")
-  ((p1) "P")
-  ((p3) "P,P,P")
-  ((p7) "P,P,P,P,P,P,P")))
-  
-(define (rtttl title notes)
- (string-append title ": d=4, o=5, b=400: " notes "\n"))
-
-(define (morse-rtttl text)
- (let* ((morse (morse-flatten (morse-string text)))
-        (song (apply string-append
-                     (implode "," (map morse->note morse)))))
-  (rtttl text song)))
-   
-(define (save filename contents)
- (call-with-output-file (string-append "/sdcard/Documents/" filename)
-  (lambda (out)
-   (display contents out)))) 
-
 (define (&& . any)
  (apply string-append
         (map (lambda (x)
@@ -79,6 +11,86 @@
                     (else x)))
              any)))
              
+(define (implode sep parts)  
+ (let loop ((parts parts) (accum '()))
+  (cond ((null? parts) (apply && accum))
+        (else
+         (loop (cdr parts)
+               (if (null? accum)
+                   (list (car parts))
+                   (append accum (list sep (car parts)))))))))
+
+(define (string-head text)
+ (substring text 0 1))
+(define (string-tail text)
+ (substring text 1 (string-length text)))
+
+(define (explode sep text)
+ (let loop ((text text) (current "") (accum '()))
+  (cond ((equal? text "")
+         (if (equal? current "")
+             (reverse accum)
+             (reverse (cons current accum))))
+        ((equal? (string-head text) sep)
+         (loop (string-tail text)
+               ""
+               (cons current accum)))
+        (else
+         (loop (string-tail text)
+               (string-append current (string-head text))
+               accum))))) 
+
+
+(define (rtttl title notes)
+ (string-append title ":d=4,o=5,b=160:" notes "\n"))
+   
+(define (save filename contents)
+ (call-with-output-file (string-append "/sdcard/Documents/" filename)
+  (lambda (out)
+   (display contents out)))) 
+
+
+
+(define morse-map
+ '((a ".-") (b "-...") (c "-.-.") (d "-..") (e ".")
+   (f "..-.") (g "--.") (h "....") (i "..") (j ".---")
+   (k ".-.-")  (l ".-..") (m "--") (n "-.") (o "---")
+   (p ".-.-") (q "--*-") (r ".-.") (s "...")
+   (t "-") (u "..-") (v "...-") (w ".-") (x "-..-")
+   (y "-.--") (z "--..")))
+   
+(define (morse-char c)
+ (let ((needle (string->symbol (string (char-downcase c)))))
+  (cond ((eq? c #\space) " ")
+        ((assoc needle morse-map) => cadr)
+        (else (morse-char #\x)))))
+
+(define (morse-word text)
+ (let ((chars (map morse-char (string->list text))))
+  (implode "|" chars)))
+  
+(define (morse-string text)
+ (let ((words (explode " " text)))
+  (implode "_" (map morse-word words))))
+
+(define (morse-notes encoded)
+ (let loop ((chars (string->list encoded)) (accum '()))
+  (cond ((null? chars)
+         (implode "," (reverse accum)))
+        (else
+         (loop
+          (cdr chars)
+          (cons
+           (case (car chars)
+            ((#\.) "c5")
+            ((#\-) "a7")
+            ((#\|) "p")
+            ((#\_) "p,p,p"))
+           accum))))))
+ 
+(define (morse-rtttl message)
+ (rtttl message (morse-notes (morse-string message))))          
+ 
              
 (define (string-reverse text)
  (apply string
@@ -118,14 +130,17 @@
             '(1 2 4 8 16 32))
     (string-append 
       (rtttl (random-name)
-             (string-implode "," 
+             (implode "," 
                (append
                 (buffer 'items)
                 (reverse (buffer 'items))))))))
               
-
 (save "hw.rtttl" (morse-rtttl "Hello World"))
-(save "random.rtttl" (random-song))
+(save "sos.rtttl" (morse-rtttl "SOS"))
+
+(for-each (lambda (i)
+           (save (&& "rand-" i ".rtttl") (random-song)))
+          (range 100 0))
 
 
  
