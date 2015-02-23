@@ -28,12 +28,12 @@
             (i 0)
             (c 0))
   (cond ((= n 0)
-         (show i " vs " (morris-value c)))
+         (show "actual=" i ", morris=" (morris-value c)))
         (else
          (loop (- n 1)
                (int-count i)
                (morris-count c))))))
                
 (define (test)
- (for-each trial '(10 50 100 200 500 800 1000 1500 2000)))
+ (for-each trial '(10 50 100 200 500 800 1000 1500 2000 5000 7000 10000)))
 
