@@ -33,7 +33,6 @@
     }
     var target = root.childNodes.length - 2;
     for(var i = 0; i < last.word.length; i++) {
-      console.log(target);
       root.removeChild(root.childNodes[target-i]);
     }
 
