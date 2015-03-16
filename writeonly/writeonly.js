@@ -73,4 +73,5 @@
  
 
   $('.writeonly').keypress(keypress);
+  $('.writeonly').focus();
 })();
