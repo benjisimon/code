@@ -1,0 +1,31 @@
+body {
+  background-color: #E2E2E2;
+}
+.writeonly {
+  font-family: Courier New,Courier,Lucida Sans Typewriter,Lucida Typewriter,monospace;
+  margin: .5in 1in 20px 1in;
+  border: 1px solid #CCCCCC;
+  min-height: 400px;
+  background-color: white;
+  padding: 5px;
+}
+
+.writeonly:focus {
+  border: 1px solid #0000DD;
+  outline: none;
+}
+
+.footer {
+  text-align: center;
+  font-size: 9px;
+}
+
+.feedback {
+  position: fixed;
+  top: 2px;
+  right: 0px;
+  left: 0px;
+  font-style: italic;
+  font-size: 10px;
+  text-align: center;
+}
