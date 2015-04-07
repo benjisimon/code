@@ -38,10 +38,26 @@
  (for-each display x)
  (newline))
 
-(define (test s t)
- (show t)
- (show (list t (int->mr s (mr->int s t))))
- (show (int->mr s (* 3 (mr->int s t)))))
+;;
+;; Slightly higher level API
+;;
+
+(define (make-mr spec value)
+ (cons spec value))
+
+(define (mr-spec x) (car x))
  
-(test hms-spec '(3 4 15))
-(test dist-spec '(2 3 0 1))
+(define (mr-value x) (cdr x))
+
+ 
+(define (mr-op op)
+ (lambda (x y)
+   (let ((xv (mr->int (mr-spec x) (mr-value x)))
+         (yv (mr->int (mr-spec y) (mr-value y))))
+     (make-mr (mr-spec x) (int->mr (mr-spec x) (op xv yv))))))
+   
+(define mr-add (mr-op +))
+(define mr-sub (mr-op -))
+(define mr-mul (mr-op *))
+ 
+(define x (make-mr hms-spec '(3 19 45)))
