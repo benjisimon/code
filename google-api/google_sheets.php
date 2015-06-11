@@ -22,7 +22,7 @@ class GoogleSheets {
   function walk($doc_id, $worksheet_name, $callback) {
     $auth = $this->auth;
     $this->reduce($doc_id, $worksheet_name,
-                  function($carry, $item, $entry) use ($callback, $auth){
+                  function($carry, $item, $entry) use ($callback, $auth, $doc_id){
                     $answer = call_user_func($callback, $item);
                     if(is_array($answer)) {
                       $ns = $entry->getNamespaces(true);
@@ -43,6 +43,10 @@ EOF;
 EOF;
                       $entry->registerXPathNamespace('a', 'http://www.w3.org/2005/Atom');
                       $link = $entry->xpath('./a:link[@rel="edit"]');
+                      if(!$link) {
+                        trigger_error("No edit access has been granted to $doc_id", E_USER_ERROR);
+                        return false;
+                      }
                       $update_url = $link[0]['href'] . "";
                       $auth->curl('PUT', $update_url, $update, 'raw');
                     }

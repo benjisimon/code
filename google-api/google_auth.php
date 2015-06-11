@@ -51,12 +51,16 @@ class GoogleAuth {
    * will refresh the token as needed automatically.
    */
   function auth_token() {
+    if(!file_exists($this->ctx['auth_file'])) {
+      trigger_error("No auth file found: {$this->ctx['auth_file']}", E_USER_ERROR);
+      return false;
+    }
+
     $auth = json_decode(file_get_contents($this->ctx['auth_file']));
     $age  = time() - filemtime($this->ctx['auth_file']);
 
     if($age > $auth->expires_in) {
-      $this->auth_refresh($auth);
-      return $this->auth_token();
+      return $this->auth_refresh($auth);
     } else {
       return $auth->access_token;
     }
@@ -71,8 +75,9 @@ class GoogleAuth {
                     'refresh_token' => $auth->refresh_token);
 
     $response = $this->curl('POST', 'https://www.googleapis.com/oauth2/v3/token', $params, 'json');
-    $this->save_auth($response);
-    return true;
+    $auth->access_token = $response->access_token;
+    $this->save_auth($auth);
+    return $response->access_token;
   }
 
   private function save_auth($response) {
