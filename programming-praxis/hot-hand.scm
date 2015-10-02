@@ -3,7 +3,7 @@
 ;;
 
 (define (flip)
-  (if (> (random) .5) 'H 'T))
+  (if (= (random 2) 1) 'H 'T))
 
 (define (sample)
   (list (flip) (flip) (flip) (flip)))
