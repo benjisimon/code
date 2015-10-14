@@ -52,22 +52,21 @@
 		 (* (if (eq? result 'win) 1 -1) dir))
 	      (* dir -1))))))
 		 
-		 
-
 (define m1 (make-machine 'm1 100))
 (define m2 (make-machine 'm2 10))
 (define m3 (make-machine 'm3 13))
 
 (m1 'name)
 
-(play m1 100 100)
-(play m2 100 100)
+(play m1 100 100)   ; => 1000
+(play m2 100 100)   ; => 80
+(play m3 100 100)   ; => 130
 
-(trial 100 m1 100 100)
-(trial 1000 m2 100 100)
-(trial 1000 m3 100 100)
+(trial 100 m1 100 100)   ; => '(100 . 0)
+(trial 1000 m2 100 100)  ; => '(425 . 575)
+(trial 1000 m3 100 100)  ; => '(764 . 236)
 
-(observe 100 m1 m2)
-(observe 10 m2 m3)
-(observe 100 m2 m3)
-(observe 1000 m2 m3)
+(observe 100 m1 m2)      ; => '(m1 . -96)
+(observe 10 m2 m3)       ; => '(m3 . 4) '(m2 . -2) '(?? . 0)
+(observe 100 m2 m3)      ; => '(m3 . 8) '(m2 . -2) '(m3 . 12)
+(observe 1000 m2 m3)     ; => '(m3 . 48) '(m3 . 34) '(m3 . 58)
