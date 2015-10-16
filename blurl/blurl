@@ -5,6 +5,8 @@
 ## 
 ## Along with curl, this tools also depends on jq (https://stedolan.github.io/jq/)
 ##
+## Learn more: http://www.blogbyben.com/2015/10/blurl-lightweight-command-line-blogger.html
+##
 
 KEY=AIzaSyAM2gqZQPvfFoGWcJnxuM7jKOPRw2dQb_U # Uh, get your own here: https://developers.google.com/blogger/docs/3.0/using#auth
 BLOG_ID=12753102 # XXX - for now, hard coded to my personal blog
