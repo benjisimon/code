@@ -6,16 +6,23 @@
 ## Along with curl, this tools also depends on jq (https://stedolan.github.io/jq/)
 ##
 
-KEY=AIzaSyAM2gqZQPvfFoGWcJnxuM7jKOPRw2dQb_U
+KEY=AIzaSyAM2gqZQPvfFoGWcJnxuM7jKOPRw2dQb_U # Uh, get your own here: https://developers.google.com/blogger/docs/3.0/using#auth
 BLOG_ID=12753102 # XXX - for now, hard coded to my personal blog
 CURL="curl -s -G -d key=$KEY"
-action=$1 ; shift
 BASE_URL="https://www.googleapis.com/blogger/v3"
 
 function usage {
-  echo "Usage: `basename $0` {info [url]|posts|lookup [id]|get [id]}"
+  echo "Usage: `basename $0` [-q] {info url|posts|get id}"
   exit 1
 }
+
+quick=no
+if [ "$1" = "-q" ] ; then
+  quick=yes
+  shift
+fi
+
+action=$1 ; shift
 
 case $action in
   info)
@@ -23,27 +30,33 @@ case $action in
       usage
     else
       url=$1 ; shift
-      $CURL --data-urlencode "url=$url"  $BASE_URL/blogs/byurl
+      if [ "$quick" = "yes" ] ; then
+        filter="jq -r '.id + \":\" + .name'"
+      else
+        filter=cat
+      fi
+      $CURL --data-urlencode "url=$url"  $BASE_URL/blogs/byurl | eval $filter
     fi
     ;;
   posts)
-    $CURL -d "fetchBodies=false" -d "maxResults=30" "$BASE_URL/blogs/$BLOG_ID/posts" | \
-      jq -r '.items[] | .id + ":" + .title'
-    ;;
-  lookup)
-    if [ -z "$1" ] ; then
-      usage
+    if [ "$quick" = "yes" ] ; then
+      filter="jq -r '.items[] | .id + \":\" + .title'"
     else
-      id=$1 ; shift
-      $CURL "$BASE_URL/blogs/$BLOG_ID/posts/$id"
+      filter=cat
     fi
+    $CURL -d "fetchBodies=false" -d "maxResults=30" "$BASE_URL/blogs/$BLOG_ID/posts" | eval $filter
     ;;
   get)
     if [ -z "$1" ] ; then
       usage
     else
       id=$1 ; shift
-      $CURL "$BASE_URL/blogs/$BLOG_ID/posts/$id" | jq -r '.content'
+      if [ "$quick" = "yes" ] ; then
+        filter="jq -r '.content'"
+      else
+        filter=cat
+      fi
+      $CURL "$BASE_URL/blogs/$BLOG_ID/posts/$id" | eval $filter
     fi
     ;;
   *)
