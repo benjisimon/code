@@ -1,0 +1,54 @@
+#!/bin/bash
+
+##
+## Blogger + Curl = blurl - command line blogger tool.
+## 
+## Along with curl, this tools also depends on jq (https://stedolan.github.io/jq/)
+##
+
+KEY=AIzaSyAM2gqZQPvfFoGWcJnxuM7jKOPRw2dQb_U
+BLOG_ID=12753102 # XXX - for now, hard coded to my personal blog
+CURL="curl -s -G -d key=$KEY"
+action=$1 ; shift
+BASE_URL="https://www.googleapis.com/blogger/v3"
+
+function usage {
+  echo "Usage: `basename $0` {info [url]|posts|lookup [id]|get [id]}"
+  exit 1
+}
+
+case $action in
+  info)
+    if [ -z "$1" ] ; then
+      usage
+    else
+      url=$1 ; shift
+      $CURL --data-urlencode "url=$url"  $BASE_URL/blogs/byurl
+    fi
+    ;;
+  posts)
+    $CURL -d "fetchBodies=false" -d "maxResults=30" "$BASE_URL/blogs/$BLOG_ID/posts" | \
+      jq -r '.items[] | .id + ":" + .title'
+    ;;
+  lookup)
+    if [ -z "$1" ] ; then
+      usage
+    else
+      id=$1 ; shift
+      $CURL "$BASE_URL/blogs/$BLOG_ID/posts/$id"
+    fi
+    ;;
+  get)
+    if [ -z "$1" ] ; then
+      usage
+    else
+      id=$1 ; shift
+      $CURL "$BASE_URL/blogs/$BLOG_ID/posts/$id" | jq -r '.content'
+    fi
+    ;;
+  *)
+    usage
+    ;;
+esac
+
+      
