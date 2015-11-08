@@ -14,10 +14,10 @@ foreach(all_customers() as $c) {
   $entries = fb_time_entries_by_client($client,
                                        array('filter' => array('date_from' => $from,
                                                              'date_to'   => $to)));
-  $total   = array_reduce($entries,
-                          function($carry, $item) {
-                            return $carry + $item['hours'];
-                          }, 0);
+  if(!$entries) {
+    continue;
+  }
+
   $html    = snippet('emails/digest', array('customer' => $c,
                                             'entries'  => $entries,
                                             'client'   => $client,
