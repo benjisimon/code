@@ -4,6 +4,7 @@
  */
 require_once('lib/siteconfig.php');
 
+$debug  = g($_GET, 'debug') == 'on';
 $from   = date('Y-m-01', time());
 $to     = date('Y-m-d', time());
 $month  = date('F Y', time());
@@ -23,6 +24,14 @@ foreach(all_customers() as $c) {
                                             'from'     => $from,
                                             'to'       => $to));
     
-  xmail($c['to'], "[Ideas2Executables] Hours Summary for $month as of " . fmt_date($to), $html);
+  $subject = "[Ideas2Executables] Hours Summary for $month as of " . fmt_date($to);
+
+  if($debug) {
+    var_dump(array('to' => $c['to'],
+                   'subject' => $subject,
+                   'body'    => $html));
+  } else {
+    xmail($c['to'], $subject, $html);
+  }
 }
 ?>
