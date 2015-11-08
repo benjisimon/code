@@ -1,0 +1,5 @@
+{
+    "require": {
+        "rtconner/freshbooks-api": "dev-master"
+    }
+}

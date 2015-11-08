@@ -1,0 +1,53 @@
+[
+    {
+        "name": "rtconner/freshbooks-api",
+        "version": "dev-master",
+        "version_normalized": "9999999-dev",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/rtconner/freshbooks-api.git",
+            "reference": "07201bee4729498950a04caefbe9c0ce071242c0"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/rtconner/freshbooks-api/zipball/07201bee4729498950a04caefbe9c0ce071242c0",
+            "reference": "07201bee4729498950a04caefbe9c0ce071242c0",
+            "shasum": ""
+        },
+        "require": {
+            "ext-curl": "*",
+            "php": ">=5.3.0"
+        },
+        "time": "2014-11-23 22:14:47",
+        "type": "library",
+        "installation-source": "source",
+        "autoload": {
+            "psr-0": {
+                "Freshbooks\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "jboesch",
+                "homepage": "https://github.com/jboesch/FreshBooksRequest-PHP-API"
+            },
+            {
+                "name": "JasonReading",
+                "homepage": "http://jasonreading.com"
+            },
+            {
+                "name": "Robert Conner",
+                "homepage": "http://smartersoftware.net"
+            }
+        ],
+        "description": "Wrapper to the FreshBooks API",
+        "keywords": [
+            "api",
+            "freshbooks"
+        ]
+    }
+]
