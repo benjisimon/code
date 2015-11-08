@@ -15,7 +15,7 @@ $projects = fb_projects_by_client($client);
 <? foreach($projects as $p) { ?>
   <? $entries = fb_time_entries_by_project($p); ?>
   <? foreach($entries as $e) { ?>
-    <li><?= $e['date'] ?> <?= $e['hours'] ?>hrs: <?= $e['notes'] ?></li> 
+    <li><?= fmt_date($e['date']) ?> <?= fmt_hours($e['hours']) ?>: <?= $e['notes'] ?></li> 
   <? } ?>
 <? } ?>
 
