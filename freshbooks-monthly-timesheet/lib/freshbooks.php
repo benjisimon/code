@@ -5,9 +5,10 @@
  */
 
 function fb_invoke($type, $verb, $args = array()) {
+  $type_args = array('list' => array('per_page' => 100));
   $fb = new Freshbooks\FreshBooksApi(FB_DOMAIN, FB_KEY); 
   $fb->setMethod("$type.$verb");
-  $fb->post($args);
+  $fb->post($args + g($type_args, $type, A()));
   $fb->request();
   $type_plural = $type == 'time_entry' ? 'time_entries' : "{$type}s";
 
@@ -41,6 +42,21 @@ function fb_projects_by_client($client) {
 
 function fb_time_entries_by_project($project) {
   return fb_invoke('time_entry', 'list', array('project_id' => $project['project_id']));
+}
+
+function fb_time_entries_by_client($client, $options = array()) {
+  $entries  = A();
+  $projects = fb_projects_by_client($client);
+  foreach($projects as $p) {
+    $entries = array_merge(array_map(function($t) use($p) {
+                                      $t['project'] = $p;
+                                      return $t;
+                                     },
+                                     fb_time_entries_by_project($p)),
+                           $entries);
+  }
+  usort($entries, function($a,$b) { return strcmp($b['date'], $a['date']); });
+  return $entries;
 }
 
 ?>

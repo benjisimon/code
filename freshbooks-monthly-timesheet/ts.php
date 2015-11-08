@@ -10,12 +10,18 @@ if(!$email) {
   die("Access denied");
 }
 $client = fb_client_by_email($email);
-$projects = fb_projects_by_client($client);
+$entries = fb_time_entries_by_client($client);
+$total   = array_reduce($entries,
+                        function($carry, $item) {
+                          return $carry + $item['hours'];
+                        }, 0);
 ?>
-<? foreach($projects as $p) { ?>
-  <? $entries = fb_time_entries_by_project($p); ?>
+<p>
+ Total Hours for the Month: <?= $total ?>
+</p>
+
+<ul>
   <? foreach($entries as $e) { ?>
     <li><?= fmt_date($e['date']) ?> <?= fmt_hours($e['hours']) ?>: <?= $e['notes'] ?></li> 
   <? } ?>
-<? } ?>
-
+</ul>

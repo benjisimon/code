@@ -2,6 +2,7 @@
 /*
  * Configured our site
  */
+date_default_timezone_set('UTC');
 
 require_once(__DIR__ . '/../.conf.php');
 require_once(__DIR__ . '/../shared/lib/utils.php');
