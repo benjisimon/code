@@ -1,0 +1,69 @@
+#!/bin/bash
+
+##
+## Blogger + Curl = blurl - command line blogger tool.
+## 
+## Along with curl, this tools also depends on jq (https://stedolan.github.io/jq/)
+##
+## Learn more: http://www.blogbyben.com/2015/10/blurl-lightweight-command-line-blogger.html
+##
+
+KEY=AIzaSyAM2gqZQPvfFoGWcJnxuM7jKOPRw2dQb_U # Uh, get your own here: https://developers.google.com/blogger/docs/3.0/using#auth
+BLOG_ID=12753102 # XXX - for now, hard coded to my personal blog
+CURL="curl -s -G -d key=$KEY"
+BASE_URL="https://www.googleapis.com/blogger/v3"
+
+function usage {
+  echo "Usage: `basename $0` [-q] {info url|posts|get id}"
+  exit 1
+}
+
+quick=no
+if [ "$1" = "-q" ] ; then
+  quick=yes
+  shift
+fi
+
+action=$1 ; shift
+
+case $action in
+  info)
+    if [ -z "$1" ] ; then
+      usage
+    else
+      url=$1 ; shift
+      if [ "$quick" = "yes" ] ; then
+        filter="jq -r '.id + \":\" + .name'"
+      else
+        filter=cat
+      fi
+      $CURL --data-urlencode "url=$url"  $BASE_URL/blogs/byurl | eval $filter
+    fi
+    ;;
+  posts)
+    if [ "$quick" = "yes" ] ; then
+      filter="jq -r '.items[] | .id + \":\" + .title'"
+    else
+      filter=cat
+    fi
+    $CURL -d "fetchBodies=false" -d "maxResults=30" "$BASE_URL/blogs/$BLOG_ID/posts" | eval $filter
+    ;;
+  get)
+    if [ -z "$1" ] ; then
+      usage
+    else
+      id=$1 ; shift
+      if [ "$quick" = "yes" ] ; then
+        filter="jq -r '.content'"
+      else
+        filter=cat
+      fi
+      $CURL "$BASE_URL/blogs/$BLOG_ID/posts/$id" | eval $filter
+    fi
+    ;;
+  *)
+    usage
+    ;;
+esac
+
+      
