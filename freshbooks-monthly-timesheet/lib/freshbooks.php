@@ -40,8 +40,9 @@ function fb_projects_by_client($client) {
   return $found;
 }
 
-function fb_time_entries_by_project($project) {
-  return fb_invoke('time_entry', 'list', array('project_id' => $project['project_id']));
+function fb_time_entries_by_project($project, $options) {
+  return fb_invoke('time_entry', 'list', array('project_id' => $project['project_id']) +
+                                         g($options, 'filter'));
 }
 
 function fb_time_entries_by_client($client, $options = array()) {
@@ -52,7 +53,7 @@ function fb_time_entries_by_client($client, $options = array()) {
                                       $t['project'] = $p;
                                       return $t;
                                      },
-                                     fb_time_entries_by_project($p)),
+                                     fb_time_entries_by_project($p, $options)),
                            $entries);
   }
   usort($entries, function($a,$b) { return strcmp($b['date'], $a['date']); });
