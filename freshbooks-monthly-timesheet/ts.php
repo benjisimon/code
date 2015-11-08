@@ -16,11 +16,11 @@ foreach(all_customers() as $c) {
                           function($carry, $item) {
                             return $carry + $item['hours'];
                           }, 0);
-  $html    = snippet('monthly_timesheet', array('customer' => $c,
-                                                'entries'  => $entries,
-                                                'client'   => $client,
-                                                'from'     => $from,
-                                                'to'       => $to));
+  $html    = snippet('emails/digest', array('customer' => $c,
+                                            'entries'  => $entries,
+                                            'client'   => $client,
+                                            'from'     => $from,
+                                            'to'       => $to));
   echo $html;
 }
 ?>
