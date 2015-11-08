@@ -28,4 +28,11 @@ function hop() {
   return $obj;
 }
 
+function snippet($_name, $_vars = array()) {
+  ob_start();
+  extract($_vars);
+  require(__DIR__ . "/../../snippets/$_name.php");
+  return ob_get_clean();
+}
+
 ?>
