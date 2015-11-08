@@ -6,6 +6,7 @@ require_once('lib/siteconfig.php');
 
 $from   = date('Y-m-01', time());
 $to     = date('Y-m-d', time());
+$month  = date('F Y', time());
 
 foreach(all_customers() as $c) {
   $client = fb_client_by_email($c['client_email']);
@@ -21,6 +22,7 @@ foreach(all_customers() as $c) {
                                             'client'   => $client,
                                             'from'     => $from,
                                             'to'       => $to));
-  echo $html;
+    
+  xmail($c['to'], "[Ideas2Executables] Hours Summary for $month as of " . fmt_date($to), $html);
 }
 ?>
