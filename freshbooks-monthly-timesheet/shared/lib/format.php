@@ -13,3 +13,5 @@ function fmt_date($d) {
   $t = is_numeric($d) ? $d : strtotime($d);
   return date('m/d/Y', $t);
 }
+
+?>

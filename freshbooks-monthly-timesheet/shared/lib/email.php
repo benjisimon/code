@@ -21,3 +21,4 @@ function xmail($to, $subject, $body) {
   $mail =& Mail::factory('mail');
   $mail->send($to, $hdrs, $body);
 }
+?>
