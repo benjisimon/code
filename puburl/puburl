@@ -1,0 +1,38 @@
+#!/bin/bash
+
+##
+## puburl is a quick and easy way to put content on the web
+## and get access to it via  URL. It leverages gdrive
+## [see: https://github.com/prasmussen/gdrive]
+##
+
+##
+## Configure Me
+##
+GDRIVE_CONFIG=$PUBURL_GDRIVE_CONFIG
+PARENT_FOLDER_ID=0B53sMu55xO1GaEp1UGlPWWVVaTA
+
+
+##
+## OK, nothing to see here. Move Along
+##
+GDRIVE="gdrive -c $GDRIVE_CONFIG"
+
+if [ -z "$1" ] ; then
+  echo "Usage: `basename $0` file1 [file2 ...]"
+  exit
+fi
+
+for f in "$@" ; do
+  md5=`md5sum "$f" | cut -d ' ' -f1`
+  found=`$GDRIVE list -q "'$PARENT_FOLDER_ID' in parents and title = '$md5'" | grep -v ^Id`
+  if [ -z "$found" ] ; then
+    id=`cat "$f" | $GDRIVE upload -s -t $md5 -p $PARENT_FOLDER_ID --share |grep ^Id | sed 's/Id: //'`
+  else
+    id=`echo $found | cut -d ' ' -f 1`
+  fi
+  $GDRIVE url -i $id -d
+done
+
+
+  
