@@ -9,14 +9,18 @@
 ##
 ## Configure Me
 ##
-GDRIVE_CONFIG=$PUBURL_GDRIVE_CONFIG
 PARENT_FOLDER_ID=0B53sMu55xO1GaEp1UGlPWWVVaTA
 
 
 ##
 ## OK, nothing to see here. Move Along
 ##
-GDRIVE="gdrive -c $GDRIVE_CONFIG"
+if [ -z "$PUBURL_GDRIVE_CONFIG" ]; then
+  echo "Missing setting of PUBURL_GDRIVE_CONFIG - set this to the path to your ~/.gdrive auth dir."
+  exit
+fi
+
+GDRIVE="gdrive -c $PUBURL_GDRIVE_CONFIG"
 
 if [ -z "$1" ] ; then
   echo "Usage: `basename $0` file1 [file2 ...]"
@@ -24,6 +28,11 @@ if [ -z "$1" ] ; then
 fi
 
 for f in "$@" ; do
+  if [ ! -f "$f" ] ; then
+    echo "Cowardly refusing to upload [$f], a file that doesn't exist"
+    continue
+  fi
+
   md5=`md5sum "$f" | cut -d ' ' -f1`
   found=`$GDRIVE list -q "'$PARENT_FOLDER_ID' in parents and title = '$md5'" | grep -v ^Id`
   if [ -z "$found" ] ; then
