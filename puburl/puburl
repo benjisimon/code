@@ -5,6 +5,9 @@
 ## and get access to it via  URL. It leverages gdrive
 ## [see: https://github.com/prasmussen/gdrive]
 ##
+## The preferred URL to access the file is found here:
+## http://www.itproportal.com/2015/03/30/how-host-web-page-google-drive/
+##
 
 ##
 ## Configure Me
@@ -34,13 +37,13 @@ for f in "$@" ; do
   fi
 
   md5=`md5sum "$f" | cut -d ' ' -f1`
-  found=`$GDRIVE list -q "'$PARENT_FOLDER_ID' in parents and title = '$md5'" | grep -v ^Id`
+  found=`$GDRIVE list -n -q "'$PARENT_FOLDER_ID' in parents and title = '$md5'"`
   if [ -z "$found" ] ; then
     id=`cat "$f" | $GDRIVE upload -s -t $md5 -p $PARENT_FOLDER_ID --share |grep ^Id | sed 's/Id: //'`
   else
     id=`echo $found | cut -d ' ' -f 1`
   fi
-  $GDRIVE url -i $id -d
+  echo "https://www.googledrive.com/host/$id"
 done
 
 
