@@ -19,11 +19,19 @@ function curl_get {
 }
 
 function curl_post {
-  curl -H "Authorization: Bearer $AUTH_TOKEN" -H "Content-Type: application/json" -d @$1 $2
+  curl -s -H "Authorization: Bearer $AUTH_TOKEN" -H "Content-Type: application/json" -d @$1 $2
+}
+
+function curl_delete {
+  curl -s -H "Authorization: Bearer $AUTH_TOKEN" -H "Content-Type: application/json" -X DELETE $1
+}
+
+function curl_put {
+  curl -s -H "Authorization: Bearer $AUTH_TOKEN" -H "Content-Type: application/json" -X PUT -d @$1 $2
 }
 
 function usage {
-  echo "Usage: `basename $0` [-q] {info url|posts|get id|new title}"
+  echo "Usage: `basename $0` [-q] {info url|list|get id|new title|update id title|delete id}"
   exit 1
 }
 
@@ -49,7 +57,7 @@ case $action in
       curl_get --data-urlencode "url=$url"  $BASE_URL/blogs/byurl | eval $filter
     fi
     ;;
-  posts)
+  list)
     if [ "$quick" = "yes" ] ; then
       filter="jq -r '.items[] | .id + \":\" + .title'"
     else
@@ -75,6 +83,11 @@ case $action in
       usage
     else
       title=$1; shift
+      if [ "$quick" = "yes" ] ; then
+        filter="jq -r '.url'"
+      else
+        filter=cat
+      fi
       cat <<EOF > /tmp/jq.$$
       { kind: "blogger#post",
         blog: { id: "$BLOG_ID" },
@@ -83,7 +96,37 @@ case $action in
 EOF
       jq -R -s -f `cygpath -m /tmp/jq.$$` > /tmp/post.$$
       curl_post /tmp/post.$$ $BASE_URL/blogs/$BLOG_ID/posts/
-      rm -f /tmp/jq.$$ /tmp/post.$$
+      rm -f /tmp/jq.$$ /tmp/post.$$ | eval $filter
+    fi
+    ;;
+  update)
+    if [ -z "$1" -o -z "$2" ] ; then
+      usage
+    else
+      id=$1 ; shift
+      title=$1 ; shift
+      if [ "$quick" = "yes" ] ; then
+        filter="jq -r '.url'"
+      else
+        filter=cat
+      fi
+      cat <<EOF > /tmp/jq.$$
+      { kind: "blogger#post",
+        id: "$id",
+        blog: { id: "$BLOG_ID" },
+        title: "$title" ,
+        content: . }
+EOF
+      jq -R -s -f `cygpath -m /tmp/jq.$$` > /tmp/post.$$      
+      curl_put /tmp/post.$$ $BASE_URL/blogs/$BLOG_ID/posts/$id | eval $filter
+    fi
+    ;;
+  delete)
+    if [ -z "$1" ] ; then
+      usage
+    else
+      id=$1 ; shift
+      curl_delete $BASE_URL/blogs/$BLOG_ID/posts/$id
     fi
     ;;
   *)
