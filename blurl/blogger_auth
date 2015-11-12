@@ -1,0 +1,86 @@
+#!/bin/bash
+
+##
+## Authenticate with Google Drive
+##
+USAGE="`basename $0` {auth|refresh|token} ctx"
+CTX_DIR=$HOME/.blogger_auth
+CLIENT_ID=392608688954-5ujk1k0nmqo5lg4qlovlpev466mbrmcf.apps.googleusercontent.com
+CLIENT_SECRET=rt-oKLPHGwUbCXL1Teu9nZ2U
+
+ctx=default
+
+function usage {
+  echo "Usage: `basename $0` [-h] [-c context] {init|token}"
+  exit
+}
+
+function age {
+  modified=`stat -c %X $1`
+  now=`date +%s`
+  expr $now - $modified
+}
+
+function refresh {
+  refresh_token=`cat $CTX_DIR/$ctx.refresh_token`
+  curl -si \
+       -d client_id=$CLIENT_ID \
+       -d client_secret=$CLIENT_SECRET \
+       -d refresh_token=$refresh_token \
+       -d grant_type=refresh_token \
+       https://www.googleapis.com/oauth2/v3/token > $CTX_DIR/$ctx.refresh
+  grep access_token $CTX_DIR/$ctx.refresh | sed -e 's/.*: "//' -e 's/",//' > $CTX_DIR/$ctx.access_token
+}
+
+while getopts :hc: opt ; do
+  case $opt in
+    c) ctx=$OPTARG ;;
+    h) usage ;;
+  esac
+done
+shift $(($OPTIND - 1))
+
+cmd=$1 ; shift
+
+mkdir -p $CTX_DIR
+case $cmd in
+  init)
+    url=`curl -gsi \
+         -d scope=https://www.googleapis.com/auth/blogger \
+         -d redirect_uri=urn:ietf:wg:oauth:2.0:oob \
+         -d response_type=code \
+         -d client_id=$CLIENT_ID\
+         https://accounts.google.com/o/oauth2/auth | \
+      grep Location: | \
+      sed 's/Location: //'`
+    echo $url | xclip -in -selection clipboard
+    echo $url
+    echo -n "Code? "
+    read code
+    curl -s \
+         -d client_id=$CLIENT_ID \
+         -d client_secret=$CLIENT_SECRET \
+         -d code=$code \
+         -d grant_type=authorization_code \
+         -d redirect_uri=urn:ietf:wg:oauth:2.0:oob \
+         https://www.googleapis.com/oauth2/v3/token > $CTX_DIR/$ctx.init
+    grep access_token $CTX_DIR/$ctx.init | sed -e 's/.*: "//' -e 's/",//' > $CTX_DIR/$ctx.access_token
+    grep refresh_token $CTX_DIR/$ctx.init | sed -e 's/.*: "//' -e 's/"//' > $CTX_DIR/$ctx.refresh_token
+    echo "Done"
+    ;;
+  token)
+    if [ ! -f $CTX_DIR/$ctx.access_token ] ; then
+      echo "Unknown context: $ctx. Try initing first."
+      exit
+    fi
+    age=`age $CTX_DIR/$ctx.access_token`
+    if [ $age -gt 3600 ] ; then
+      refresh
+    fi
+    cat $CTX_DIR/$ctx.access_token
+    ;;
+  *)
+    usage
+esac
+
+
