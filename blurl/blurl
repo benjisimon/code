@@ -9,129 +9,152 @@
 ##
 
 KEY=AIzaSyAM2gqZQPvfFoGWcJnxuM7jKOPRw2dQb_U # Uh, get your own here: https://developers.google.com/blogger/docs/3.0/using#auth
-BLOG_ID=1652895851793494171 # XXX - for now, hard coded to my practice area
-BLOGGER_AUTH=`dirname $0`/blogger_auth
-AUTH_TOKEN=`$BLOGGER_AUTH token`
-BASE_URL="https://www.googleapis.com/blogger/v3"
-
-function curl_get {
-  curl -s -G -d key=$KEY $*
-}
-
-function curl_post {
-  curl -s -H "Authorization: Bearer $AUTH_TOKEN" -H "Content-Type: application/json" -d @$1 $2
-}
-
-function curl_delete {
-  curl -s -H "Authorization: Bearer $AUTH_TOKEN" -H "Content-Type: application/json" -X DELETE $1
-}
-
-function curl_put {
-  curl -s -H "Authorization: Bearer $AUTH_TOKEN" -H "Content-Type: application/json" -X PUT -d @$1 $2
-}
+VERBOSE=""
+ACTION=info
+BLOG_ID=$BLURL_BLOG_ID
+AUTH_CTX=${BLURL_AUTH_CTX:-default}
+API_URL="https://www.googleapis.com/blogger/v3/blogs"
+AUTH_TOKEN=`blogger_auth -c $AUTH_CTX token`
 
 function usage {
-  echo "Usage: `basename $0` [-q] {info url|list|get id|new title|update id title|delete id}"
+  cmd=`basename $0`
+  echo "Usage: $cmd [-a get|list|new|update|delete] [-i id] [-t title] [-l labels] [-b blogid] [-v] [-u url]"
+  echo ""
+  echo "Examples: "
+  echo "$cmd -a info -u -a info -u http://benspracticearea.blogspot.com/"
+  echo "$cmd -a list -b 1652895851793494171"
+  echo "$cmd -a get -b 1652895851793494171 -i 340833261817193713"
+  echo "( echo '<pre>' ; fortune ; echo '</pre>') | $cmd -a new  -t 'Quote of the Day' -l 'cli,blurl'"
+  echo "( $cmd -a get -b 1652895851793494171 -i 340833261817193713 ; echo '<p>The End</p>') | \ "
+  echo "  $cmd -a update -t 'A Story' -l 'cli,stories' -i 340833261817193713"
+  echo "$cmd -a delete -i 7833575450850872368"
+  echo ""
+  echo "Blog ID: ${BLOG_ID:-unset}"
   exit 1
 }
 
-quick=no
-if [ "$1" = "-q" ] ; then
-  quick=yes
-  shift
-fi
+while getopts ":a:i:t:l:b:p:u:v" opt ; do
+  case $opt in
+    a) ACTION=$OPTARG ;;
+    i) ID=$OPTARG ;;
+    t) TITLE=$OPTARG ;;
+    l) LABELS=$OPTARG ;;
+    b) BLOG_ID=$OPTARG ;;
+    u) URL=$OPTARG ;;
+    v) VERBOSE=yes ;;
+    \?) usage ;;
+  esac
+done
 
-action=$1 ; shift
+function mk_tmp {
+  prefix=$1
+  if [ `uname` = "CYGWIN_NT-6.3" ] ; then
+    cygpath -m /tmp/$prefix.$$
+  else
+    echo /tmp/$prefix.$$
+  fi
+}
 
-case $action in
+function mk_labels {
+  if [ -z "$LABELS" ] ; then
+    echo ''
+  else
+    echo $LABELS | sed -e 's/^/"/' -e 's/, */","/g' -e 's/$/"/'
+  fi
+}
+
+function curl_get {
+  filter=$1 ; shift
+  path=$1 ; shift
+  if [ -n "$VERBOSE" ] ; then
+    scrub=cat
+  else
+    scrub="jq -r '$filter'"
+  fi
+  curl -s -G -d key=$KEY $* $API_URL/$path | eval $scrub
+}
+
+function curl_do {
+  method=$1 ; shift
+  filter=$1 ; shift
+  path=$1 ; shift
+  payload=$1 ; shift
+  if [ -n "$VERBOSE" ] ; then
+    scrub=cat
+  else
+    scrub="jq -r '$filter'"
+  fi
+  if [ -n "$payload" ] ; then
+    curl -s -X $method -H "Authorization: Bearer $AUTH_TOKEN" -H "Content-Type: application/json" -d @$payload $API_URL/$path | eval $scrub
+  else
+    curl -s -X $method -H "Authorization: Bearer $AUTH_TOKEN" $API_URL/$path | eval $scrub
+  fi
+}
+
+
+case $ACTION in
   info)
-    if [ -z "$1" ] ; then
+    if [ -z "$URL" ] ; then
       usage
     else
-      url=$1 ; shift
-      if [ "$quick" = "yes" ] ; then
-        filter="jq -r '.id + \":\" + .name'"
-      else
-        filter=cat
-      fi
-      curl_get --data-urlencode "url=$url"  $BASE_URL/blogs/byurl | eval $filter
+      curl_get '.id + ":" + .name' byurl --data-urlencode "url=$URL"  
     fi
     ;;
   list)
-    if [ "$quick" = "yes" ] ; then
-      filter="jq -r '.items[] | .id + \":\" + .title'"
+    if [ -z "$BLOG_ID" ] ; then
+      usage
     else
-      filter=cat
+      curl_get '.items[]  | .id + ":" + .title' "$BLOG_ID/posts" -d "fetchBodies=false" -d "maxResults=30"
     fi
-    curl_get -d "fetchBodies=false" -d "maxResults=30" "$BASE_URL/blogs/$BLOG_ID/posts" | eval $filter
     ;;
   get)
-    if [ -z "$1" ] ; then
+    if [ -z "$BLOG_ID" -o -z "$ID" ] ; then
       usage
     else
-      id=$1 ; shift
-      if [ "$quick" = "yes" ] ; then
-        filter="jq -r '.content'"
-      else
-        filter=cat
-      fi
-      curl_get "$BASE_URL/blogs/$BLOG_ID/posts/$id" | eval $filter
+      curl_get '.content' "$BLOG_ID/posts/$ID"
     fi
     ;;
-  new)
-    if [  -z "$1" ] ; then
+  new|update)
+    if [ -z "$BLOG_ID" -o -z "$TITLE" ] ; then
       usage
     else
-      title=$1; shift
-      if [ "$quick" = "yes" ] ; then
-        filter="jq -r '.url'"
-      else
-        filter=cat
+      if [ $ACTION = "update" -a -z "$ID" ] ; then
+        usage
       fi
-      cat <<EOF > /tmp/jq.$$
+
+      if [ $ACTION = "new" ] ; then
+        maybe_id=''
+      else
+        maybe_id="id: \"$ID\","
+      fi
+
+      labels=`mk_labels`
+      jq_tmp=`mk_tmp jq`
+      body_tmp=`mk_tmp body`
+      cat <<EOF > $jq_tmp
       { kind: "blogger#post",
         blog: { id: "$BLOG_ID" },
-        title: "$title" ,
+        $maybe_id
+        labels: [ $labels ],
+        title: "$TITLE" ,
         content: . }
 EOF
-      jq -R -s -f `cygpath -m /tmp/jq.$$` > /tmp/post.$$
-      curl_post /tmp/post.$$ $BASE_URL/blogs/$BLOG_ID/posts/
-      rm -f /tmp/jq.$$ /tmp/post.$$ | eval $filter
-    fi
-    ;;
-  update)
-    if [ -z "$1" -o -z "$2" ] ; then
-      usage
-    else
-      id=$1 ; shift
-      title=$1 ; shift
-      if [ "$quick" = "yes" ] ; then
-        filter="jq -r '.url'"
+      jq -R -s -f $jq_tmp > $body_tmp
+      if [ $ACTION = "new" ] ; then
+        method=POST
       else
-        filter=cat
+        method=PUT
       fi
-      cat <<EOF > /tmp/jq.$$
-      { kind: "blogger#post",
-        id: "$id",
-        blog: { id: "$BLOG_ID" },
-        title: "$title" ,
-        content: . }
-EOF
-      jq -R -s -f `cygpath -m /tmp/jq.$$` > /tmp/post.$$      
-      curl_put /tmp/post.$$ $BASE_URL/blogs/$BLOG_ID/posts/$id | eval $filter
+      curl_do $method '.url' "$BLOG_ID/posts/$ID" $body_tmp
+      rm -f $jq_tmp $body_tmp
     fi
     ;;
   delete)
-    if [ -z "$1" ] ; then
+    if [ -z "$BLOG_ID" -o -z "$ID" ] ; then
       usage
     else
-      id=$1 ; shift
-      curl_delete $BASE_URL/blogs/$BLOG_ID/posts/$id
+      curl_do 'DELETE' '.' "$BLOG_ID/posts/$ID"
     fi
     ;;
-  *)
-    usage
-    ;;
+  *) usage ;;
 esac
-
-      
