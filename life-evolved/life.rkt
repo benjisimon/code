@@ -12,6 +12,12 @@
 (define (cell-ref board x y)
   (vector-ref (vector-ref board y) x))
 
+(define (print board)
+  (for ([row board])
+    (for ([cell row])
+      (printf "~s " (if cell 'X '_)))
+    (newline)))
+
 (define (bang width height init)
   (let ([board (make-vector height)])
     (for ([y height])
@@ -33,3 +39,5 @@
 (define c
   (bang 3 3
         '((X))))
+
+(print b)
