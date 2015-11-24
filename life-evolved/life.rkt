@@ -30,15 +30,16 @@
       (vector-ref (vector-ref board y) x))))
 
 (define (neighbors board x y)
-  (let ([ref (lambda (x y) (cell-ref board x y))])
+  (let ([ref (lambda (x y)
+               (cell-ref board x y))])
     (list (ref (dec x) y)
           (ref (dec x) (dec y))
           (ref x       (dec y))
-          (ref (inc x) (inc y))
-          (ref (inc x) y)
           (ref (inc x) (dec y))
-          (ref x       (dec y))
-          (ref (dec x) (dec y)))))
+          (ref (inc x) y)
+          (ref (inc x) (inc y))
+          (ref x       (inc y))
+          (ref (dec x) (inc y)))))
 
 (define (print board)
   (for ([row board])
@@ -47,16 +48,18 @@
     (newline)))
 
 (define (bang width height init)
-  (let ([board (make-vector height)])
-    (for ([y height])
-      (vector-set! board y (make-vector width #f)))
-    (for ([row init]
-          [y   (in-naturals)])
-      (for ([cell row]
-            [x (in-naturals)])
-        (when (eq? 'X cell)
-          (cell-set! board x y #t))))
-    board))
+  (let ([width (if (eq? width #t) (length (car init)) width)]
+        [height (if (eq? height #t) (length init) height)])
+    (let ([board (make-vector height)])
+      (for ([y height])
+        (vector-set! board y (make-vector width #f)))
+      (for ([row init]
+            [y   (in-naturals)])
+        (for ([cell row]
+              [x (in-naturals)])
+          (when (eq? 'X cell)
+            (cell-set! board x y #t))))
+      board)))
 
 (define (survive? board x y)
   (let* ([alive? (cell-ref board x y)]
@@ -92,16 +95,35 @@
           (_ _ X X)
           (X _ _ _))))
 
-
-(print (play 10 b))
-
-(print b)
-(print (tick b))
-(print (tick (tick b)))
-(print (tick (tick (tick b))))
-
 (define c
   (bang 3 3
         '((X))))
 
-(print b)
+(define d
+  (bang #t #t
+        '((_ _ _ _ _ _ _ _)
+          (_ _ _ _ _ _ _ _)
+          (_ _ X X X X _ _)
+          (_ _ X X X X _ _)
+          (_ _ _ _ _ _ _ _)
+          (_ _ _ _ _ _ _ _))))
+
+(print d)
+(print (tick d))
+(print (tick (tick d)))
+
+
+
+(define e
+  (bang #t #t
+        '((_ _ _ _ _ _ _ _)
+          (_ _ _ X _ _ _ _)
+          (_ _ X X X _ _ _)
+          (_ _ _ X _ _ _ _)
+          (_ _ _ _ _ _ _ _)
+          (_ _ _ _ _ _ _ _))))
+
+(print e)
+(print (tick e))
+(print (tick (tick (tick e))))
+(print (tick (tick (tick (tick e)))))
