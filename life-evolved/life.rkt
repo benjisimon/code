@@ -4,6 +4,8 @@
 ;; A very primitive implementation of Conway's Game of Life
 ;;
 
+(provide bang print play)
+
 (define (inc x)
   (+ 1 x))
 
@@ -88,42 +90,3 @@
   (if (= generations 0) board
       (play (dec generations) (tick board))))
 
-
-(define b
-  (bang 8 8
-        '((_ X _ X)
-          (_ _ X X)
-          (X _ _ _))))
-
-(define c
-  (bang 3 3
-        '((X))))
-
-(define d
-  (bang #t #t
-        '((_ _ _ _ _ _ _ _)
-          (_ _ _ _ _ _ _ _)
-          (_ _ X X X X _ _)
-          (_ _ X X X X _ _)
-          (_ _ _ _ _ _ _ _)
-          (_ _ _ _ _ _ _ _))))
-
-(print d)
-(print (tick d))
-(print (tick (tick d)))
-
-
-
-(define e
-  (bang #t #t
-        '((_ _ _ _ _ _ _ _)
-          (_ _ _ X _ _ _ _)
-          (_ _ X X X _ _ _)
-          (_ _ _ X _ _ _ _)
-          (_ _ _ _ _ _ _ _)
-          (_ _ _ _ _ _ _ _))))
-
-(print e)
-(print (tick e))
-(print (tick (tick (tick e))))
-(print (tick (tick (tick (tick e)))))
