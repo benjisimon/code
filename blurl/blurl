@@ -18,22 +18,23 @@ AUTH_TOKEN=`blogger_auth -c $AUTH_CTX token`
 
 function usage {
   cmd=`basename $0`
-  echo "Usage: $cmd [-a get|list|new|update|delete] [-i id] [-t title] [-l labels] [-b blogid] [-v] [-u url]"
+  echo "Usage: $cmd [-a get|list|new|update|delete|patch] [-i id] [-t title] [-l labels] [-b blogid] [-v] [-n] [-u url]"
   echo ""
   echo "Examples: "
-  echo "$cmd -a info -u -a info -u http://benspracticearea.blogspot.com/"
+  echo "$cmd -a info -u http://benspracticearea.blogspot.com/"
   echo "$cmd -a list -b 1652895851793494171"
   echo "$cmd -a get -b 1652895851793494171 -i 340833261817193713"
   echo "( echo '<pre>' ; fortune ; echo '</pre>') | $cmd -a new  -t 'Quote of the Day' -l 'cli,blurl'"
   echo "( $cmd -a get -b 1652895851793494171 -i 340833261817193713 ; echo '<p>The End</p>') | \ "
   echo "  $cmd -a update -t 'A Story' -l 'cli,stories' -i 340833261817193713"
   echo "$cmd -a delete -i 7833575450850872368"
+  echo "$cmd -a patch -i 7833575450850872368 -t 'New Title' -n"
   echo ""
   echo "Blog ID: ${BLOG_ID:-unset}"
   exit 1
 }
 
-while getopts ":a:i:t:l:b:p:u:v" opt ; do
+while getopts ":a:i:t:l:b:p:u:vn" opt ; do
   case $opt in
     a) ACTION=$OPTARG ;;
     i) ID=$OPTARG ;;
@@ -42,6 +43,7 @@ while getopts ":a:i:t:l:b:p:u:v" opt ; do
     b) BLOG_ID=$OPTARG ;;
     u) URL=$OPTARG ;;
     v) VERBOSE=yes ;;
+    n) NO_BODY=yes ;;
     \?) usage ;;
   esac
 done
@@ -112,6 +114,33 @@ case $ACTION in
       usage
     else
       curl_get '.content' "$BLOG_ID/posts/$ID"
+    fi
+    ;;
+  patch)
+    if [ -z "$BLOG_ID" -o -z "$ID" ] ; then
+      usage
+    else
+      labels=`mk_labels`
+      jq_tmp=`mk_tmp jq`
+      body_tmp=`mk_tmp body`
+      echo '{ kind: "#blogger:post" ' >> $jq_tmp
+      if [ -n "$labels" ] ; then
+        echo ", labels: [ $labels ] " >> $jq_tmp
+      fi
+      if [ -n "$TITLE" ] ; then
+        echo ", title: \"$TITLE\" " >> $jq_tmp
+      fi
+      if [ -z "$NO_BODY" ] ; then
+        echo ', content: . ' >> $jq_tmp
+      fi
+      echo " } " >> $jq_tmp
+      if [ -n "$NO_BODY" ] ; then
+        echo "" | jq -s -f $jq_tmp > $body_tmp
+      else
+        jq -R -s -f $jq_tmp > $body_tmp
+      fi
+      curl_do PATCH '.url' "$BLOG_ID/posts/$ID" $body_tmp
+      rm -f $jq_tmp $body_tmp
     fi
     ;;
   new|update)
