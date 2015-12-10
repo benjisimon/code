@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Morse Code Hacking</title>
+    <link rel='Stylesheet' type='text/css' href=''/>
+  </head>
+  
+  <p>Nothing to see here, it's all in the JavaScript.</p>
+
+  <body>
+    <script type='text/javascript'>
+      function codeToPattern(code) {
+        var code    = code.split('');
+        var dot     = 100;
+        var pattern = [];
+
+        for(var i = 0; i < code.length; i++) {
+          var letter = code[i];
+          if(letter == ' ') {
+            continue;
+          } else if(letter == '.') {
+            pattern.push(dot);
+           } else if(letter == '-') {
+            pattern.push(dot * 3);
+          }
+          var peek = (i + 1) == code.length ? null : code[i+1];
+          if(peek == null) {
+            continue;
+          } else {
+            pattern.push(peek == ' ' ? dot*7 : dot);
+          }
+        }
+        return pattern.join(',');
+      }
+
+      function textToCode(text) {
+        var code      = "";
+        var letters   = text.toUpperCase().split("");
+        var encoder   = { 
+          A: '.-',         B: '-...',       C: '-.-.',
+          D: '-..',        E: '.',          F: '..-.',
+          G: '--.',        H: '....',       I: '..',
+          J: '.---',       K: '-.-',        L: '.-..',
+          M: '--',         N: '-.',         O: '---',
+          P: '.--.',       Q: '--.-',       R: '.-.',
+          S: '...',        T: '-',          U: '..-',
+          V: '...-',       W: '.--',        X: '-..-',
+          Y: '-.--',       Z: '--..'
+        };
+
+        for(var i = 0; i < letters.length; i ++) {
+          var c = letters[i];
+          var e = encoder[c];
+          if(e) {
+            if(code != "") {
+              code += " ";
+            }
+            code += e;
+          }
+        }
+        return code;
+      }
+      var text = "Hello World";
+      var code = textToCode(text);
+      var pattern = codeToPattern(code);
+      console.log(text);
+      console.log(code);
+      console.log(pattern);
+
+      var text = "ee ee";
+      var code = textToCode(text);
+      var pattern = codeToPattern(code);
+      console.log(text);
+      console.log(code);
+      console.log(pattern);
+    </script>
+      
+  </body>
+</html>
+

@@ -1,0 +1,50 @@
+#!/bin/bash
+
+##
+## puburl is a quick and easy way to put content on the web
+## and get access to it via  URL. It leverages gdrive
+## [see: https://github.com/prasmussen/gdrive]
+##
+## The preferred URL to access the file is found here:
+## http://www.itproportal.com/2015/03/30/how-host-web-page-google-drive/
+##
+
+##
+## Configure Me
+##
+PARENT_FOLDER_ID=0B53sMu55xO1GaEp1UGlPWWVVaTA
+
+
+##
+## OK, nothing to see here. Move Along
+##
+if [ -z "$PUBURL_GDRIVE_CONFIG" ]; then
+  echo "Missing setting of PUBURL_GDRIVE_CONFIG - set this to the path to your ~/.gdrive auth dir."
+  exit
+fi
+
+GDRIVE="gdrive -c $PUBURL_GDRIVE_CONFIG"
+
+if [ -z "$1" ] ; then
+  echo "Usage: `basename $0` file1 [file2 ...]"
+  exit
+fi
+
+for f in "$@" ; do
+  if [ ! -f "$f" ] ; then
+    echo "Cowardly refusing to upload [$f], a file that doesn't exist"
+    continue
+  fi
+
+  md5=`md5sum "$f" | cut -d ' ' -f1`
+  found=`$GDRIVE list -n -q "'$PARENT_FOLDER_ID' in parents and title = '$md5'"`
+  if [ -z "$found" ] ; then
+    id=`cat "$f" | $GDRIVE upload -s -t $md5 -p $PARENT_FOLDER_ID --share |grep ^Id | sed 's/Id: //'`
+  else
+    id=`echo $found | cut -d ' ' -f 1`
+  fi
+  echo "https://www.googledrive.com/host/$id"
+done
+
+
+  

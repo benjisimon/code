@@ -1,0 +1,189 @@
+#!/bin/bash
+
+##
+## Blogger + Curl = blurl - command line blogger tool.
+## 
+## Along with curl, this tools also depends on jq (https://stedolan.github.io/jq/)
+##
+## Learn more: http://www.blogbyben.com/2015/10/blurl-lightweight-command-line-blogger.html
+##
+
+KEY=AIzaSyAM2gqZQPvfFoGWcJnxuM7jKOPRw2dQb_U # Uh, get your own here: https://developers.google.com/blogger/docs/3.0/using#auth
+VERBOSE=""
+ACTION=info
+BLOG_ID=$BLURL_BLOG_ID
+AUTH_CTX=${BLURL_AUTH_CTX:-default}
+API_URL="https://www.googleapis.com/blogger/v3/blogs"
+AUTH_TOKEN=`blogger_auth -c $AUTH_CTX token`
+
+function usage {
+  cmd=`basename $0`
+  echo "Usage: $cmd [-a get|list|new|update|delete|patch] [-i id] [-t title] [-l labels] [-b blogid] [-v] [-n] [-u url]"
+  echo ""
+  echo "Examples: "
+  echo "$cmd -a info -u http://benspracticearea.blogspot.com/"
+  echo "$cmd -a list -b 1652895851793494171"
+  echo "$cmd -a get -b 1652895851793494171 -i 340833261817193713"
+  echo "( echo '<pre>' ; fortune ; echo '</pre>') | $cmd -a new  -t 'Quote of the Day' -l 'cli,blurl'"
+  echo "( $cmd -a get -b 1652895851793494171 -i 340833261817193713 ; echo '<p>The End</p>') | \ "
+  echo "  $cmd -a update -t 'A Story' -l 'cli,stories' -i 340833261817193713"
+  echo "$cmd -a delete -i 7833575450850872368"
+  echo "$cmd -a patch -i 7833575450850872368 -t 'New Title' -n"
+  echo ""
+  echo "Blog ID: ${BLOG_ID:-unset}"
+  exit 1
+}
+
+while getopts ":a:i:t:l:b:p:u:vn" opt ; do
+  case $opt in
+    a) ACTION=$OPTARG ;;
+    i) ID=$OPTARG ;;
+    t) TITLE=$OPTARG ;;
+    l) LABELS=$OPTARG ;;
+    b) BLOG_ID=$OPTARG ;;
+    u) URL=$OPTARG ;;
+    v) VERBOSE=yes ;;
+    n) NO_BODY=yes ;;
+    \?) usage ;;
+  esac
+done
+
+function mk_tmp {
+  prefix=$1
+  if [ `uname` = "CYGWIN_NT-6.3" ] ; then
+    cygpath -m /tmp/$prefix.$$
+  else
+    echo /tmp/$prefix.$$
+  fi
+}
+
+function mk_labels {
+  if [ -z "$LABELS" ] ; then
+    echo ''
+  else
+    echo $LABELS | sed -e 's/^/"/' -e 's/, */","/g' -e 's/$/"/'
+  fi
+}
+
+function curl_get {
+  filter=$1 ; shift
+  path=$1 ; shift
+  if [ -n "$VERBOSE" ] ; then
+    scrub=cat
+  else
+    scrub="jq -r '$filter'"
+  fi
+  curl -s -G -d key=$KEY $* $API_URL/$path | eval $scrub
+}
+
+function curl_do {
+  method=$1 ; shift
+  filter=$1 ; shift
+  path=$1 ; shift
+  payload=$1 ; shift
+  if [ -n "$VERBOSE" ] ; then
+    scrub=cat
+  else
+    scrub="jq -r '$filter'"
+  fi
+  if [ -n "$payload" ] ; then
+    curl -s -X $method -H "Authorization: Bearer $AUTH_TOKEN" -H "Content-Type: application/json" -d @$payload $API_URL/$path | eval $scrub
+  else
+    curl -s -X $method -H "Authorization: Bearer $AUTH_TOKEN" $API_URL/$path | eval $scrub
+  fi
+}
+
+
+case $ACTION in
+  info)
+    if [ -z "$URL" ] ; then
+      usage
+    else
+      curl_get '.id + ":" + .name' byurl --data-urlencode "url=$URL"  
+    fi
+    ;;
+  list)
+    if [ -z "$BLOG_ID" ] ; then
+      usage
+    else
+      curl_get '.items[]  | .id + ":" + .title' "$BLOG_ID/posts" -d "fetchBodies=false" -d "maxResults=30"
+    fi
+    ;;
+  get)
+    if [ -z "$BLOG_ID" -o -z "$ID" ] ; then
+      usage
+    else
+      curl_get '.content' "$BLOG_ID/posts/$ID"
+    fi
+    ;;
+  patch)
+    if [ -z "$BLOG_ID" -o -z "$ID" ] ; then
+      usage
+    else
+      labels=`mk_labels`
+      jq_tmp=`mk_tmp jq`
+      body_tmp=`mk_tmp body`
+      echo '{ kind: "#blogger:post" ' >> $jq_tmp
+      if [ -n "$labels" ] ; then
+        echo ", labels: [ $labels ] " >> $jq_tmp
+      fi
+      if [ -n "$TITLE" ] ; then
+        echo ", title: \"$TITLE\" " >> $jq_tmp
+      fi
+      if [ -z "$NO_BODY" ] ; then
+        echo ', content: . ' >> $jq_tmp
+      fi
+      echo " } " >> $jq_tmp
+      if [ -n "$NO_BODY" ] ; then
+        echo "" | jq -s -f $jq_tmp > $body_tmp
+      else
+        jq -R -s -f $jq_tmp > $body_tmp
+      fi
+      curl_do PATCH '.url' "$BLOG_ID/posts/$ID" $body_tmp
+      rm -f $jq_tmp $body_tmp
+    fi
+    ;;
+  new|update)
+    if [ -z "$BLOG_ID" -o -z "$TITLE" ] ; then
+      usage
+    else
+      if [ $ACTION = "update" -a -z "$ID" ] ; then
+        usage
+      fi
+
+      if [ $ACTION = "new" ] ; then
+        maybe_id=''
+      else
+        maybe_id="id: \"$ID\","
+      fi
+
+      labels=`mk_labels`
+      jq_tmp=`mk_tmp jq`
+      body_tmp=`mk_tmp body`
+      cat <<EOF > $jq_tmp
+      { kind: "blogger#post",
+        blog: { id: "$BLOG_ID" },
+        $maybe_id
+        labels: [ $labels ],
+        title: "$TITLE" ,
+        content: . }
+EOF
+      jq -R -s -f $jq_tmp > $body_tmp
+      if [ $ACTION = "new" ] ; then
+        method=POST
+      else
+        method=PUT
+      fi
+      curl_do $method '.url' "$BLOG_ID/posts/$ID" $body_tmp
+      rm -f $jq_tmp $body_tmp
+    fi
+    ;;
+  delete)
+    if [ -z "$BLOG_ID" -o -z "$ID" ] ; then
+      usage
+    else
+      curl_do 'DELETE' '.' "$BLOG_ID/posts/$ID"
+    fi
+    ;;
+  *) usage ;;
+esac
