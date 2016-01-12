@@ -12,7 +12,7 @@
 (define (dec x)
   (- x 1))
 
-(define (make-sym-generator)
+(define (make-symbol-generator)
   (let ([x 0])
     (lambda ()
       (set! x (inc x))
@@ -20,70 +20,73 @@
 
 (define (card-match? c1 c2)
   (cond ([null? c1] #f)
+        ([null? c2] #f)
         ([member (car c1) c2] #t)
         (else (card-match? (cdr c1) c2))))
 
-(define (can-add-to-bucket? card bucket)
-  (let loop ([i 0])
-    (cond ([>= i (vector-length bucket)] #f)
-          ([eq? (vector-ref bucket i) #f] #t)
-          ([card-match? (vector-ref bucket i) card] #f)
-          (else
-           (loop (inc i))))))
-
-(define (make-buckets n)
-  (for/vector ([i n])
-     (make-vector n #f)))
-
-(define (make-deck n)
+(define (make-deck n sym-gen)
   (if (exact? (sqrt n))
-      (make-list n '())
+      (apply append
+             (for/list ([i (sqrt n)])
+               (let ([sym (sym-gen)])
+                 (for/list ([j (sqrt n)])
+                   (list sym)))))
       (error "Deck size must a perfect square")))
+  
+(define (can-add-to-pile? card pile)
+  (cond ([null? pile] #t)
+        ((not [card-match? (car pile) card])
+         (can-add-to-pile? card (cdr pile)))
+        (else #f)))
 
-(define (bucket-add! bucket card)
-  (let loop ([i 0])
-    (cond ([>= i (vector-length bucket)]
-           (error (format "Whoops, no space to store this card: ~s: ~s" card bucket)))
-          ([eq? (vector-ref bucket i) #f]
-           (vector-set! bucket i card))
-          (else
-           (loop (inc i))))))
+(define (grow-pile pile size deck)
+  (cond ([= size 0] pile)
+        ([null? deck] #f)
+        (else
+         (let ([card (car deck)])
+           (if (and (can-add-to-pile? card pile)
+                    (grow-pile (cons card pile) (dec size) (cdr deck)))
+               (grow-pile (cons card pile) (dec size) (cdr deck))
+               (grow-pile pile size (cdr deck)))))))
 
-(define (add-to-bucket! card buckets)
-  (let loop ([i 0])
-    (cond ([>= i (vector-length buckets)]
-           (error (format "Can't find a valid bucket for ~s: ~s" card buckets)))
-          ([can-add-to-bucket? card (vector-ref buckets i)]
-           (bucket-add! (vector-ref buckets i) card))
-          (else (loop (inc i))))))
 
-(define (bucket-matchify bucket sym-gen)
+(define (remove-pile-from-deck pile deck)
+  (filter (lambda (card)
+            (not (memq card pile)))
+          deck))
+
+(define (match-pile pile sym-gen)
   (let ([sym (sym-gen)])
-    (for/list ([c bucket])
-      (cons sym c))))
+    (map (lambda (card)
+           (cons sym card))
+         pile)))
 
-(define (tick cards num-buckets sym-generator)
-  (let ([buckets (make-buckets num-buckets)])
-    (let loop ([cards cards])
-      (cond ([null? cards]
-             #t)
-            (else
-             (let ([card (car cards)])
-               (add-to-bucket! card buckets)
-               (loop (cdr cards))))))
-    (let loop ([i 0] [cards '()])
-      (cond ([>= i (vector-length buckets)] cards)
-            (else
-             (loop (inc i)
-                   (append cards
-                           (bucket-matchify
-                            (vector-ref buckets i) sym-generator))))))))
+(define (done? deck)
+  (let loop ([cards deck])
+    (cond ([null? cards] #t)
+          (else
+           (if (can-add-to-pile? (car cards) deck)
 
+(define (tick deck sym-gen)
+  (let ([psize (sqrt (length deck))])
+    (let loop ([i 0] [deck deck] [piles '()])
+      (cond ([= i psize]
+             (apply append (map (lambda (p)
+                                  (match-pile p sym-gen))
+                                piles)))
+            (else
+             (let ([pile (grow-pile '() psize deck)])
+               (loop (inc i)
+                     (remove-pile-from-deck pile deck)
+                     (cons pile piles))))))))
 
 (define (go size)
-  (let ([sym-gen (make-sym-generator)])
-    (let loop ([generation 0] [cards (make-deck size)])
-      (display (format "deck[~s]: ~s\n" generation cards))
-      (loop (inc generation) (tick cards (sqrt size) sym-gen)))))
+  (let ([sym-gen (make-symbol-generator)])
+    (let loop ([deck (make-deck size sym-gen)])
+      (cond ([done? deck] deck)
+            (else
+             (loop
+              (tick deck sym-gen)))))))
+  
 
 (go 9)
