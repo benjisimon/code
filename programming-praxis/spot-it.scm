@@ -65,7 +65,11 @@
   (let loop ([cards deck])
     (cond ([null? cards] #t)
           (else
-           (if (can-add-to-pile? (car cards) deck)
+           (if (andmap (lambda (c)
+                         (card-match? c (car cards)))
+                       deck)
+               (loop (cdr cards))
+               #f)))))
 
 (define (tick deck sym-gen)
   (let ([psize (sqrt (length deck))])
@@ -90,3 +94,4 @@
   
 
 (go 9)
+(go 16)
