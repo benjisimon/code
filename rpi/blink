@@ -1,0 +1,18 @@
+#!/bin/bash
+
+LED=/sys/class/gpio/gpio17/value
+
+if [ -z "$1" ] ; then
+  echo "Usage: `basename $0` on-time off-time ..."
+fi
+
+while [ -n "$1" ] ; do
+  echo 1 > $LED
+  sleep $1 ; shift
+  if [ -n "$1" ] ; then
+    echo 0 > $LED
+    sleep $1 ; shift
+  fi
+done
+
+echo 0 > $LED

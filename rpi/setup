@@ -1,0 +1,9 @@
+#!/bin/bash
+
+##
+## Setup the devices on our Raspberry Pi for cli hacking
+##
+
+echo 17 > /sys/class/gpio/export
+echo out > /sys/class/gpio/gpio17/direction
+
