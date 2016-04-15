@@ -17,5 +17,7 @@ require_once('lib/siteconfig.php');
     <div class='icons'>
       <?= snippet('icons'); ?>
     </div>
+    <?= snippet('layout/js', array('path' => 'shared/js/jquery-2.2.3.min.js')) ?>
+    <?= snippet('layout/js', array('path' => 'js/ui.js')); ?>
   </body>
 </html>

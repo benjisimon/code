@@ -20,3 +20,8 @@ i {
   cursor: pointer;
   margin: 5px;
 }
+
+i.emph {
+  background-color: green;
+  font-size: 400%;
+}
