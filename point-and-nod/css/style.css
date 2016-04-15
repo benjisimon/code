@@ -1,0 +1,22 @@
+/*
+ *  style our doc
+ */
+
+body {
+  background-color: black;
+  color: #E0E0E0;
+}
+
+.icons {
+  font-size: 45px;
+  padding: 20px;
+}
+
+i {
+  display: inline-block;
+  padding: 10px;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  cursor: pointer;
+  margin: 5px;
+}
