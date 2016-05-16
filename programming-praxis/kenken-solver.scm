@@ -1,5 +1,12 @@
 ;; http://brainwagon.org/2016/05/12/kenken-puzzle-solver/
 
+(define (show . words)
+  (for-each (lambda (w)
+	      (display w)
+	      (display " "))
+	    words)
+  (newline))
+
 (define (unique? items)
   (if (null? items)
       #t
@@ -10,7 +17,9 @@
   (not (member '? puzzle)))
 
 (define (blank-puzzle n)
-  (make-list n '?))
+  (if (= 0 n)
+      '()
+      (cons '? (blank-puzzle (- n 1)))))
 
 (define (try sym puzzle)
   (if (null? puzzle)
@@ -23,39 +32,91 @@
 (define (ok? puzzle constraints)
   (if (null? constraints)
       #t
-      (let* [(params (map (lambda (i) (list-ref puzzle i))
+      (let* ((params (map (lambda (i) (list-ref puzzle i))
 			  (car (car constraints))))
 	     (valid? (if (solved? params)
 			 (apply (cdr (car constraints)) params)
-			 #t))]
+			 #t)))
 	(and valid? (ok? puzzle (cdr constraints))))))
 
 
 (define (solve puzzle dictionary constraints)
   (define (go puzzle pool)
-    (cond ([solved? puzzle]
+    (cond ((solved? puzzle)
 	   puzzle)
-	  ([null? pool] #f)
+	  ((null? pool) #f)
 	  (else
-	   (let [(next-attempt (try (car pool) puzzle))]
-	     (if (and (ok? next-attempt constraints)
-		      (go next-attempt dictionary))
-		 (go next-attempt dictionary)
-		 (go puzzle (cdr pool)))))))
+	   (let* ((next-attempt (try (car pool) puzzle))
+		  (valid (and (ok? next-attempt constraints)
+			      (go next-attempt dictionary))))
+	     (if valid
+		 valid
+		 (begin
+		   (show "Rejecting:" next-attempt)
+		   (go puzzle (cdr pool))))))))
   (go puzzle dictionary))
-     
-(define c
-  `(((0 1 2)   . ,(lambda args (unique? args)))
-    ((1 2)     . ,(lambda (a b) (= 3 (+ a b))))))
-;(solve (blank-puzzle 3) '(0 1 2) c)
 
 (define (uni . args)
   (unique? args))
 
 (define (is op val)
   (lambda args
-    (= val (apply op args))))
+    (or (= val (apply op args))
+	(= val (apply op (reverse args))))))
   
+  
+
+(define kk-3x3-cons
+  `(((0 1 2) . ,uni)
+    ((3 4 5) . ,uni)
+    ((6 7 8) . ,uni)
+    ((0 3 6) . ,uni)
+    ((1 4 7) . ,uni)
+    ((2 5 8) . ,uni)))
+
+(define kk-3x3-dict '(1 2 3))
+
+(define kk-p1-cons
+  `(((0 3) . ,(is + 3))
+    ((2 5 4) . ,(is + 8))
+    ((7 8) . ,(is + 3))
+    ((6) . ,(is + 3))
+    ((1) . ,(is + 1))))
+
+; (solve (blank-puzzle 9) kk-3x3-dict (append kk-3x3-cons kk-p1-cons))
+
+(define kk-p2-cons
+  `(((0 1) . ,(is + 3))
+    ((2 5) . ,(is + 5))
+    ((7 8) . ,(is + 4))
+    ((3 6) . ,(is + 5))
+    ((4)   . ,(is + 1))))
+
+;; (solve (blank-puzzle 9) kk-3x3-dict (append kk-3x3-cons kk-p2-cons))
+
+(define kk-4x4-cons
+  `(((0 1 2 3) . ,uni)
+    ((4 5 6 7) . ,uni)
+    ((8 9 10 11) . ,uni)
+    ((12 13 14 15) . ,uni)
+    ((0 4 8 12) . ,uni)
+    ((1 5 9 13) . ,uni)
+    ((2 6 10 14) . ,uni)
+    ((3 7 11 15) . ,uni)))
+
+(define kk-4x4-dict '(1 2 3 4))
+
+(define kk-p3-cons
+  `(((0 1) . ,(is + 6))
+    ((2 3 7) . ,(is * 12))
+    ((6 10 11) . ,(is * 4))
+    ((5 9) . ,(is + 4))
+    ((4) . ,(is + 3))
+    ((8 12) . ,(is - 3))
+    ((13 14) . ,(is / 2))
+    ((15) . ,(is + 3))))
+
+;; (solve (blank-puzzle 16) kk-4x4-dict (append kk-4x4-cons kk-p3-cons))
 
 (define kk-6x6-cons
   `(((00 01 02 03 04 05) . ,uni)
@@ -73,46 +134,19 @@
 
 (define kk-6x6-dict '(1 2 3 4 5 6))
 
-; (solve (blank-puzzle 36) kk-6x6-dict kk-6x6-cons)
+(define kk-p4-cons
+  `(((0 1 6) . ,(is * 12))
+    ((2 3 4) . ,(is + 11))
+    ((5 11)    . ,(is + 7))
+    ((17 23 29) . ,(is + 8))
+    ((28 34 35) . ,(is * 72))
+    ((27 33) . ,(is + 5))
+    ((32) . ,(is + 3))
+    ((30 31) . ,(is - 1))
+    ((12 18 24 25) . ,(is + 12))
+    ((13 14) . ,(is / 2))
+    ((14 15 16 10) . ,(is + 19))
+    ((9) . ,(is + 3))
+    ((21 22) . ,(is - 5))))
 
-(define kk-p1-cons
-  `(((00 01 06) . ,(lambda (a b c) (= 12 (* a b c))))
-    ((02 03 04) . ,(lambda (a b c) (= 11 (+ a b c))))
-    ((05 11)    . ,(lambda (a b) (= 7 (+ a b))))
-    ((07 08)    . ,(lambda (a b) (= 5 (- a b))))
-    ((09)       . ,(lambda (a) (= a 9)))
-    ((10 14 15 16) . ,(lambda (a b c d) (= 19 (+ a b c d))))
-    ((17 23 29) . ,(lambda (a b c) (= 8 (+ a b c))))
-    ((28 34 35) . ,(lambda (a b c) (= 72 (* a b c))))
-    ((27 33)    . ,(lambda (a b) (= 5 (+ a b))))
-    ((32)       . ,(lambda (a) (= a 3)))
-    ((30 31)    . ,(lambda (a b) (= 1 (- a b))))
-    ((12 18 24 25) . ,(lambda (a b c d) (= 12 (+ a b c d))))
-    ((13 19) . ,(lambda (a b) (= 2 (/ a b))))
-    ((20 26) . ,(lambda (a b) (= 2 (/ a b))))
-    ((21 22) . ,(lambda (a b) (= 5 (- a b))))))
-
-; (solve (blank-puzzle 36) kk-6x6-dict (append kk-p1-cons kk-6x6-cons))
-
-; (solve (blank-puzzle 36) kk-6x6-dict kk-6x6-cons)
-
-(define kk-3x3-cons
-  `(((0 1 2) . ,uni)
-    ((3 4 5) . ,uni)
-    ((6 7 8) . ,uni)
-    ((0 3 6) . ,uni)
-    ((1 4 7) . ,uni)
-    ((2 5 8) . ,uni)))
-
-(define kk-3x3-dict '(1 2 3))
-
-(define kk-p2-cons
-  `(((0 1 3) . ,(is * 12))
-    ((2) . ,(is + 2))
-    ((5 8) . ,(is + 5))
-    ((6 7) . ,(is - 2))
-    ((4) . ,(is + 1))))
-
-kk-p2-cons
-
-(solve (blank-puzzle 9) kk-3x3-dict (append kk-3x3-cons kk-p2-cons))
+;; (solve (blank-puzzle 36) kk-6x6-dict (append kk-p4-cons kk-6x6-cons))
