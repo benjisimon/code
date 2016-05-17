@@ -61,8 +61,10 @@
 
 (define (is op val)
   (lambda args
-    (or (= val (apply op args))
-	(= val (apply op (reverse args))))))
+    (if (memq op (list / -))
+	(or (= val (apply op args))
+	    (= val (apply op (reverse args))))
+	(= val (apply op args)))))
   
   
 
@@ -151,5 +153,5 @@
     ((7 8) . ,(is - 5))
     ((21 22) . ,(is - 5))))
 
-;; (solve (blank-puzzle 36) kk-6x6-dict (append kk-p4-cons kk-6x6-cons))
+;; (solve (blank-puzzle 36) kk-6x6-dict (append kk-6x6-cons kk-p4-cons))
 
