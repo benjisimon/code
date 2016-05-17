@@ -52,7 +52,7 @@
 	     (if valid
 		 valid
 		 (begin
-		   (show "Rejecting:" next-attempt)
+		   ;; (show "Rejecting:" next-attempt)
 		   (go puzzle (cdr pool))))))))
   (go puzzle dictionary))
 
@@ -83,7 +83,7 @@
     ((6) . ,(is + 3))
     ((1) . ,(is + 1))))
 
-; (solve (blank-puzzle 9) kk-3x3-dict (append kk-3x3-cons kk-p1-cons))
+;; (solve (blank-puzzle 9) kk-3x3-dict (append kk-3x3-cons kk-p1-cons))
 
 (define kk-p2-cons
   `(((0 1) . ,(is + 3))
@@ -152,3 +152,4 @@
     ((21 22) . ,(is - 5))))
 
 ;; (solve (blank-puzzle 36) kk-6x6-dict (append kk-p4-cons kk-6x6-cons))
+
