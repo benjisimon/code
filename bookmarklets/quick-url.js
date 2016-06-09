@@ -11,6 +11,6 @@
   window.location =
     ('http://u.ideas2executables.com/admin.py?hash=True&main=True&action=EDIT&' +
      'url='+encodeURIComponent(location.href) + '&' +
-     'path=' + c() + c() + c() + c());
+     'path=' + c() + c() + c());
 }())
     
