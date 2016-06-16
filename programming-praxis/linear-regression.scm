@@ -26,6 +26,12 @@
 	       (set! remaining (cdr remaining))
 	       x))))))
 
+(define (file->generator path scrubber)
+  (let ((port (open-input-file path)))
+    (lambda ()
+      (let ((next (read port)))
+        (if (eof-object? next) '() (apply scrubber next))))))
+
 (define (sigma generator . fns)
   (define (update fns sums data)
     (let loop ((fns fns)
@@ -68,8 +74,8 @@
 
 (define (make-crystal-ball data)
   (let* ((lr (linear-regression data))
-	 (m  (car lr))
-	 (b  (cdr lr)))
+         (m  (car lr))
+         (b  (cdr lr)))
     (lambda (x)
       (+ (* m x) b))))
 
@@ -85,3 +91,16 @@
     (show (ball 66))
     (show (ball 1024))))
 
+;; From:
+;;  http://onlinestatbook.com/2/regression/intro.html
+;;  http://onlinestatbook.com/2/case_studies/sat.html
+(define (gpa-sat-test)
+  (define data (file->generator "gpa-sat-data.scm"
+                                (lambda (high-gpa math-sat verb-sat comp-gpa univ-gpa)
+                                  (list high-gpa univ-gpa))))
+  (let ((ball (make-crystal-ball data)))
+    (show "2.7 => " (ball 2.7))
+    (show "3.0 => " (ball 3))
+    (show "3.5 => " (ball 3.5))))
+
+(gpa-sat-test)
