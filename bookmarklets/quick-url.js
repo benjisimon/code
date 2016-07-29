@@ -6,7 +6,7 @@
     var dict = ['A','B','C','D','E','F',,'H','J','K','L','M','N',
                 'P','Q','R','S','T','U','W','X','Y','Z',
                 2,3,4,5,7,8,9];
-    return dict[Math.floor(Math.random() * dict.length)];
+    return dict[Math.floor(Math.random() * dict.length) % dict.length];
   }
   window.open('http://u.ideas2executables.com/admin.py?hash=True&main=True&action=EDIT&' +
               'url='+encodeURIComponent(location.href) + '&' +
