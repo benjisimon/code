@@ -44,13 +44,10 @@ define('DATA_CACHE_TTL', 60 * 60 * 24);
 //
 function cache_data() {
   $fd   = fopen(DATA_CACHE_FILE, "w");
-  var_dump(DATA_URL);
   $ch   = curl_init(DATA_URL);
   curl_setopt($ch, CURLOPT_FILE, $fd);
   curl_setopt($ch, CURLOPT_TIMEOUT, 20);
   curl_exec($ch);
-  var_dump(curl_error($ch));
-  var_dump(curl_errno($ch));
   fclose($fd);
 }
 
