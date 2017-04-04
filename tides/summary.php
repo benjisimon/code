@@ -61,7 +61,7 @@ if($result === false) {
       break;
     case 'json':
       header("Content-Type: application/json");
-      echo json_encode(array('high' => $high, 'low' => $low, 'current' => $current, 'offset' => $offset));
+      echo json_encode(array('high' => $high, 'low' => $low, 'current' => $current, 'offset' => $offset, 'source' => $url));
       break;
      default:
       die("Unknown format: $as");
