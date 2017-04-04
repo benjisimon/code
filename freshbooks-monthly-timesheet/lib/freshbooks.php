@@ -36,7 +36,8 @@ function fb_client_by_email($email) {
 
 
 function fb_projects_by_client($client) {
-  $found = fb_invoke('project', 'list', array('client_id' => $client['client_id']));
+  $found = array_filter(fb_invoke('project', 'list', array('client_id' => $client['client_id'])),
+                        function($p) { return $p['bill_method'] != 'flat-rate'; });
   return $found;
 }
 
