@@ -25,7 +25,7 @@ define('DATA_CACHE_TTL', 60 * 60 * 24);
    h2 { font-size: 54px; text-align: center; font-family: 'Montserrat', sans-serif;}
    h3 { text-align: center; font-size: 12px; }
    a { color: #006699; }
-   .page { margin: 20px auto auto auto; width: 40%; min-width: 200px; }
+   .page { margin: 10px auto auto auto; width: 80%; min-width: 200px; }
 
   </style>
  </head>
