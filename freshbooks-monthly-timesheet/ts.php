@@ -8,8 +8,12 @@ $debug  = g($_GET, 'debug') == 'on';
 $from   = date('Y-m-01', time());
 $to     = date('Y-m-d', time());
 $month  = date('F Y', time());
+$target = g($_GET, 'client');
 
 foreach(all_customers() as $c) {
+  if($target && $target != $c['name']) {
+    continue;
+  }
   $client = fb_client_by_email($c['client_email']);
   $entries = fb_time_entries_by_client($client,
                                        array('filter' => array('date_from' => $from,
