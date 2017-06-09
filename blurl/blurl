@@ -18,7 +18,7 @@ AUTH_TOKEN=`blogger_auth -c $AUTH_CTX token`
 
 function usage {
   cmd=`basename $0`
-  echo "Usage: $cmd [-a get|list|new|update|delete|patch] [-i id] [-t title] [-l labels] [-b blogid] [-v] [-n] [-u url]"
+  echo "Usage: $cmd [-a info|get|list|new|update|patch|delete|search] [-i id] [-t title] [-l labels] [-b blogid] [-v] [-u url] [-q query] [-c]"
   echo ""
   echo "Examples: "
   echo "$cmd -a info -u http://benspracticearea.blogspot.com/"
@@ -28,13 +28,18 @@ function usage {
   echo "( $cmd -a get -b 1652895851793494171 -i 340833261817193713 ; echo '<p>The End</p>') | \ "
   echo "  $cmd -a update -t 'A Story' -l 'cli,stories' -i 340833261817193713"
   echo "$cmd -a delete -i 7833575450850872368"
-  echo "$cmd -a patch -i 7833575450850872368 -t 'New Title' -n"
+  echo "$cmd -a list |  "
+  echo "  while read line; "
+  echo "   do id=$(echo $line | sed 's/:.*//'); "
+  echo "     title=$(echo $line | sed 's/^.*://'); "
+  echo "     blurl -a patch -i $id -t \"[test] $title\" ; "
+  echo "  done"
   echo ""
   echo "Blog ID: ${BLOG_ID:-unset}"
   exit 1
 }
 
-while getopts ":a:i:t:l:b:p:u:vn" opt ; do
+while getopts ":a:i:t:l:b:p:u:q:vc" opt ; do
   case $opt in
     a) ACTION=$OPTARG ;;
     i) ID=$OPTARG ;;
@@ -43,7 +48,8 @@ while getopts ":a:i:t:l:b:p:u:vn" opt ; do
     b) BLOG_ID=$OPTARG ;;
     u) URL=$OPTARG ;;
     v) VERBOSE=yes ;;
-    n) NO_BODY=yes ;;
+    c) READ_CONTENT=yes ;;
+    q) QUERY=$OPTARG ;;
     \?) usage ;;
   esac
 done
@@ -73,7 +79,49 @@ function curl_get {
   else
     scrub="jq -r '$filter'"
   fi
-  curl -s -G -d key=$KEY $* $API_URL/$path | eval $scrub
+  next=''
+  p=$(printf '%010d' 0)
+  while true ; do
+    p=$(printf '%010d' $(expr $p + 1))
+    buffer=$(mk_tmp page.$p)
+    if [ -n "$next" ] ; then
+      curl -s -G -d key=$KEY  -d pageToken=$next $* $API_URL/$path > $buffer
+    else
+      curl -s -G -d key=$KEY $* $API_URL/$path > $buffer
+    fi
+    next=$(jq -r .nextPageToken $buffer)
+    if [  "$next" == 'null' ] ; then
+      break;
+    fi
+  done
+  all=$(mk_tmp all)
+  echo '{ "pages" : [' > $all
+  if [ $p  -gt 0 ] ; then
+    path=$(mk_tmp page.$(printf '%010d' 1))
+    has_items=$(jq -r '.items | type' $path)
+    if [ "$has_items" == 'array' ] ; then
+      cat $path >> $all
+    else 
+      echo '{ "items" : [] }' >> $all
+    fi
+    rm $path
+  fi
+  if [ $p -gt 1 ] ; then
+    for i in $(seq 2 $p) ; do
+      echo "," >> $all
+      path=$(mk_tmp page.$(printf '%010d' $i))
+      has_items=$(jq -r '.items | type' $path)
+      if [ "$has_items" == 'array' ] ; then
+        cat $path >> $all
+      else 
+        echo '{ "items" : [] }' >> $all
+      fi
+      rm $path
+    done
+  fi
+  echo ']}' >> $all
+  cat $all | eval $scrub
+  rm $all
 }
 
 function curl_do {
@@ -86,10 +134,17 @@ function curl_do {
   else
     scrub="jq -r '$filter'"
   fi
-  if [ -n "$payload" ] ; then
-    curl -s -X $method -H "Authorization: Bearer $AUTH_TOKEN" -H "Content-Type: application/json" -d @$payload $API_URL/$path | eval $scrub
+
+  if [ "$method" == "GET" ] ; then
+    method_arg="-G"
   else
-    curl -s -X $method -H "Authorization: Bearer $AUTH_TOKEN" $API_URL/$path | eval $scrub
+    method_arg="-X $method"
+  fi
+
+  if [ -n "$payload" ] ; then
+    curl -s $method_arg -H "Authorization: Bearer $AUTH_TOKEN" -H "Content-Type: application/json" -d @$payload $API_URL/$path | eval $scrub
+  else
+    curl -s $method_arg -H "Authorization: Bearer $AUTH_TOKEN" $API_URL/$path $* | eval $scrub
   fi
 }
 
@@ -99,14 +154,25 @@ case $ACTION in
     if [ -z "$URL" ] ; then
       usage
     else
-      curl_get '.id + ":" + .name' byurl --data-urlencode "url=$URL"  
+      curl_do 'GET' '.id + ":" + .name' byurl '' --data-urlencode "url=$URL"  
+    fi
+    ;;
+  search)
+    if [ -z "$BLOG_ID" -o -z "$QUERY" ] ; then
+      usage
+    else
+      curl_get '.pages[] | .items[]  | .id + ":" + .title' "$BLOG_ID/posts/search" -d blogId=$BLOG_ID --data-urlencode "q=$QUERY"
     fi
     ;;
   list)
     if [ -z "$BLOG_ID" ] ; then
       usage
+    elif [ -n "$LABELS" ] ; then
+      curl_get '.pages[] | .items[]  | .id + ":" + .title' "$BLOG_ID/posts" -d "fetchBodies=false"  \
+               -d "maxResults=100" --data-urlencode "labels=$LABELS"
     else
-      curl_get '.items[]  | .id + ":" + .title' "$BLOG_ID/posts" -d "fetchBodies=false" -d "maxResults=30"
+      curl_get '.pages[] | .items[]  | .id + ":" + .title' "$BLOG_ID/posts" -d "fetchBodies=false"  \
+               -d "maxResults=100"
     fi
     ;;
   get)
@@ -117,30 +183,30 @@ case $ACTION in
     fi
     ;;
   patch)
-    if [ -z "$BLOG_ID" -o -z "$ID" ] ; then
+    if [ -z "$BLOG_ID" ] ; then
       usage
     else
-      labels=`mk_labels`
-      jq_tmp=`mk_tmp jq`
-      body_tmp=`mk_tmp body`
-      echo '{ kind: "#blogger:post" ' >> $jq_tmp
-      if [ -n "$labels" ] ; then
-        echo ", labels: [ $labels ] " >> $jq_tmp
+      jq_tmp=$(mk_tmp jq)
+      body_tmp=$(mk_tmp body)
+      echo '{ kind: "blogger#post" '            >> $jq_tmp
+      echo "  , blog: { id: \"$BLOG_ID\" }  "   >> $jq_tmp
+      echo "  , id: \"$ID\"                 "   >> $jq_tmp
+      if [ -n "$LABELS" ] ; then
+        labels=$(mk_labels)
+        echo "  , labels: [ $labels ] "         >> $jq_tmp
       fi
       if [ -n "$TITLE" ] ; then
-        echo ", title: \"$TITLE\" " >> $jq_tmp
+        echo "  , title: \"$TITLE\" "           >> $jq_tmp
       fi
-      if [ -z "$NO_BODY" ] ; then
-        echo ', content: . ' >> $jq_tmp
-      fi
-      echo " } " >> $jq_tmp
-      if [ -n "$NO_BODY" ] ; then
-        echo "" | jq -s -f $jq_tmp > $body_tmp
+      if [ -n "$READ_CONTENT" ] ; then
+        echo "  , content: . "              >> $jq_tmp
+        source=cat
       else
-        jq -R -s -f $jq_tmp > $body_tmp
+        source=echo
       fi
-      curl_do PATCH '.url' "$BLOG_ID/posts/$ID" $body_tmp
-      rm -f $jq_tmp $body_tmp
+      echo '}'                                  >> $jq_tmp
+      $source | jq -R -s -f $jq_tmp > $body_tmp
+      curl_do 'PATCH' '.url' "$BLOG_ID/posts/$ID" $body_tmp
     fi
     ;;
   new|update)
