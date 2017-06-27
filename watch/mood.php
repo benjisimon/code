@@ -4,9 +4,10 @@
  */
 $feedback = false;
 $mood     = false;
+$background = '0b3760';
 if(!empty($_POST)) {
   if(preg_match('/^#?([A-Fa-f0-9]{6})$/', $_POST['mood'], $matches)) {
-    $mood = $matches[1];
+    $mood = $background = $matches[1];
     $url = "https://autoremotejoaomgcd.appspot.com/sendmessage?" .
            "key=APA91bHLATsKgcU0GFd9bpfejmouw9PpwFqz7bzLqwuO_LuBYgp9c3XiBHFoOh96yc23iZUEqkuqyairALK13Uwuj7cSzoI8HlAvjJaK8sCwZmCXI7XkUCDVNsdy0B6a0cwDR1v9Zvr-&" .
            "message=mood=:=" . strtolower($mood);
@@ -23,23 +24,26 @@ if(!empty($_POST)) {
 <html>
   <head>
     <title>Set The Mood</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <style>
       body {
-         background-color: #0b3760;
+         background-color: #<?= $background ?>;
       }
       h1 {
         text-align: center;
         color: white;
-        font-size: 24px; 
+        font-size: 48px; 
         font-family: Arial;
       }
       form {
         max-width: 400px;
         margin: auto;
+        font-size: 24px;
       }
       input {
         display: block;
         width: 100%;
+        font-size: 24px;
         margin: 5px 0px;
       }
       pre {
@@ -63,8 +67,5 @@ if(!empty($_POST)) {
       <input type='text' name='mood'/>
       <input type='submit' value='Go'/>
     </form>
-    <? if($mood) { ?>
-      <div class='swatch' style='background-color: #<?= $mood ?>'></div>
-    <? } ?>
   </body>
 </html>
