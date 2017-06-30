@@ -4,7 +4,7 @@
  */
 $feedback = false;
 $mood     = false;
-$background = '0b3760';
+$background = '2b6bd1';
 if(!empty($_POST)) {
   if(preg_match('/^#?([A-Fa-f0-9]{6})$/', $_POST['mood'], $matches)) {
     $mood = $background = $matches[1];
@@ -25,6 +25,7 @@ if(!empty($_POST)) {
   <head>
     <title>Set The Mood</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <script src="shared/js/jscolor.js"></script>
     <style>
       body {
          background-color: #<?= $background ?>;
@@ -64,7 +65,7 @@ if(!empty($_POST)) {
       <pre class='feedback'><?= $feedback?></pre>
     <? } ?>
     <form method='POST' action='mood.php'>
-      <input type='text' name='mood'/>
+      <input class="jscolor" value="<?= $background ?>" name='mood'/>
       <input type='submit' value='Go'/>
     </form>
   </body>
