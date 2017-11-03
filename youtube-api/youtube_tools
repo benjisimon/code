@@ -1,0 +1,135 @@
+#!/bin/bash
+
+##
+## command line tools for working with YouTube.
+## See: https://developers.google.com/youtube/v3/docs/
+##
+API_BASE=https://www.googleapis.com/youtube/v3
+AUTH_TOKEN=`youtube_auth token`
+
+if [ -z "$AUTH_TOKEN" ] ; then
+  echo "`basename $0`: authentication not setup. Run: 'youtube_auth init'"
+  exit 1
+fi
+
+function usage {
+  echo -n "Usage: `basename $0` "
+  echo -n "-a {subscriptions|subscription-delete|playlists|playlist|playlist-delete|playlist-rename|video} "
+  echo "[-i ID] [-n name] -v"
+  exit
+}
+
+function filter {
+  if [ -z "$VERBOSE" ] ; then
+    jq "$@"
+  else
+    cat
+  fi
+}
+
+while getopts ":a:i:n:v" opt ; do
+  case $opt in
+    a) ACTION=$OPTARG ;;
+    v) VERBOSE=yes    ;;
+    i) ID=$OPTARG     ;;
+    n) NAME=$OPTARG     ;;
+    \?) usage         ;;
+  esac
+done
+
+function invoke {
+  curl -s -H "Authorization: Bearer $AUTH_TOKEN" "$@" > /tmp/yt.buffer.$$
+  next_page=`jq -r '.nextPageToken' < /tmp/yt.buffer.$$`
+
+  if [ "$next_page" = "null" -o -z "$next_page" ] ; then
+    cat /tmp/yt.buffer.$$
+    rm -f /tmp/yt.buffer.$$
+  else
+    jq '.items'  < /tmp/yt.buffer.$$ | sed 's/^.//'> /tmp/yt.master.$$
+    while [ "$next_page" != "null" ] ; do
+      curl -s -H "Authorization: Bearer $AUTH_TOKEN" "$@" -d pageToken=$next_page |
+        tee /tmp/yt.buffer.$$ |
+        ( echo "," ; jq '.items' | sed 's/^.//' ) >> /tmp/yt.master.$$
+      next_page=`jq -r '.nextPageToken' < /tmp/yt.buffer.$$`
+    done
+    rm -f /tmp/yt.buffer.$$
+    echo '{ "items" : [ '
+    cat /tmp/yt.master.$$
+    echo ' ] }'
+    rm -f /tmp/yt.master.$$
+  fi
+}
+
+case $ACTION in
+  subscriptions)
+    invoke -G $API_BASE/subscriptions \
+           -d mine=true \
+           -d part=snippet \
+           -d maxResults=50 | 
+      filter -r ' .items[] |  .id + ":" + .snippet.title'
+    ;;
+
+  subscription-delete)
+    if [ -z "$ID" ] ; then
+      echo "Deleting a subscription requires an ID (-i) value"
+      usage
+    fi
+    invoke -X DELETE "$API_BASE/subscriptions?id=$ID"
+    ;;
+
+  playlists)
+    invoke -G $API_BASE/playlists \
+           -d mine=true \
+           -d part=snippet \
+           -d maxResults=50 | 
+      filter -r ' .items[] |  .id + ":" + .snippet.title'
+    ;;
+
+  playlist)
+    if [ -z "$ID" ] ; then
+      echo "Listing a playlist requires a playlist ID"
+      usage
+    fi
+    invoke -G $API_BASE/playlistItems \
+           -d playlistId=$ID \
+           -d part=snippet \
+           -d maxResults=50 |
+      filter -r ' .items[] | .id + ":" + .snippet.resourceId.videoId + ":" + .snippet.title'
+    ;;
+
+  playlist-delete)
+    if [ -z "$ID" ] ; then
+      echo "Deleting a playlist requires an ID (-i) value"
+      usage
+    fi
+    invoke -X DELETE "$API_BASE/playlists?id=$ID"
+    ;;
+
+  playlist-rename)
+    if [ -z "$ID" -o -z "$NAME" ] ; then
+      echo "Renaming a playlist requires you set the ID (-i) and NAME (-n)"
+      usage
+    fi
+    invoke -X PUT "$API_BASE/playlists?part=snippet" \
+           -H 'Content-Type: application/json' \
+           -d "{'id': '$ID', 'snippet': {'title' : '$NAME'} }" |
+      filter -r '.id + ":" + .snippet.title'
+    ;;
+
+  video)
+    if [ -z "$ID" ] ; then
+      echo "Video info requires an ID (-i)"
+      usage
+    fi
+    invoke -G $API_BASE/videos \
+           -d id=$ID \
+           -d part=snippet \
+           -d maxResults=50 |
+      filter -r '.items[] | .id + ":" + .snippet.title'
+    ;;
+
+  *)
+    usage
+    ;;
+esac
+
