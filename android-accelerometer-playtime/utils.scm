@@ -33,16 +33,23 @@
 ;; Assume the first row is a header and the
 ;; following rows are all numeric data
 (define (with-data file handler init)
+  (define (wrap data)
+    (lambda (index)
+      (case index
+	((all) data)
+	(else  (list-ref data index)))))
   (call-with-input-file file
     (lambda (port)
       (let ((header-row (read-line port)))
 	(let loop ((line (read-line port))
-		   (accum init))
-	  (cond ((eof-object? line) accum)
+		   (accum (wrap init)))
+	  (cond ((eof-object? line) (accum 'all))
 		(else
 		 (loop (read-line port)
-		       (handler accum
-				(map string->number (string-split #\, line)))))))))))
-
+		       (wrap (handler
+			      accum
+			      (wrap (map string->number
+					 (string-split #\, line)))))))))))))
+  
 
 		  

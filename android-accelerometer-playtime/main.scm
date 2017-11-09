@@ -11,15 +11,15 @@
 ;; based on the current acceleration, time
 ;; and velocity
 (define (calculate-distance accum data)
-  (let* ((t-now (list-ref data 0))
+  (let* ((t-now (data 0))
 	 (a-now (+
-		 (list-ref data 1)  ; ax 
-		 (list-ref data 2)  ; ay
-		 (list-ref data 3)  ; az
+		 (data 1)  ; ax 
+		 (data 2)  ; ay
+		 (data 3)  ; az
 		 ))
-	 (t-prev (list-ref accum 0))
-	 (v-prev (list-ref accum 1))
-	 (d-prev (list-ref accum 2))
+	 (t-prev (accum 0))
+	 (v-prev (accum 1))
+	 (d-prev (accum 2))
 	 (t (- t-now t-prev))
 	 (v-now (+ v-prev (* a-now t)))
 	 (d-now (+ d-prev (* v-now t))))
