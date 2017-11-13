@@ -7,6 +7,23 @@
 
 (load "utils.scm")
 
+
+;; Counting the peaks in a given accelerometer stream.  This should
+;; give us a rough approximation of jumps
+(define (count-peaks accum data)
+  (let ((lower 0)
+	(upper 10)
+	(a-now (+ (data 1) (data 2) (data 3)))
+	(rising? (accum 0))
+	(num-peaks (accum 1)))
+    (cond ((and rising? (>= a-now upper))
+	   (list #f (+ 1 num-peaks)))
+	  ((and (not rising?) (<= a-now lower))
+	   (list #t num-peaks))
+	  (else
+	   (list rising? num-peaks)))))
+
+
 ;; Use Physics 101 to calculate distance
 ;; based on the current acceleration, time
 ;; and velocity
@@ -26,9 +43,9 @@
     (list t-now v-now d-now)))
 
 (define (go)
-  (with-data "/sdcard/PhysicsToolboxSuite/4m.5.csv"
-	     calculate-distance
-	     '(0 0 0)))
+  (with-data "/sdcard/PhysicsToolboxSuitePro/10jumps.1.csv"
+	     count-peaks
+	     '(#t 0)))
 		 
 
 			 
