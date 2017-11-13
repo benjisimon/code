@@ -1,0 +1,12 @@
+#!/data/data/com.termux/files/usr/bin/sh
+
+usage () {
+    echo "Usage: `basename $0` /path/to/data.csv"
+    exit
+}
+
+if [ -f "$1" ] ; then
+    exec tinyscheme -c "(load \"main.scm\") (show (count-jumps \"$1\"))"
+else
+    usage
+fi

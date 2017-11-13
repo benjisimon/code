@@ -42,10 +42,10 @@
 	 (d-now (+ d-prev (* v-now t))))
     (list t-now v-now d-now)))
 
-(define (go)
-  (with-data "/sdcard/PhysicsToolboxSuitePro/10jumps.1.csv"
-	     count-peaks
-	     '(#t 0)))
+(define (count-jumps path)
+  (cadr (with-data path count-peaks '(#t 0))))
+
+
 		 
 
 			 
