@@ -5,7 +5,10 @@
 ;; on your phone.
 ;;
 
-(load "utils.scm")
+(load (string-append
+       (if (defined? '*src-dir*) *src-dir* "")
+       "utils.scm"))
+
 
 
 ;; Counting the peaks in a given accelerometer stream.  This should
@@ -13,10 +16,13 @@
 (define (count-peaks accum data)
   (let ((lower 0)
 	(upper 10)
+	(verbose? #t)
 	(a-now (+ (data 1) (data 2) (data 3)))
 	(rising? (accum 0))
 	(num-peaks (accum 1)))
     (cond ((and rising? (>= a-now upper))
+	   (if verbose?
+	       (show "peak discovered: " a-now))
 	   (list #f (+ 1 num-peaks)))
 	  ((and (not rising?) (<= a-now lower))
 	   (list #t num-peaks))

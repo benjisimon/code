@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/sh
 
-SRC_DIR=/data/data/com.termux/files/home/dt/i2x/code/android-accelerometer-playtime/
+SRC_DIR=$HOME/dt/i2x/code/android-accelerometer-playtime/
 MAIN_SCM=$SRC_DIR/main.scm
 
 usage () {
@@ -9,7 +9,7 @@ usage () {
 }
 
 if [ -f "$1" ] ; then
-    exec tinyscheme -c "(load \"$MAIN_SCM\") (show (count-jumps \"$1\"))"
+    exec tinyscheme -c "(define *src-dir* \"$SRC_DIR\") (load \"$MAIN_SCM\") (show (count-jumps \"$1\"))"
 else
     usage
 fi
