@@ -1,0 +1,15 @@
+#!/data/data/com.termux/files/usr/bin/sh
+
+SRC_DIR=$HOME/dt/i2x/code/android-accelerometer-playtime/
+MAIN_SCM=$SRC_DIR/main.scm
+
+usage () {
+    echo "Usage: `basename $0` /path/to/data.csv"
+    exit
+}
+
+if [ -f "$1" ] ; then
+    exec tinyscheme -c "(define *src-dir* \"$SRC_DIR\") (load \"$MAIN_SCM\") (show (count-jumps \"$1\"))"
+else
+    usage
+fi
