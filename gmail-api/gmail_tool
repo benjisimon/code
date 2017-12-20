@@ -1,0 +1,135 @@
+#!/bin/bash
+
+##
+## command line tools for working with Gmail.
+##
+CLIENT_ID=--GET_YOUR_OWN--
+CLIENT_SECRET=--GET_YOUR_OWN--
+API_SCOPE=https://www.googleapis.com/auth/gmail.modify
+API_BASE=https://www.googleapis.com/gmail/v1
+AUTH_TOKEN=`gapi_auth -i $CLIENT_ID -p $CLIENT_SECRET -s $API_SCOPE token`
+
+if [ -z "$AUTH_TOKEN" ] ; then
+  echo "`basename $0`: authentication not setup. Run: 'youtube_auth init'"
+  exit 1
+fi
+
+function usage {
+  echo -n "Usage: `basename $0` "
+  echo -n "-a {list|get|labels|update}"
+  echo "[-q query] [-i id] [-l labels-to-add] [-r labels-to-remove] [-v] [-p]"
+  exit
+}
+
+function filter {
+  if [ -z "$VERBOSE" ] ; then
+    jq "$@"
+  else
+    cat
+  fi
+}
+
+function listify {
+  sep=""
+  expr="[ "
+  for x in "$@" ; do
+    expr="$expr $sep \"$x\""
+    sep=","
+  done
+  expr="$expr ]"
+  echo $expr
+}
+
+while getopts ":a:r:q:i:l:vp" opt ; do
+  case $opt in
+    a) ACTION=$OPTARG             ;;
+    v) VERBOSE=yes                ;;
+    q) QUERY="$OPTARG"            ;;
+    l) LABELS_ADD=$OPTARG         ;;
+    r) LABELS_REMOVE=$OPTARG      ;;
+    i) ID=$OPTARG                 ;;
+    p) PAGING=yes                 ;;
+    \?) usage                     ;;
+  esac
+done
+
+function invoke {
+  root=$1 ; shift
+  curl -s -H "Authorization: Bearer $AUTH_TOKEN" "$@" > /tmp/yt.buffer.$$
+  next_page=`jq -r '.nextPageToken' < /tmp/yt.buffer.$$`
+
+  if [ "$PAGING" = "yes" ] ; then
+    if [ "$next_page" = "null" -o -z "$next_page" ] ; then
+      cat /tmp/yt.buffer.$$
+      rm -f /tmp/yt.buffer.$$
+    else
+      jq ".$root"  < /tmp/yt.buffer.$$ | sed 's/^.//'> /tmp/yt.master.$$
+      while [ "$next_page" != "null" ] ; do
+        curl -s -H "Authorization: Bearer $AUTH_TOKEN" "$@" -d pageToken=$next_page |
+          tee /tmp/yt.buffer.$$ |
+          ( echo "," ; jq ".$root" | sed 's/^.//' ) >> /tmp/yt.master.$$
+        next_page=`jq -r '.nextPageToken' < /tmp/yt.buffer.$$`
+      done
+      rm -f /tmp/yt.buffer.$$
+      echo "{ \"$root\" : [ "
+      cat /tmp/yt.master.$$
+      echo ' ] }'
+      rm -f /tmp/yt.master.$$
+    fi
+  else
+    cat /tmp/yt.buffer.$$
+    rm /tmp/yt.buffer.$$
+  fi
+}
+
+case $ACTION in
+  list)
+    if [ -z "$QUERY" ] ; then
+      echo "Uh, better provide a query"
+      echo
+      usage
+    fi
+    invoke threads -G $API_BASE/users/me/threads \
+           --data-urlencode q="$QUERY" \
+           -d maxResults=50 |
+      filter -r ' .threads[]? |  .id + ":" + .snippet'
+    ;;
+
+  get)
+    if [ -z "$ID" ] ; then
+      usage
+    fi
+    invoke messages -G $API_BASE/users/me/threads/$ID?format=full \
+           -d maxResults=50 |
+      filter -r ' .messages[] | .id + ":" + .snippet'
+    ;;
+
+  labels)
+    invoke labels -G $API_BASE/users/me/labels |
+      filter -r ' .labels[] | .id + ":" + .name'
+    ;;
+
+
+  update)
+    if [ -z "$ID" ] ; then
+      usage
+    fi
+    
+    if [ -z "$LABELS_ADD" -a -z "$LABLES_REMOVE" ] ; then
+      echo "Refusing to run if you don't provide at least one label to add or remove"
+      echo
+      usage
+    fi
+    
+    body="{ addLabelIds: $(listify $LABELS_ADD),  removeLabelIds: $(listify $LABELS_REMOVE) }"
+
+    invoke messages -H "Content-Type: application/json" \
+           $API_BASE/users/me/threads/$ID/modify \
+           -X POST -d "$body" |
+        filter -r '.messages[] | .id + ":" + (.labelIds | join(","))'
+    ;;
+  *)
+    usage
+    ;;
+esac
+
