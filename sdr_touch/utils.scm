@@ -12,8 +12,8 @@
   (set! *id-src* (+ *id-src* 1))
   *id-src*)
 
-(define (with-frequencies proc)
-  (call-with-input-file "frequencies.scm"
+(define (with-data-from-file file proc)
+  (call-with-input-file file
     (lambda (port)
       (proc (read port)))))
 

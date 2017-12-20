@@ -2,13 +2,13 @@
 ;; Generate a SDRTouchPresets.xml file from our local DB
 ;;
 
-(load "utils.scm")
+(load (cmd-dir "utils.scm"))
 
 
-(define (save-presets filename)
-  (with-output-to-file filename
+(define (make-presets frequency-file xml-file)
+  (with-output-to-file xml-file
     (lambda ()
-      (with-frequencies
+      (with-data-from-file frequency-file
        (lambda (data)
 	 (show "<?xml version='1.0' encoding='UTF-8'?>")
 	 (show "<sdr_presets version='1'>")
@@ -30,3 +30,10 @@
 	 (show "</sdr_presets>"))))))
   
 
+(cond
+ ((= 1 (length (cmd-args)))
+  (make-presets (car (cmd-args)) "SDRTouchPresets.xml"))
+ ((= 2 (length (cmd-args)))
+  (make-presets (car (cmd-args)) (cadr (cmd-args))))
+ (else
+  (show "Need to provide frequency and output file to continue.")))
