@@ -2,6 +2,16 @@
  * This is a javascript file used for working with drawing
  */
 
+
+function deg2rad(deg) {
+  return deg * Math.PI / 180.0;
+}
+
+
+function now() {
+  return (new Date()).getTime();
+}
+
 /*
  * ************************************************************************
  * Lines
@@ -27,7 +37,7 @@ Line.prototype.translate = function(offset) {
 // Mrs. Buck would not be impressed that I have to Google this.
 // http://www.felixeve.co.uk/how-to-rotate-a-point-around-an-origin-with-javascript/
 Line.prototype.rotate = function(degrees) {
-  var rads = degrees * Math.PI / 180.0;
+  var rads = deg2rad(degrees);
   this.start = { x: Math.cos(rads) * this.start.x - Math.sin(rads) * this.start.y,
                  y: Math.sin(rads) * this.start.x + Math.cos(rads) * this.start.y };
 
@@ -135,7 +145,3 @@ var Painter = {
   }
 
 };
-
-function now() {
-  return (new Date()).getTime();
-}
