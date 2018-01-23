@@ -105,9 +105,6 @@ var Painter = {
       var ctx = canvas.getContext('2d');
       var space = {
         stroke: function(start, end) {
-          console.log('S', start.x, start.y, start.x + oo.x, oo.y - start.y);
-          console.log('E', end.x, end.y, end.x + oo.x, oo.y - end.y);
-          console.log('--');
           ctx.beginPath();
           ctx.moveTo(start.x + oo.x, oo.y - start.y);
           ctx.lineTo(end.x + oo.x, oo.y - end.y);

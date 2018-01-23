@@ -9,7 +9,6 @@ var helloworld = function() {
     l.scale(i + 1).rotate(i + 1);
     d.add(l);
   }
-  console.log('DD', d);
   return d;
 };
 
