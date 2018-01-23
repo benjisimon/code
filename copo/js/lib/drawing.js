@@ -100,8 +100,9 @@ Drawing.prototype.drawInto = function(space) {
  */
 var Painter = {
 
-  draw: function(generator) {
-    var canvas = document.getElementById('canvas');
+  draw: function(generator, options) {
+    var options = options ? options : {};
+    var canvas = options.canvas ? options.canvas : document.getElementById('canvas');
     if(canvas.getContext) {
       var oo = { x: canvas.scrollWidth / 2,
                  y: canvas.scrollHeight / 2 };
@@ -118,6 +119,23 @@ var Painter = {
     } else {
       throw new Error("Canvas has no context to draw into");
     }
+  },
+
+  animate: function(generator) {
+    var canvas = document.getElementById('canvas');
+    if(canvas.getContext) {
+      var ctx = canvas.getContext('2d');
+      setInterval(function() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        Painter.draw(generator, {canvas: canvas});
+      }, 66);
+    } else {
+      throw new Error("Canvas can has no drawing support");
+    }
   }
 
 };
+
+function now() {
+  return (new Date()).getTime();
+}
