@@ -85,7 +85,9 @@ Drawing.prototype.rotate = function(degrees) {
 }
 
 Drawing.prototype.copy = function() {
-  return this.each(function(p) { return p.copy(); });
+  var dup = new Drawing();
+  dup.parts = this.each(function(p) { return p.copy(); });
+  return dup
 }
 
 Drawing.prototype.drawInto = function(space) {
@@ -98,7 +100,8 @@ Drawing.prototype.drawInto = function(space) {
  */
 var Painter = {
 
-  draw: function(canvas, generator) {
+  draw: function(generator) {
+    var canvas = document.getElementById('canvas');
     if(canvas.getContext) {
       var oo = { x: canvas.scrollWidth / 2,
                  y: canvas.scrollHeight / 2 };

@@ -12,4 +12,4 @@ var helloworld = function() {
   return d;
 };
 
-Painter.draw(document.getElementById('canvas'),  helloworld);
+Painter.draw(helloworld);
