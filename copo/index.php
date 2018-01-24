@@ -38,12 +38,15 @@ $poem = isset($_GET['p']) && in_array($_GET['p'], $poems) ? $_GET['p'] : 'hellow
   </head>
   
   <body>
-    <p>
-      Computational Poetry. Inspired by <A href="https://www.youtube.com/watch?v=bmztlO9_Wvo">Zach Liberman</a>
-    </p>
-    <?= snippet('layout/poem_chooser', array('poems' => $poems)); ?>
     <canvas id="canvas" width="500" height="500">
     </canvas>
+    <p>
+      Computational Poetry. 
+      Inspired by <A href="https://www.youtube.com/watch?v=bmztlO9_Wvo">Zach Liberman</a>. 
+      Built by <A href='http://www.blogbyben.com/2018/01/the-joy-of-poetic-computation.html'>Ben</a>.
+    </p>
+
+    <?= snippet('layout/poem_chooser', array('poems' => $poems)); ?>
 
     <?= snippet('layout/script', array('src' => 'js/lib/drawing.js')); ?>
     <?= snippet('layout/script', array('src' => "js/poems/$poem.js")); ?>
