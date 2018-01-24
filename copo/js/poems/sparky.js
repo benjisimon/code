@@ -2,7 +2,7 @@
  * This is a javascript file to experiment with animation
  */
 
-function sparky() {
+function sparky(ctx) {
   var pic = new Drawing();
   var d = new Drawing();
   for(var i = 0; i < 4; i++) {
@@ -16,7 +16,7 @@ function sparky() {
     pic.add(d.copy());
   }
 
-  return pic;
+  return { drawing: pic };
 }
 
 Painter.animate(sparky);
