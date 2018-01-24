@@ -1,7 +1,3 @@
-/*
- * This is a javascript file used for being a novel picture
- */
-
 Painter.animate(function(ctx) {
   var pic = ctx.drawing;
   if(ctx.drawing.isEmpty()) {
@@ -11,7 +7,9 @@ Painter.animate(function(ctx) {
   }
   ctx.tick++;
 
-  pic.add(new Line().scale(Math.floor(Math.random() * 250)).rotate(Math.floor(Math.random() * 360)));
+  pic.add(new Line()
+          .scale(Math.floor(Math.random() * 250))
+          .rotate(Math.floor(Math.random() * 360)));
 
   ctx.drawing = pic;
   return ctx;

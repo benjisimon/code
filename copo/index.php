@@ -15,31 +15,16 @@ $poem = isset($_GET['p']) && in_array($_GET['p'], $poems) ? $_GET['p'] : 'hellow
   <head>
     <meta charset="utf-8"/>
     <title>Digital Poetry Thingy</title>
-    <style>
-     body {
-       background-color: #222;
-       font-family: arial;
-       color: #EEE;
-       font-size: 14px;
-     }
-     p {
-       text-align: center;
-     }
-     a {
-       color: #00DD00;
-     }
-     canvas {
-       border: 4px solid #666;
-       background-color: white;
-       display: block;
-       margin: auto;
-     }
-    </style>
+    <?= snippet('layout/style', array('src' => 'css/layout.css')) ?>
   </head>
   
   <body>
+    <p>
+      <a href="#" id="show-code">Show Code</a>
+    </p>
     <canvas id="canvas" width="500" height="500">
     </canvas>
+    <?= snippet('layout/code', array('poem' => $poem)) ?>
     <p>
       Computational Poetry. 
       Inspired by <A href="https://www.youtube.com/watch?v=bmztlO9_Wvo">Zach Liberman</a>. 
@@ -48,7 +33,9 @@ $poem = isset($_GET['p']) && in_array($_GET['p'], $poems) ? $_GET['p'] : 'hellow
 
     <?= snippet('layout/poem_chooser', array('poems' => $poems)); ?>
 
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script> 
     <?= snippet('layout/script', array('src' => 'js/lib/drawing.js')); ?>
+    <?= snippet('layout/script', array('src' => 'js/lib/ui.js')); ?>
     <?= snippet('layout/script', array('src' => "js/poems/$poem.js")); ?>
 
   </body>
