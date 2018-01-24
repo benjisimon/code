@@ -12,6 +12,11 @@ function now() {
   return (new Date()).getTime();
 }
 
+function rand(lower, upper) {
+  var x = Math.floor((Math.random() * (upper - lower)));
+  return lower + x;
+}
+
 /*
  * ************************************************************************
  * Lines
@@ -104,28 +109,35 @@ Drawing.prototype.drawInto = function(space) {
   this.each(function(p) { p.drawInto(space); });
 }
 
+Drawing.prototype.isEmpty = function() {
+  return this.parts.length == 0;
+}
+
 /*
  * ************************************************************************
  * Do the translation from drawings and such to a canvas
  */
 var Painter = {
 
-  draw: function(generator, options) {
-    var options = options ? options : {};
-    var canvas = options.canvas ? options.canvas : document.getElementById('canvas');
+  draw: function(generator, ctx) {
+    var ctx    = ctx ? ctx : { drawing: new Drawing() };
+    var canvas = ctx.canvas ? ctx.canvas : document.getElementById('canvas');
+    ctx.canvas = canvas;
     if(canvas.getContext) {
       var oo = { x: canvas.scrollWidth / 2,
                  y: canvas.scrollHeight / 2 };
-      var ctx = canvas.getContext('2d');
+      var canvasCtx = canvas.getContext('2d');
       var space = {
         stroke: function(start, end) {
-          ctx.beginPath();
-          ctx.moveTo(start.x + oo.x, oo.y - start.y);
-          ctx.lineTo(end.x + oo.x, oo.y - end.y);
-          ctx.stroke();
+          canvasCtx.beginPath();
+          canvasCtx.moveTo(start.x + oo.x, oo.y - start.y);
+          canvasCtx.lineTo(end.x + oo.x, oo.y - end.y);
+          canvasCtx.stroke();
         }
       };
-      generator().drawInto(space);
+      ctx = generator(ctx);
+      ctx.drawing.drawInto(space);
+      return ctx;
     } else {
       throw new Error("Canvas has no context to draw into");
     }
@@ -133,11 +145,12 @@ var Painter = {
 
   animate: function(generator) {
     var canvas = document.getElementById('canvas');
+    var ctx     = { canvas: canvas, drawing: new Drawing() };
     if(canvas.getContext) {
-      var ctx = canvas.getContext('2d');
+      var canvasCtx = canvas.getContext('2d');
       setInterval(function() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        Painter.draw(generator, {canvas: canvas});
+        canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx = Painter.draw(generator, ctx);
       }, 66);
     } else {
       throw new Error("Canvas can has no drawing support");

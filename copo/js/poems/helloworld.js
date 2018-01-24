@@ -9,7 +9,7 @@ var helloworld = function() {
     l.scale(i + 1).rotate(i + 1);
     d.add(l);
   }
-  return d;
+  return { drawing: d }
 };
 
 Painter.draw(helloworld);

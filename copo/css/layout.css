@@ -1,0 +1,40 @@
+/*
+ * A CSS file for laying out our little tool
+ */
+
+body {
+  background-color: #222;
+  font-family: arial;
+  color: #EEE;
+  font-size: 14px;
+  margin: 0px;
+  padding: 0px;
+}
+
+p { text-align: center;   }
+
+a { color: #00DD00;   }
+
+#canvas {
+  border: 2px solid #666;
+  background-color: white;
+  display: block;
+  margin: auto;
+}
+
+#code {
+  width: 500px;
+  height: 500px;
+  margin: auto;
+  overflow: auto;
+  background-color: white;
+  border: 2px solid #666;
+  color: #222;
+}
+
+#code > .inner {
+  padding: 10px;
+}
+
+.hidden, #canvas.hidden { display: none; }
+

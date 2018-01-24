@@ -2,7 +2,7 @@
  * This is a javascript file to experiment with circle
  */
 
-function circle() {
+function circle(ctx) {
   var pic = new Drawing();
   var d = new Drawing();
   for(var i = 0; i < 4; i++) {
@@ -15,7 +15,7 @@ function circle() {
     pic.add(d.copy());
   }
 
-  return pic;
+  return { drawing: pic }
 }
 
 Painter.draw(circle);
