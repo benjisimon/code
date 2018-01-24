@@ -14,7 +14,7 @@ $poem = isset($_GET['p']) && in_array($_GET['p'], $poems) ? $_GET['p'] : 'hellow
 <html lang="en">
   <head>
     <meta charset="utf-8"/>
-    <title>Digital Poetry Thingy</title>
+    <title>Computationl Poetry Playground</title>
     <?= snippet('layout/style', array('src' => 'css/layout.css')) ?>
   </head>
   
