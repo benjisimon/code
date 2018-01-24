@@ -147,3 +147,8 @@ var Painter = {
 function now() {
   return (new Date()).getTime();
 }
+
+function rand(lower, upper) {
+  var x = Math.floor((Math.random() * (upper - lower)));
+  return lower + x;
+}
