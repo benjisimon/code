@@ -8,7 +8,7 @@ $poems = array_map(
   files_in_dir(__DIR__ . '/js/poems', 
                array('filter' => function($f) { return strpos($f, '.js') !== false; })));
 
-$poem = isset($_GET['p']) && in_array($_GET['p'], $poems) ? $_GET['p'] : 'helloworld';
+$poem = isset($_GET['p']) && in_array($_GET['p'], $poems) ? $_GET['p'] : $poems[array_rand($poems)];
 ?>
 <!DOCTYPE html>
 <html lang="en">
