@@ -11,7 +11,11 @@ Painter.animate(function(ctx) {
   for(var i = 0; i < ctx.tick; i++) {
     var s = (4 / ctx.tick) * 100;
     var d = (4 / ctx.tick) * 90;
-    pic.add(seg.copy().scale(s).translate({x: 0, y: s}).translate({ x: s, y: 0}).rotate(i * d));
+    pic.add(seg.copy()
+            .scale(s)
+            .translate({x: 0, y: s})
+            .translate({ x: s, y: 0})
+            .rotate(i * d));
   }
   
   ctx.drawing = pic;
