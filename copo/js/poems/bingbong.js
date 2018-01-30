@@ -12,5 +12,5 @@ Conductor.play(function(ctx) {
     right.add(new Sound().frequency(400).duration(.25));
   }
   
-  return { score: new Stack().add(left).add(right) };
+  return { song: new Stack().add(left).add(right) };
 });

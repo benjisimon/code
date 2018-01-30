@@ -162,7 +162,7 @@ Conductor = {};
       if($(this).attr('action') == 'play') {
         $(this).attr('action', 'stop').val("Stop");
         Conductor.status = 'playing';
-        Conductor.setup(audioCtx, generator, { score: new Score() });
+        Conductor.setup(audioCtx, generator, { song: new Score() });
       } else {
         Conductor.status = 'stop';
         $(this).attr('action', 'play').val("Listen!");        
@@ -173,7 +173,7 @@ Conductor = {};
 
   Conductor.setup = function(audioCtx, generator, ctx) {
     var ctx   = generator(ctx);
-    var end   = ctx.score.schedule(audioCtx.currentTime, { schedule: function(t, frequency, gain, duration) {
+    var end   = ctx.song.schedule(audioCtx.currentTime, { schedule: function(t, frequency, gain, duration) {
       if(frequency > 0 && Conductor.status == 'playing') {
         var oscillatorNode = audioCtx.createOscillator();
         var gainNode       = audioCtx.createGain();
