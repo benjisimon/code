@@ -19,6 +19,11 @@ a { color: #00DD00;   }
   width: 500px;
   min-height: 100px;
   margin: auto;
+  text-align: center;
+}
+
+#play-music {
+  font-size: 200%;
 }
 
 #canvas {
