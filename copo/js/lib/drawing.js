@@ -120,6 +120,7 @@ Drawing.prototype.isEmpty = function() {
 var Painter = {
 
   draw: function(generator, ctx) {
+    Painter.init();
     var ctx    = ctx ? ctx : { drawing: new Drawing() };
     var canvas = ctx.canvas ? ctx.canvas : document.getElementById('canvas');
     ctx.canvas = canvas;
@@ -144,6 +145,7 @@ var Painter = {
   },
 
   animate: function(generator) {
+    Painter.init();
     var canvas = document.getElementById('canvas');
     var ctx     = { canvas: canvas, drawing: new Drawing() };
     if(canvas.getContext) {
@@ -154,6 +156,13 @@ var Painter = {
       }, 66);
     } else {
       throw new Error("Canvas can has no drawing support");
+    }
+  },
+
+  init: function() {
+    if($('#canvas').length == 0) {
+      $('#poem').append('<canvas id="canvas" width="500" height="500">' +
+                        '</canvas>');
     }
   }
 

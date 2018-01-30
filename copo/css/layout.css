@@ -15,11 +15,16 @@ p { text-align: center;   }
 
 a { color: #00DD00;   }
 
+#poem {
+  width: 500px;
+  min-height: 100px;
+  margin: auto;
+}
+
 #canvas {
   border: 2px solid #666;
   background-color: white;
   display: block;
-  margin: auto;
 }
 
 #code {
