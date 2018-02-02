@@ -12,7 +12,7 @@ Conductor.play(function(ctx) {
   var right = new Score();
   var pattern = [350, 380, 400 ] ;
   for(var i = 0; i < 4; i++) {
-    right.add(new Sound().frequency(pattern[i % pattern.length]).duration(.125));
+    right.add(new Sound().frequency(pattern[i % pattern.length]).duration(.125).gain((ctx.tick / 100) * 100));
     right.add(new Sound().frequency(0).duration(.125));
   }
   
