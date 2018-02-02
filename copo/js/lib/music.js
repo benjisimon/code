@@ -182,7 +182,8 @@ Conductor = {};
         oscillatorNode.frequency.value = frequency;
         gainNode.gain.value = gain / 100;
         oscillatorNode.start(t);
-        oscillatorNode.stop(t + duration);
+        gainNode.gain.setTargetAtTime(0, t + duration, 0.015);
+        oscillatorNode.stop(t + duration + 1);
       }
     }});
 
