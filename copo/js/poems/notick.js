@@ -4,24 +4,20 @@ Conductor.play(function(ctx) {
   }
   
   var left = new Score();
-  for(var i = 0; i < 4; i++) {
-    left.add(new Sound().frequency(100).duration(.25));
-    left.add(new Sound().frequency(0).duration(.25));
-  }
+  left.add(new Sound().frequency(Note.C).duration(2).g(((10 - ctx.tick) / 10) * 100));
 
   var right = new Score();
-  var pattern = [350, 380, 400 ] ;
+  var pattern = [Note.C, Note.A, Note.D, Note.G ] ;
   for(var i = 0; i < 4; i++) {
-    right.add(new Sound().frequency(pattern[i % pattern.length]).duration(.125).gain((ctx.tick / 100) * 100));
+    var stack = new Stack();
+    for(j = 0; j < i; j++) {
+      stack.add(new Sound().f(pattern[i]).d(.25));
+    }
+    right.add(stack.g( (ctx.tick / 10) * 100));
     right.add(new Sound().frequency(0).duration(.125));
   }
-  
-  var mid = new Score();
-  if(ctx.tick > 4) {
-    mid.add(new Sound().frequency(120).duration(1));
-  }
 
-  ctx.tick = ctx.tick % 20;
-  ctx.song = new Stack().add(left).add(right).add(mid);
+  ctx.tick = (ctx.tick + 1) % 10;
+  ctx.song = new Stack().add(left).add(right);
   return ctx;
 });

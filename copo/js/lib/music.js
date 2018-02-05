@@ -19,6 +19,7 @@ function Score() {
   this.items = [];
 }
 
+Note      = {};
 Conductor = {};
 
 (function() {
@@ -68,9 +69,9 @@ Conductor = {};
  
   Sound.prototype.copy = function() {
     var s       = new Sound();
-    s.frequency = this.frequency;
-    s.gain      = this.gain;
-    s.duration  = this.duration;
+    s.frequency(this.frequency);
+    s.gain(this.gain);
+    s.duration(this.duration);
   }
 
   Sound.prototype.schedule = function(t, scribe) {
@@ -91,6 +92,7 @@ Conductor = {};
          this.items[i][prop].apply(this.items[i], arguments);
        }
      }
+     return this;
    }
   }
 
@@ -121,8 +123,8 @@ Conductor = {};
 
   
   Stack.prototype.frequency = itemAccessor('frequency', maxReduce);
-  Stack.prototype.frequency = itemAccessor('gain', maxReduce);
-  Stack.prototype.frequency = itemAccessor('duration', maxReduce);
+  Stack.prototype.gain      = itemAccessor('gain', maxReduce);
+  Stack.prototype.duration  = itemAccessor('duration', maxReduce);
   Stack.prototype.copy      = itemCopy(() => new Stack());
   Stack.prototype.add       = itemAdd();
   Stack.prototype.isEmpty   = itemIsEmpty();
@@ -135,8 +137,8 @@ Conductor = {};
   };
 
   Score.prototype.frequency = itemAccessor('frequency', sumReduce);
-  Score.prototype.frequency = itemAccessor('gain', sumReduce);
-  Score.prototype.frequency = itemAccessor('duration', sumReduce);
+  Score.prototype.gain      = itemAccessor('gain', sumReduce);
+  Score.prototype.duration  = itemAccessor('duration', sumReduce);
   Score.prototype.copy      = itemCopy(() => new Score());
   Score.prototype.add       = itemAdd();
   Score.prototype.isEmpty   = itemIsEmpty();
@@ -174,7 +176,7 @@ Conductor = {};
   Conductor.setup = function(audioCtx, generator, ctx) {
     var ctx   = generator(ctx);
     var end   = ctx.song.schedule(audioCtx.currentTime, { schedule: function(t, frequency, gain, duration) {
-      if(frequency > 0 && Conductor.status == 'playing') {
+      if(frequency > 0 && gain > 0 && Conductor.status == 'playing') {
         var oscillatorNode = audioCtx.createOscillator();
         var gainNode       = audioCtx.createGain();
         oscillatorNode.connect(gainNode);
@@ -182,7 +184,7 @@ Conductor = {};
         oscillatorNode.frequency.value = frequency;
         gainNode.gain.value = gain / 100;
         oscillatorNode.start(t);
-        gainNode.gain.setValueAtTime(gainNode.gain.value, t + duration); 
+        gainNode.gain.exponentialRampToValueAtTime(gainNode.gain.value, t + 0.03);
         gainNode.gain.exponentialRampToValueAtTime(0.0001, t + duration + 0.03);
         oscillatorNode.stop(t + duration + 3);
       }
@@ -194,5 +196,31 @@ Conductor = {};
       }
     }, (end - audioCtx.currentTime) * 1000)
   }
+
+  new Stack(); new Score(); new Sound();
+
+  [Sound.prototype, Score.prototype, Stack.prototype ].forEach(function(p) {
+    p.f = p.frequency;
+    p.g = p.gain;
+    p.d = p.duration;
+  });
+
+  Note.C = 261.626;
+  Note.D = 293.664;
+  Note.E = 329.628;
+  Note.F = 349.228;
+  Note.G = 391.995;
+  Note.A = 440;
+  Note.B = 493.883;
+
+  Note.octave = function(value, offset) {
+    var val = value;
+    for(var i = 0; i < Math.abs(offset); i++) {
+      val = (offset > 0 ? val * 2 : val / 2);
+    }
+    return val;
+  }
+
+
 
 })();
