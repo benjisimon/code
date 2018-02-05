@@ -176,7 +176,7 @@ Conductor = {};
   Conductor.setup = function(audioCtx, generator, ctx) {
     var ctx   = generator(ctx);
     var end   = ctx.song.schedule(audioCtx.currentTime, { schedule: function(t, frequency, gain, duration) {
-      if(frequency > 0 && gain > 0 && Conductor.status == 'playing') {
+      if(frequency > 0 && gain > 0 && duration > 0 && Conductor.status == 'playing') {
         var oscillatorNode = audioCtx.createOscillator();
         var gainNode       = audioCtx.createGain();
         oscillatorNode.connect(gainNode);
@@ -184,7 +184,7 @@ Conductor = {};
         oscillatorNode.frequency.value = frequency;
         gainNode.gain.value = gain;
         oscillatorNode.start(t);
-        gainNode.gain.exponentialRampToValueAtTime(gainNode.gain.value, t + 0.03);
+        gainNode.gain.exponentialRampToValueAtTime(gainNode.gain.value, t + Math.min(.001, duration / 32));
         gainNode.gain.exponentialRampToValueAtTime(0.0001, t + duration + 0.03);
         oscillatorNode.stop(t + duration + 3);
       }
