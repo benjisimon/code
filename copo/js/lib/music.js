@@ -5,8 +5,8 @@
 
 function Sound() {
   this.values = {
-    frequency: 440,
-    gain:      100,
+    frequency: 261.626,
+    gain:      1,
     duration:  1
   };
 }
@@ -182,7 +182,7 @@ Conductor = {};
         oscillatorNode.connect(gainNode);
         gainNode.connect(audioCtx.destination);
         oscillatorNode.frequency.value = frequency;
-        gainNode.gain.value = gain / 100;
+        gainNode.gain.value = gain;
         oscillatorNode.start(t);
         gainNode.gain.exponentialRampToValueAtTime(gainNode.gain.value, t + 0.03);
         gainNode.gain.exponentialRampToValueAtTime(0.0001, t + duration + 0.03);

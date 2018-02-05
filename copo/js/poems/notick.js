@@ -4,7 +4,7 @@ Conductor.play(function(ctx) {
   }
   
   var left = new Score();
-  left.add(new Sound().frequency(Note.C).duration(2).g(((10 - ctx.tick) / 10) * 100));
+  left.add(new Sound().frequency(Note.C).duration(2).g(((10 - ctx.tick) / 10)));
 
   var right = new Score();
   var pattern = [Note.C, Note.A, Note.D, Note.G ] ;
@@ -13,7 +13,7 @@ Conductor.play(function(ctx) {
     for(j = 0; j < i; j++) {
       stack.add(new Sound().f(pattern[i]).d(.25));
     }
-    right.add(stack.g( (ctx.tick / 10) * 100));
+    right.add(stack.g( (ctx.tick / 10)));
     right.add(new Sound().frequency(0).duration(.125));
   }
 

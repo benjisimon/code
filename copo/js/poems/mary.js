@@ -15,7 +15,7 @@ Conductor.play(function(ctx) {
   
   var left = new Score();
   for(var i = 0; i < mary.length; i++) {
-    left.add(new Sound().frequency(mary[i]).duration(.25).gain((((ctx.tick % 4)+1) / 5) * 100));
+    left.add(new Sound().frequency(mary[i]).duration(.25).gain((((ctx.tick % 4)+1) / 5)));
     left.add(new Sound().frequency(0).duration(.25));
   }
 
