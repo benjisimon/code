@@ -8,7 +8,7 @@ $poems = array_map(
   files_in_dir(__DIR__ . '/js/poems', 
                array('filter' => function($f) { return strpos($f, '.js') !== false; })));
 
-$poem = isset($_GET['p']) && in_array($_GET['p'], $poems) ? $_GET['p'] : 'helloworld';
+$poem = isset($_GET['p']) && in_array($_GET['p'], $poems) ? $_GET['p'] : $poems[array_rand($poems)];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -22,8 +22,9 @@ $poem = isset($_GET['p']) && in_array($_GET['p'], $poems) ? $_GET['p'] : 'hellow
     <p>
       <a href="#" id="show-code">Show Code</a>
     </p>
-    <canvas id="canvas" width="500" height="500">
-    </canvas>
+    <div id="poem">
+    </div>
+
     <?= snippet('layout/code', array('poem' => $poem)) ?>
     <p>
       Computational Poetry. 
@@ -35,6 +36,7 @@ $poem = isset($_GET['p']) && in_array($_GET['p'], $poems) ? $_GET['p'] : 'hellow
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script> 
     <?= snippet('layout/script', array('src' => 'js/lib/drawing.js')); ?>
+    <?= snippet('layout/script', array('src' => 'js/lib/music.js')); ?>
     <?= snippet('layout/script', array('src' => 'js/lib/ui.js')); ?>
     <?= snippet('layout/script', array('src' => "js/poems/$poem.js")); ?>
 
