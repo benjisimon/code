@@ -6,12 +6,15 @@
 
 var Audio = {
 
-  play: function(generator) {
-    var ctx = { players: [], tick: 0, width: 12, bpm: 120 }
-
-    ctx = generator(ctx);
-    Audio.playback(ctx);
-
+  play: function(ctx, generator) {
+    if(Audio.status == 'playing') {
+      ctx = generator(ctx);
+      Audio.playback(ctx);
+      var playAgainAt = (60 / ctx.bpm) * ctx.width * 1000;
+      setTimeout(function() {
+        Audio.play(ctx, generator);
+      }, playAgainAt);
+    }
   },
 
   playback: function(ctx) {
@@ -53,7 +56,6 @@ var Audio = {
   scheduleChange: function(node, evt, at, ctx) {
     var secPerDuration = (60 / ctx.bpm) * evt.duration;
     var buildAt  = 1/3 * (secPerDuration / 20);
-    console.log("ZZ", evt, buildAt, secPerDuration);
     node.setTargetAtTime(evt.value, at(evt.at), buildAt);
     node.setTargetAtTime(0.0001, at(evt.at + evt.duration), buildAt);
   },
@@ -65,7 +67,8 @@ var Audio = {
         if($(this).attr('action') == 'play') {
           $(this).attr('action', 'stop').val("Stop");
           Audio.status = 'playing';
-          Audio.play(generator);
+          var ctx = { players: [], tick: 0, width: 12, bpm: 120 };
+          Audio.play(ctx, generator);
         } else {
           Audio.status = 'stop';
           $(this).attr('action', 'play').val("Listen!");        
