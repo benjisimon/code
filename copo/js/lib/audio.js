@@ -59,7 +59,8 @@ var Audio = {
 
     evt.value      = (isNaN(parseFloat(evt.value)) ? 
                       evt.value  : { value: evt.value, fadeIn: defaultFactor, fadeOut:  defaultFactor });
-    
+
+    console.log('SS', evt);
     node.setTargetAtTime(evt.value.value, at(evt.at), evt.value.fadeIn);
     node.setTargetAtTime(0.0001, at(evt.at + evt.duration), evt.value.fadeOut);
   },
