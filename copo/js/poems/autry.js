@@ -3,8 +3,8 @@ Audio.setup(function(ctx) {
     { type: 'frequency', value: Note.C, at: 0, duration: ctx.width }
   ];
 
-  for(var i = 0; i < ctx.width; i += 2) {
-    left.push({ type: 'gain', value: 1, at: i, duration: 1 });
+  for(var i = 0; i < ctx.width; i += 1) {
+    left.push({ type: 'gain', value: 1, at: i, duration: .80 });
   }
 
   var right = [ 
