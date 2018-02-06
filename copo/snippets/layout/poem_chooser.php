@@ -3,6 +3,7 @@
  * A PHP file for rendering our list of poems
  */
 $sep = '';
+sort($poems);
 ?>
 <p>
   More:
