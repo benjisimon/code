@@ -55,9 +55,13 @@ var Audio = {
 
   scheduleChange: function(node, evt, at, ctx) {
     var secPerDuration = (60 / ctx.bpm) * evt.duration;
-    var buildAt  = 1/3 * (secPerDuration / 20);
-    node.setTargetAtTime(evt.value, at(evt.at), buildAt);
-    node.setTargetAtTime(0.0001, at(evt.at + evt.duration), buildAt);
+    var defaultFactor  = 1/3 * (secPerDuration / 20);
+
+    evt.value      = (isNaN(parseFloat(evt.value)) ? 
+                      evt.value  : { value: evt.value, fadeIn: defaultFactor, fadeOut:  defaultFactor });
+    
+    node.setTargetAtTime(evt.value.value, at(evt.at), evt.value.fadeIn);
+    node.setTargetAtTime(0.0001, at(evt.at + evt.duration), evt.value.fadeOut);
   },
 
   setup: function(generator) {
@@ -67,7 +71,7 @@ var Audio = {
         if($(this).attr('action') == 'play') {
           $(this).attr('action', 'stop').val("Stop");
           Audio.status = 'playing';
-          var ctx = { players: [], tick: 0, width: 12, bpm: 120 };
+          var ctx = { players: [], width: 12, bpm: 120 };
           Audio.play(ctx, generator);
         } else {
           Audio.status = 'stop';
