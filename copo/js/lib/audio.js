@@ -4,6 +4,41 @@
  * an alterantive API.
  */
 
+function SynthEvent(type, value, at, duration) {
+  this.type     = type;
+  this.value    = value;
+  this.at       = at;
+  this.duration = duration;
+}
+
+SynthEvent.prototype.copy = function() {
+  return new SynthEvent(this.type, this.value, this.at, this.duration);
+}
+
+
+function Synth() {
+  this.events = [];
+}
+
+Synth.prototype.gain = function(value, at, duration) {
+  this.events.push(new SynthEvent('gain', value, at, duration));
+  return this;
+}
+
+Synth.prototype.frequency = function(value, at, duration) {
+  this.events.push(new SynthEvent('frequency', value, at, duration));
+  return this;
+}
+
+Synth.prototype.f = Synth.prototype.frequency;
+Synth.prototype.g = Synth.prototype.gain;
+
+Synth.prototype.copy = function() {
+  var copy = new Synth();
+  copy.events = this.events.map(e => e.copy());
+  return copy;
+}
+
 var Audio = {
 
   play: function(ctx, generator) {
@@ -24,7 +59,7 @@ var Audio = {
       return epoch + ((beatIndex * 60) / ctx.bpm);
     };
 
-    var oscillators = ctx.players.map(function(player) {
+    var oscillators = ctx.synths.map(function(synth) {
         var oscillatorNode = audioCtx.createOscillator();
         var gainNode       = audioCtx.createGain();
         oscillatorNode.connect(gainNode);
@@ -32,7 +67,7 @@ var Audio = {
         oscillatorNode.frequency.value = 0;
         gainNode.gain.value            = 0;
         
-        player.forEach(function(evt) {
+        synth.events.forEach(function(evt) {
           switch(evt.type) {
           case 'frequency':
             Audio.scheduleChange(oscillatorNode.frequency, evt, at, ctx);
@@ -60,7 +95,6 @@ var Audio = {
     evt.value      = (isNaN(parseFloat(evt.value)) ? 
                       evt.value  : { value: evt.value, fadeIn: defaultFactor, fadeOut:  defaultFactor });
 
-    console.log('SS', evt);
     node.setTargetAtTime(evt.value.value, at(evt.at), evt.value.fadeIn);
     node.setTargetAtTime(0.0001, at(evt.at + evt.duration), evt.value.fadeOut);
   },
@@ -72,7 +106,7 @@ var Audio = {
         if($(this).attr('action') == 'play') {
           $(this).attr('action', 'stop').val("Stop");
           Audio.status = 'playing';
-          var ctx = { players: [], width: 12, bpm: 120 };
+          var ctx = { synths: [], width: 12, bpm: 120 };
           Audio.play(ctx, generator);
         } else {
           Audio.status = 'stop';
