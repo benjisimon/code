@@ -93,10 +93,13 @@ var Audio = {
     var defaultFactor  = 1/3 * (secPerDuration / 20);
 
     evt.value      = (isNaN(parseFloat(evt.value)) ? 
-                      evt.value  : { value: evt.value, fadeIn: defaultFactor, fadeOut:  defaultFactor });
+                      evt.value  : { value: evt.value });
 
-    node.setTargetAtTime(evt.value.value, at(evt.at), evt.value.fadeIn);
-    node.setTargetAtTime(0.0001, at(evt.at + evt.duration), evt.value.fadeOut);
+    var fadeIn  = evt.value.fadeIn ? evt.value.fadeIn : defaultFactor;
+    var fadeOut = evt.value.fadeOut ? evt.value.fadeOut : defaultFactor;
+    var fadeTo  = Math.max(0.0001, evt.value.fadeTo ? evt.value.fadeTo : 0);
+    node.setTargetAtTime(evt.value.value, at(evt.at), fadeIn);
+    node.setTargetAtTime(fadeTo, at(evt.at + evt.duration), fadeOut);
   },
 
   setup: function(generator) {
