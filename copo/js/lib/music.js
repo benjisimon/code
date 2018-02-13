@@ -19,7 +19,6 @@ function Score() {
   this.items = [];
 }
 
-Note      = {};
 Conductor = {};
 
 (function() {
@@ -204,23 +203,5 @@ Conductor = {};
     p.g = p.gain;
     p.d = p.duration;
   });
-
-  Note.C = 261.626;
-  Note.D = 293.664;
-  Note.E = 329.628;
-  Note.F = 349.228;
-  Note.G = 391.995;
-  Note.A = 440;
-  Note.B = 493.883;
-
-  Note.octave = function(value, offset) {
-    var val = value;
-    for(var i = 0; i < Math.abs(offset); i++) {
-      val = (offset > 0 ? val * 2 : val / 2);
-    }
-    return val;
-  }
-
-
 
 })();

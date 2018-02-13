@@ -36,6 +36,7 @@ $poem = isset($_GET['p']) && in_array($_GET['p'], $poems) ? $_GET['p'] : $poems[
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script> 
     <?= snippet('layout/script', array('src' => 'js/lib/drawing.js')); ?>
+    <?= snippet('layout/script', array('src' => 'js/lib/notes.js')); ?>
     <?= snippet('layout/script', array('src' => 'js/lib/music.js')); ?>
     <?= snippet('layout/script', array('src' => 'js/lib/audio.js')); ?>
     <?= snippet('layout/script', array('src' => 'js/lib/ui.js')); ?>
