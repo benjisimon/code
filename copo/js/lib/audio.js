@@ -58,6 +58,7 @@ var Audio = {
     var at       = function(beatIndex) {
       return epoch + ((beatIndex * 60) / ctx.bpm);
     };
+    var cleanup  = [];
 
     var oscillators = ctx.synths.map(function(synth) {
         var oscillatorNode = audioCtx.createOscillator();
@@ -80,12 +81,23 @@ var Audio = {
           }
         });
 
+        cleanup.push(function() { 
+          oscillatorNode.disconnect(gainNode);
+          gainNode.disconnect();
+          gainNode       = null;
+          oscillatorNode = null;
+        });
+
         return oscillatorNode;
       });
 
     oscillators.forEach(function(osc) {
       osc.start(epoch);
     });
+
+    var cleanUpAt = ((60 / ctx.bpm) * ctx.width * 1000) + 250
+    setTimeout(() => cleanup.forEach(c => c()),
+               cleanUpAt);
   },
 
   scheduleChange: function(node, evt, at, ctx) {

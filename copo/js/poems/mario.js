@@ -11,5 +11,6 @@ Conductor.play(function(ctx) {
 
 
   ctx.song = song;
+  ctx.bpm = 80;
   return ctx;
 });
