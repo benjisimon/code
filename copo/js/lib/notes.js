@@ -50,5 +50,19 @@ var Note = {};
     return val;
   };
 
+  // Support the notation:
+  //  C3
+  //  Cs3
+  //  C#3
+  Note.parse = function(expr) {
+    expr = expr.replace('#', 's');
+    expr = expr.replace('b', 'f');
+    var matches = expr.match(/([A-Za-z]+)([0-9])/);
+    if(matches) {
+      return Note.octave(Note[matches[1]], matches[2] - 4);
+    } else {
+      return Note[expr];
+    }
+  }
 })();
 

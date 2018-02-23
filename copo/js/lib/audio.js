@@ -82,6 +82,7 @@ var Audio = {
         });
 
         cleanup.push(function() { 
+          oscillatorNode.stop();
           oscillatorNode.disconnect(gainNode);
           gainNode.disconnect();
           gainNode       = null;
@@ -112,6 +113,9 @@ var Audio = {
     var fadeTo  = Math.max(0.0001, evt.value.fadeTo ? evt.value.fadeTo : 0);
     node.setTargetAtTime(evt.value.value, at(evt.at), fadeIn);
     node.setTargetAtTime(fadeTo, at(evt.at + evt.duration), fadeOut);
+    if(node.stop) {
+      node.stop(at(evt.at + evt.duration + 0.002));
+    }
   },
 
   setup: function(generator) {
