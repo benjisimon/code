@@ -7,18 +7,18 @@ var Ui = {
   config: function() {
     return { surface: { width: $('body').width(),
                         height:  $(document).innerHeight() - $('.controls').innerHeight() - 10 },
-             beats: 12l };
+             beats: 12 };
   },
 
   makeGrid: function(viewport) {
     var config = Ui.config();
     var grid = new Concrete.Layer();    
-    var gridGap =  config.surface.width / config.beats;
+    var gridGap =  (config.surface.width / config.beats);
 
     grid.setSize(config.surface.width, config.surface.height);
     viewport.add(grid);
 
-    for(var i = 1; i < config.beats; i++) {
+    for(var i = 0; i < config.beats; i++) {
       grid.scene.context.beginPath();
       grid.scene.context.strokeStyle = '#850000';
       grid.scene.context.lineWidth = 4;
