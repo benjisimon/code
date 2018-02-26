@@ -75,11 +75,23 @@ var Ui = {
 
   press: function(coords) {
     var config = Ui.config();
+
+    var hit = Ui.viewport.getIntersection(coords.x, coords.y);
     if(Ui.startPoint) {
       Ui.startPoint.layer.destroy();
       Ui.slines.push(Sline.setup(Ui.viewport, Ui.startPoint.coords, coords));
       Ui.viewport.render();
       Ui.startPoint = null;
+    } else if(hit) {
+      Ui.slines = Ui.slines.filter(sline => {
+                                     if(hit == sline.key) {
+                                       sline.layer.destroy();
+                                       return false;
+                                     } else {
+                                       return true;
+                                     }
+                                   });
+      Ui.viewport.render();
     } else {
       Ui.startPoint = { layer:  new Concrete.Layer(), coords: coords };
       Ui.viewport.add(Ui.startPoint.layer);
@@ -88,6 +100,7 @@ var Ui = {
       Ui.startPoint.layer.scene.context.fillRect(coords.x - 5, coords.y - 5, 10, 10);
       Ui.viewport.render();
     }
+
   },
 
   start: function() {
