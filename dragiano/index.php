@@ -11,6 +11,9 @@ $bpm = 180;
 <html>
   <head>
     <title>Drag and Listen | Dragiano</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <script
 			  src="https://code.jquery.com/jquery-3.3.1.min.js"
 			  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
