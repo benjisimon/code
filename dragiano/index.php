@@ -21,7 +21,7 @@ $bpm = 180;
 
   <body>
     <div class="controls">
-      BPM: <input type="text" value="<?= $bpm ?>" size="3"/>
+      BPM: <input type="text" class="bpm" value="<?= $bpm ?>" size="3"/>
       <input type="button" class="go" value="Go"/>
     </div>
 

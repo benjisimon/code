@@ -4,6 +4,8 @@
 
 
 var Ui = {
+  running: false,
+  
   config: function() {
     return { surface: { width: $('body').width(),
                         height:  $(document).innerHeight() - $('.controls').innerHeight() - 10 },
@@ -32,21 +34,29 @@ var Ui = {
     return grid;
   },
 
-  makeMarker: function(viewport) {
+  makeMarker: function(viewport, index) {
     var config = Ui.config();
     var marker = new Concrete.Layer();
     viewport.add(marker);
 
-    marker.setSize(config.bars.width, config.surface.height);
+    var gridGap =  (config.surface.width / config.bars.count);
+    marker.setSize(config.surface.width, config.surface.height);
     marker.scene.context.beginPath();
     marker.scene.context.strokeStyle = '#FF6C00';
     marker.scene.context.lineWidth = config.bars.width
-    marker.scene.context.moveTo(0, 0);
-    marker.scene.context.lineTo(0, config.surface.height);
+    marker.scene.context.moveTo(gridGap * index, 0);
+    marker.scene.context.lineTo(gridGap * index, config.surface.height);
     marker.scene.context.stroke();
-    viewport.render();
 
     return marker;
+  },
+
+  advanceMarker: function() {
+    var config = Ui.config();
+    Ui.marker.index = (Ui.marker.index + 1) % config.bars.count;
+    Ui.marker.layer.destroy();
+    Ui.marker.layer = Ui.makeMarker(Ui.viewport, Ui.marker.index);
+    Ui.viewport.render();
   },
 
   pack: function() {
@@ -57,18 +67,28 @@ var Ui = {
     });
 
     Ui.makeBars(Ui.viewport);
-    Ui.makeMarker(Ui.viewport);
+    Ui.marker = { index: 0, layer: Ui.makeMarker(Ui.viewport, 0), timer: null };
 
     return true;
   },
 
   start: function() {
-    
-    },
+    var millisPerBeat = (60 / parseInt($('.bpm').val())) * 1000;
+    Ui.running = true;
+    Ui.marker.timer = setInterval(() => {
+                                    if(Ui.running) {
+                                      Ui.advanceMarker();
+                                    }
+                                  }, millisPerBeat);
+    return true;
+  },
 
   stop: function() {
-
+    Ui.running = false;
+    if(Ui.marker.timer) {
+      clearInterval(Ui.marker.timer);
     }
+  }
 
 };
 
