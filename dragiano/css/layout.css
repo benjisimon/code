@@ -23,6 +23,6 @@ input {
   padding: 20px;
 }
 
-canvas {
+.surface {
   background-color: #888;
 }
