@@ -31,6 +31,7 @@ $bpm = 180;
     <div class="surface">
     </div>
 
+    <script src="js/sline.js?ver=<?= filemtime(__DIR__ . "/js/sline.js")?>"></script>    
     <script src="js/ui.js?ver=<?= filemtime(__DIR__ . "/js/ui.js")?>"></script>    
   </body>
 </html>

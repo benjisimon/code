@@ -5,6 +5,7 @@
 
 var Ui = {
   running: false,
+  slines: [],
   
   config: function() {
     return { surface: { width: $('body').width(),
@@ -72,6 +73,23 @@ var Ui = {
     return true;
   },
 
+  press: function(coords) {
+    var config = Ui.config();
+    if(Ui.startPoint) {
+      Ui.startPoint.layer.destroy();
+      Ui.slines.push(Sline.setup(Ui.viewport, Ui.startPoint.coords, coords));
+      Ui.viewport.render();
+      Ui.startPoint = null;
+    } else {
+      Ui.startPoint = { layer:  new Concrete.Layer(), coords: coords };
+      Ui.viewport.add(Ui.startPoint.layer);
+      Ui.startPoint.layer.setSize(config.surface.width, config.surface.height);
+      Ui.startPoint.layer.scene.context.fillStyle = '#00DD00';
+      Ui.startPoint.layer.scene.context.fillRect(coords.x - 5, coords.y - 5, 10, 10);
+      Ui.viewport.render();
+    }
+  },
+
   start: function() {
     var millisPerBeat = (60 / parseInt($('.bpm').val())) * 1000;
     Ui.running = true;
@@ -97,6 +115,11 @@ $(document).ready(function() {
 });
 
 $(window).on('resize', Ui.pack);
+
+$(document).on('click', '.surface', function(evt) {
+  Ui.press({x: evt.pageX - $('.surface').offset().left, 
+            y: evt.pageY - $('.surface').offset().top});
+});
 
 $(document).on('click', '.go', function() {
   if($(this).val() == 'Go') {
