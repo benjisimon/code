@@ -6,9 +6,9 @@ var Sline = {
 
   setup: function(viewport, startCoords, endCoords) {
     if(startCoords.x > endCoords.x) {
-      var swapCoords = endCoords;
-      startCoords = endCoords;
-      endCoords   = swapCoords;
+      var swapCoords = { x: startCoords.x, y: startCoords.y };
+      startCoords    = { x: endCoords.x, y: endCoords.y };
+      endCoords      = { x: swapCoords.x, y: swapCoords.y };
     }
 
     var config = Ui.config();

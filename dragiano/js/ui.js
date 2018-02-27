@@ -25,7 +25,7 @@ var Ui = {
 
     for(var i = 0; i < config.bars.count; i++) {
       grid.scene.context.beginPath();
-      grid.scene.context.strokeStyle = '#850000';
+      grid.scene.context.strokeStyle = '#650000';
       grid.scene.context.lineWidth = config.bars.width;
       grid.scene.context.moveTo(gridGap * i, 0);
       grid.scene.context.lineTo(gridGap * i, config.surface.height);
@@ -150,12 +150,26 @@ $(document).on('click', '.surface', function(evt) {
             y: evt.pageY - $('.surface').offset().top});
 });
 
-$(document).on('click', '.go', function() {
-  if($(this).val() == 'Go') {
+$(document).on('click', '.play', function() {
+  if($(this).val() == 'Play') {
     Ui.start();
     $(this).val("Stop");
   } else {
     Ui.stop();
-    $(this).val("Go");
+    $(this).val("Play");
   }
+});
+
+$(document).on('click', '.undo', function() {
+  if(Ui.slines.length > 0) {
+    Sline.teardown(Ui.slines.pop());
+  }
+  Ui.viewport.render();
+});
+
+$(document).on('click', '.clear', function() {
+  while(Ui.slines.length > 0) {
+    Sline.teardown(Ui.slines.pop());
+  }
+  Ui.viewport.render();
 });
