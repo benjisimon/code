@@ -6,12 +6,13 @@
 var Ui = {
   running: false,
   slines: [],
+  audioCtx: new (window.AudioContext || window.webkitAudioContext),
   
   config: function() {
     return { surface: { width: $('body').width(),
                         height:  $(document).innerHeight() - $('.controls').innerHeight() - 10 },
-             bars: { count: 12, width: 4 }
-      };
+             bars: { count: 12, width: 4 },
+             freq: { lower: 65.40, upper: 1864.64 } }
   },
 
   makeBars: function(viewport) {
@@ -85,7 +86,7 @@ var Ui = {
     } else if(hit) {
       Ui.slines = Ui.slines.filter(sline => {
                                      if(hit == sline.key) {
-                                       sline.layer.destroy();
+                                       Sline.teardown(sline);
                                        return false;
                                      } else {
                                        return true;
@@ -104,10 +105,25 @@ var Ui = {
   },
 
   start: function() {
-    var millisPerBeat = (60 / parseInt($('.bpm').val())) * 1000;
-    Ui.running = true;
+    var secPerBeat    = (60 / parseInt($('.bpm').val()));
+    var millisPerBeat = secPerBeat * 1000;
+    var config        = Ui.config();
+    var gridGap       =  (config.surface.width / config.bars.count);
+    Ui.running        = true;
+
     Ui.marker.timer = setInterval(() => {
                                     if(Ui.running) {
+                                      var base = { t0: Ui.audioCtx.currentTime,
+                                                   x0: Ui.marker.index * gridGap,
+                                                   secPerPixel: secPerBeat / gridGap };
+                                      Ui.slines.forEach(sline => {
+                                                          Sline.schedule(Ui.marker.index * gridGap,
+                                                                         (Ui.marker.index+1) * gridGap,
+                                                                         sline,
+                                                                         function(x) {
+                                                                           return base.t0 + ((x - base.x0) * base.secPerPixel);
+                                                                         });
+                                                        });
                                       Ui.advanceMarker();
                                     }
                                   }, millisPerBeat);
