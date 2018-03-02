@@ -1,0 +1,69 @@
+#!/bin/bash
+
+##
+## Command to deal with android app snapshots. The goal is to push and pull
+## apps from one device to others.
+##
+ADB=/c/tools/android/platform-tools/adb.exe 
+
+usage() {
+  if [ -n "$1" ] ; then
+    echo $1
+  fi
+  echo "Usage: `basename $0` [-c {pull|push}] [-d dir]"
+  exit 1
+}
+
+while getopts ":hc:d:" opt ; do
+  case "$opt" in
+    h) usage  ;;
+    c) COMMAND=$OPTARG ;; 
+    d) DIR=$OPTARG ;; 
+    \?) usage "Invalid option" ;;
+  esac
+done
+
+if [ -z "$COMMAND" ] ; then
+  usage
+fi
+
+case "$COMMAND" in
+  pull)
+    if [ -z "$DIR" ] ; then
+      usage "Must set a directory"
+    elif [ -f "$DIR" ] ; then
+      usage "$DIR is a file, that's wrong."
+    elif [ -d "$DIR" ] ; then
+      usage "$DIR must not exist, but it does."
+    fi
+    mkdir $DIR
+    if [ ! -d "$DIR" ] ; then
+      usage "Failed to create a directory to capture APKs"
+    fi
+    touch $DIR/apps.index
+    $ADB shell pm list packages -f -3 | tr -d '\r' | 
+      while read line ; do
+        package=$(echo $line | cut -d'=' -f 2)
+        path=$(echo $line | sed -e  's/^package://' -e 's/=.*//')
+        echo $package >> $DIR/apps.index
+        $ADB pull $path $DIR/$package.apk
+      done
+    ;;
+  push)
+    if [ -z "$DIR" ] ; then
+      usage "Must set a directory"
+    elif [ ! -d "$DIR" ] ; then
+      usage "[$DIR] does not exist";
+    elif [ ! -f "$DIR/apps.index" ] ; then
+      usage "No $DIR/apps.index found, giving up"
+    fi
+
+    cat $DIR/apps.index | while read package ; do
+      $ADB install -r $DIR/$package.apk
+    done
+    ;;
+  *)
+    usage "[$COMMAND] not yet implemented, Goodbye."
+esac
+
+    
