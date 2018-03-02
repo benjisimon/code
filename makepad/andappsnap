@@ -62,6 +62,13 @@ case "$COMMAND" in
       $ADB install -r $DIR/$package.apk
     done
     ;;
+  nuke)
+    $ADB shell pm list packages -f -3 | tr -d '\r' | 
+      while read line ; do
+        package=$(echo $line | cut -d'=' -f 2)
+        $ADB uinstall $package
+      done
+    ;;
   *)
     usage "[$COMMAND] not yet implemented, Goodbye."
 esac
