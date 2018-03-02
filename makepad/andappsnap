@@ -10,7 +10,7 @@ usage() {
   if [ -n "$1" ] ; then
     echo $1
   fi
-  echo "Usage: `basename $0` [-c {pull|push}] [-d dir]"
+  echo "Usage: `basename $0` [-c pull|push|nuke] [-d dir]"
   exit 1
 }
 
@@ -63,11 +63,16 @@ case "$COMMAND" in
     done
     ;;
   nuke)
-    $ADB shell pm list packages -f -3 | tr -d '\r' | 
-      while read line ; do
-        package=$(echo $line | cut -d'=' -f 2)
-        $ADB uinstall $package
-      done
+    echo -n "Really, truly, erase all 3rd party packages on this device? "
+    read ans
+    if [ "$ans" = "yes" ] ; then
+      $ADB shell pm list packages -f -3 | tr -d '\r' | 
+        while read line ; do
+          package=$(echo $line | cut -d'=' -f 2)
+          echo -n "$package: "
+          $ADB uninstall $package
+        done
+    fi
     ;;
   *)
     usage "[$COMMAND] not yet implemented, Goodbye."
