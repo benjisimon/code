@@ -1,0 +1,28 @@
+/*
+ * A CSS file for laying out our main UI
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: black;
+  color: #E4E4E4;
+  padding: 0px;
+  margin: 0px;
+  font-size: 24px;
+  font-family: Arial;
+}
+
+input {
+  font-size: 14px;
+}
+
+.controls {
+  padding: 20px;
+}
+
+.surface {
+  background-color: #888;
+}
