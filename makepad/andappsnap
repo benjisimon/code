@@ -4,21 +4,27 @@
 ## Command to deal with android app snapshots. The goal is to push and pull
 ## apps from one device to others.
 ##
-ADB=/c/tools/android/platform-tools/adb.exe 
+case $(uname) in
+  Darwin)
+    ADB=$HOME/Library/Android/sdk/platform-tools/adb ;;
+  *)
+    ADB=/c/tools/android/platform-tools/adb.exe ;;
+esac
 
 usage() {
   if [ -n "$1" ] ; then
     echo $1
   fi
-  echo "Usage: `basename $0` [-c pull|push|nuke] [-d dir]"
+  echo "Usage: `basename $0` [-c pull|push|nuke|backup|restore] [-d dir] [-f file]"
   exit 1
 }
 
-while getopts ":hc:d:" opt ; do
+while getopts ":hc:d:f:" opt ; do
   case "$opt" in
     h) usage  ;;
     c) COMMAND=$OPTARG ;; 
     d) DIR=$OPTARG ;; 
+    f) FILE=$OPTARG ;; 
     \?) usage "Invalid option" ;;
   esac
 done
@@ -73,6 +79,18 @@ case "$COMMAND" in
           $ADB uninstall $package
         done
     fi
+    ;;
+  backup)
+    if [ -z "$FILE"] ; then
+      usage "Must provide file to back up to"
+    fi
+    $ADB backup -shared -nosystem -all -apk -f $FILE
+    ;;
+  restore)
+    if [ -z "$FILE"] ; then
+      usage "Must provide file to restore from"
+    fi
+    $ADB restore $FILE
     ;;
   *)
     usage "[$COMMAND] not yet implemented, Goodbye."
