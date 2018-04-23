@@ -1,0 +1,96 @@
+;; https://programmingpraxis.com/2018/02/27/seven-segment-devices/
+
+
+(define (show . args)
+  (display args)
+  (newline))
+
+(define (range lower upper)
+  (if (< lower upper)
+    (cons lower (range (+ 1 lower) upper))
+    '()))
+
+(define *digit-width* 10)
+(define *digit-height* 11)
+(define *digit-sep* 4)
+
+(define *digit-map*
+  '((0 . (2 4 6 0 5 3))
+    (1 . (4 6))
+    (2 . (2 4 1 5 0))
+    (3 . (2 4 1 6 0))
+    (4 . (3 1 4 6))
+    (5 . (2 3 1 6 0))
+    (6 . (3 5 0 6 1))
+    (7 . (2 4 6))
+    (8 . (0 1 2 3 4 5 6))
+    (9 . (2 4 1 3 6))))
+
+(define (integer->bars val)
+  (if (= val 0)
+    (cdr (assoc 0 *digit-map*))
+    (let loop ((val val) (bars '()))
+      (cond ((<= val 0) 
+             bars)
+            (else
+             (let ((d (modulo val 10)))
+               (loop
+                (inexact->exact (floor (/ val 10)))
+                (cons (cdr (assoc d *digit-map*)) bars))))))))
+  
+
+(define (draw-sep)
+  (for-each (lambda (i)
+              (display " "))
+            (range 0 *digit-sep*)))
+
+(define (draw first mid last)
+  (display first)
+  (for-each (lambda (i)
+              (display mid))
+            (range 0 (- *digit-width* 2)))
+  (display last))
+
+(define (draw-row digits row)
+  (define mid (/ (- *digit-height* 1) 2))
+  (define top? (= row 0))
+  (define bottom? (= row (- *digit-height* 1)))
+  (define mid? (= row mid))
+  (define upper? (and (not top?) (< row mid)))
+  (define lower? (and (not bottom?) (> row mid)))
+  (for-each (lambda (bars)
+              (define (has? x) (member x bars))
+              (cond ((and top? (has? 2))
+                     (draw "+" "-" "+"))
+                    ((and bottom? (has? 0))
+                     (draw "+" "-" "+"))
+                    ((and mid? (has? 1))
+                     (draw "+" "-" "+"))
+                    ((and upper? (has? 3) (has? 4))
+                     (draw "|" " " "|"))
+                    ((and upper? (has? 3))
+                     (draw "|" " " " "))
+                    ((and upper? (has? 4))
+                     (draw " " " " "|"))
+                    ((and lower? (has? 5) (has? 6))
+                     (draw "|"   " "   "|"))
+                    ((and lower? (has? 5))
+                     (draw "|" " " " "))
+                    ((and lower? (has? 6))
+                     (draw " " " " "|"))
+                    (else
+                     (draw " " " " " ")))
+              (draw-sep))
+            digits)
+  (newline))
+
+
+(define (draw-integer x)
+  (define s (integer->bars x))
+  (newline)
+  (for-each (lambda (row)
+              (draw-row s row))
+            (range 0 *digit-height*))
+  x)
+
+(draw-integer 365)
