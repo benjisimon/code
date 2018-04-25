@@ -11,6 +11,8 @@
 (define (mod x y) (remainder x y))
 (define (mod6 x) (mod x 6))
 (define (div6 x) (div x 6))
+(define (++ x) (+ x 1))
+(define (-- x) (- x 1))
 
 (define *alphabet*  (string->list "#_23456789abcdefghijklmnopqrstuvwxyz"))
 
@@ -74,8 +76,23 @@
              
 
 (define (right-rotate-row state r)
-  state)
-
+  (let* ((start (* 6 r))
+         (end   (+ start 6))) 
+    (let loop ((i 0)
+               (updated '()))
+      (cond ((= i (length state)) (reverse updated))
+            (else
+             (cond ((or (< i start)
+                        (>= i end))
+                    (loop (++ i) (cons (list-ref state i) updated)))
+                   ((= i start)
+                    (loop (++ i) (cons (list-ref state (+ i 5)) updated)))
+                   (else
+                    (loop (++ i) (cons (list-ref state (-- i))
+                                       updated)))))))))
+                    
+                   
+             
 (define (down-rotate-col state r)
   state)
 
