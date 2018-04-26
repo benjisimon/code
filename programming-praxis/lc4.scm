@@ -2,7 +2,7 @@
 
 (import (srfi 27)
         (srfi 1))
-
+55
 (define (show . x)
   (display x)
   (newline))
@@ -13,6 +13,7 @@
 (define (div6 x) (div x 6))
 (define (++ x) (+ x 1))
 (define (-- x) (- x 1))
+(define (++% x) (mod6 (++ x)))
 
 (define *alphabet*  (string->list "#_23456789abcdefghijklmnopqrstuvwxyz"))
 
@@ -68,11 +69,19 @@
 (define (make-key)
   (shuffle (range 0 36)))
 
+(define (string->key text)
+  (map c->n 
+       (filter (lambda (x)
+                 (not (equal? x #\space)))
+               (string->list text))))
+  
 (define (show-state state)
   (let loop ((remaining state))
     (cond ((not (null? remaining))
-           (apply show (map n->c (take remaining 6)))
-           (loop (drop remaining 6))))))
+           (display (list->string (map n->c (take remaining 6))))
+           (display " ")
+           (loop (drop remaining 6)))))
+  (newline))
              
 
 (define (right-rotate-row state r)
@@ -90,23 +99,58 @@
                    (else
                     (loop (++ i) (cons (list-ref state (-- i))
                                        updated)))))))))
-                    
-                   
              
-(define (down-rotate-col state r)
-  state)
+(define (down-rotate-col state c)
+  (let loop ((i 0) (updated '()))
+    (cond ((= i (length state)) 
+           (reverse updated))
+          ((= i c) 
+           (loop (++ i)
+                 (cons (list-ref state (+ 30 c))
+                       updated)))
+          ((= (mod6 i) c)
+           (loop (++ i)
+                 (cons (list-ref state (- i 6))
+                       updated)))
+          (else
+           (loop (++ i) 
+                 (cons (list-ref state i)
+                       updated))))))
 
-(define (tick S i j P)
+(define (e-tick S i j P)
+  (show-state S)
+  (show i j P)
   (let* ((r (row-of S P))
          (c (col-of S P))
          (x (mod6 (+ r (div6 (val-at S i j)))))
          (y (mod6 (+ c (mod6 (val-at S i j)))))
          (C (val-at S x y)))
-    (values (down-rotate-col 
-             (right-rotate-row S r) c)
-            (mod6 (+ i (div6 C)))
-            (mod6 (+ j (mod6 C)))
-            (n->c C))))
-          
+    (let* ((S1 (right-rotate-row S r))
+           (c (++% c))
+           (y (if (= x r) (++% y) y))
+           (r (if (= i r) (++% r) r)))
+      (let* ((S2 (down-rotate-col S1 y))
+             (x (++% x))
+             (r (if (= c y) (++% r) r))
+             (i (if (= j y) (++% i) i)))
+        (values S2 
+                (mod6 (+ i (div6 C)))
+                (mod6 (+ j (mod6 C)))
+                (n->c C))))))
+
+(define (encrypt key text)
+  (let loop ((S key)
+             (i 0)
+             (j 0)
+             (plain (string->list text))
+             (coded '()))
+    (cond ((null? plain) (list->string (reverse coded)))
+          (else
+           (let-values (((S i j C) (e-tick S i j (car plain)))) 
+             (loop S i j (cdr plain) (cons C coded)))))))
     
-    
+                 
+(define sample-key
+  (string->key "xv7ydq #opaj_ 39rzut 8b45wc sgehmi knf26l"))
+
+(encrypt sample-key "solwbf")
