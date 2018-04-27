@@ -159,7 +159,7 @@
          (c (mod6 (- y (mod6 (val-at S i j)))))
          (P (val-at S r c))
          (Cn (c->n C)))
-    (show 'd-tick C 'x-y x y 'r-c r c 'i-j i j)
+    (show 'd-tick C Cn 'i-j i j)
     (let* ((S1 (right-rotate-row S r))
            (c (++% c))
            (y (if (= x r) (++% y) y))
@@ -174,20 +174,29 @@
                 (n->c P))))))
 
 (define (decrypt key nonce coded)
-  (let loop ((S key)
+  (let setup ((S key)
              (i 0)
              (j 0)
-             (coded (string->list (string-append nonce coded)))
-             (plain '()))
-    (cond ((null? coded) (list->string (drop (reverse plain) (string-length nonce))))
+             (nonce (string->list nonce)))
+    (cond ((null? nonce)
+           (let run ((S S)
+                     (i i)
+                     (j j)
+                     (coded (string->list coded))
+                     (plain '()))
+             (cond ((null? coded) (list->string (reverse plain)))
+                   (else
+                    (let-values (((S i j P) (d-tick S i j (car coded)))) 
+                      (run S i j (cdr coded) (cons P plain)))))))
           (else
-           (let-values (((S i j P) (d-tick S i j (car coded)))) 
-             (loop S i j (cdr coded) (cons P plain)))))))
-    
+           (let-values (((S i j C) (e-tick S i j (car nonce))))
+             (setup S i j (cdr nonce)))))))
+          
                  
 (define sample-key
   (string->key "xv7ydq #opaj_ 39rzut 8b45wc sgehmi knf26l"))
 
 (define sample-e (encrypt sample-key "solwbf" "im_about_to_put_the_hammer_down" "#rubberduck"))
 
-(decrypt sample-key "5e7#je" sample-e)
+(decrypt sample-key "solwbf" sample-e)
+
