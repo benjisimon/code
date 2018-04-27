@@ -159,7 +159,6 @@
          (c (mod6 (- y (mod6 (val-at S i j)))))
          (P (val-at S r c))
          (Cn (c->n C)))
-    (show 'd-tick C Cn 'i-j i j)
     (let* ((S1 (right-rotate-row S r))
            (c (++% c))
            (y (if (= x r) (++% y) y))
@@ -200,3 +199,6 @@
 
 (decrypt sample-key "solwbf" sample-e)
 
+(let ((e (encrypt sample-key "abcdef" "aaaaaaaaaa" "_ben")))
+  (show e)
+  (show (decrypt sample-key "abcdef" e)))
