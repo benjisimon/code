@@ -3,14 +3,14 @@
 (import (srfi 27)
         (srfi 1))
 
-(define *alphabet*  (string->list "#_23456789abcdefghijklmnopqrstuvwxyz"))
+(define *alphabet*  (make-parameter (string->list "#_23456789abcdefghijklmnopqrstuvwxyz")))
 
 
 (define (key-size)
-  (length *alphabet*))
+  (length (*alphabet*)))
 
 (define (block-size)
-  (sqrt (length *alphabet*)))
+  (sqrt (length (*alphabet*))))
 
 (define bs block-size)
 
@@ -28,16 +28,16 @@
 (define (% x) 
   (let* ((z (mod x (bs))))
     (if (< z 0) (+ (bs) z)  z)))
-(define ($ x) (div x (sqrt (length *alphabet*))))
+(define ($ x) (div x (sqrt (length (*alphabet*)))))
 (define (++ x) (+ x 1))
 (define (-- x) (- x 1))
 (define (++% x) (% (++ x)))
 
 (define (n->c n)
-  (list-ref *alphabet* n))
+  (list-ref (*alphabet*) n))
 
 (define (c->n c)
-  (let loop ((i 0) (left *alphabet*))
+  (let loop ((i 0) (left (*alphabet*)))
     (cond ((null? left) 
            (error "D'oh, looks like this isn't a valid character " c))
           ((equal? (car left) c) i)
