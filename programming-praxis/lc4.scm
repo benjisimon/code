@@ -7,6 +7,11 @@
   (display x)
   (newline))
 
+(define (say . x)
+  (for-each (lambda (y) (display y) (display " "))
+            x)
+  (newline))
+
 (define (div x y) (quotient x y))
 (define (mod x y) (remainder x y))
 (define (mod6 x) 
@@ -196,9 +201,21 @@
   (string->key "xv7ydq #opaj_ 39rzut 8b45wc sgehmi knf26l"))
 
 (define sample-e (encrypt sample-key "solwbf" "im_about_to_put_the_hammer_down" "#rubberduck"))
-
 (decrypt sample-key "solwbf" sample-e)
 
-(let ((e (encrypt sample-key "abcdef" "aaaaaaaaaa" "_ben")))
-  (show e)
-  (show (decrypt sample-key "abcdef" e)))
+
+(define (show-run key nonce text signature)
+  (newline)
+  (newline)
+  (say "Key:")
+  (show-state key)
+  (say "Nonce: " nonce)
+  (say "Text: " text)
+  (let ((e (encrypt key  nonce text signature)))
+    (say "Encrypted: " e)
+    (let ((d (decrypt key nonce e)))
+      (say "Decrypted: " d)))
+  (newline))
+
+(show-run sample-key "solwbf" "im_about_to_put_the_hammer_down" "#rubberduck")
+(show-run sample-key "argvpx" "hurrrraaaaaaaaaaaaaaaaaaaaaay" "#ben")
