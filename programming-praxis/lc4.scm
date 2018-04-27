@@ -118,8 +118,6 @@
                        updated))))))
 
 (define (e-tick S i j P)
-  (show-state S)
-  (show i j P)
   (let* ((r (row-of S P))
          (c (col-of S P))
          (x (mod6 (+ r (div6 (val-at S i j)))))
@@ -128,7 +126,7 @@
     (let* ((S1 (right-rotate-row S r))
            (c (++% c))
            (y (if (= x r) (++% y) y))
-           (r (if (= i r) (++% r) r)))
+           (j (if (= i r) (++% j) j)))
       (let* ((S2 (down-rotate-col S1 y))
              (x (++% x))
              (r (if (= c y) (++% r) r))
@@ -138,13 +136,13 @@
                 (mod6 (+ j (mod6 C)))
                 (n->c C))))))
 
-(define (encrypt key text)
+(define (encrypt key nonce text signature)
   (let loop ((S key)
              (i 0)
              (j 0)
-             (plain (string->list text))
+             (plain (string->list (string-append nonce text signature)))
              (coded '()))
-    (cond ((null? plain) (list->string (reverse coded)))
+    (cond ((null? plain) (list->string (drop (reverse coded) (string-length nonce))))
           (else
            (let-values (((S i j C) (e-tick S i j (car plain)))) 
              (loop S i j (cdr plain) (cons C coded)))))))
@@ -153,4 +151,4 @@
 (define sample-key
   (string->key "xv7ydq #opaj_ 39rzut 8b45wc sgehmi knf26l"))
 
-(encrypt sample-key "solwbf")
+(encrypt sample-key "solwbf" "im_about_to_put_the_hammer_down" "#rubberduck")
