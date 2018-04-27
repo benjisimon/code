@@ -3,6 +3,17 @@
 (import (srfi 27)
         (srfi 1))
 
+(define *alphabet*  (string->list "#_23456789abcdefghijklmnopqrstuvwxyz"))
+
+
+(define (key-size)
+  (length *alphabet*))
+
+(define (block-size)
+  (sqrt (length *alphabet*)))
+
+(define bs block-size)
+
 (define (show . x)
   (display x)
   (newline))
@@ -14,17 +25,13 @@
 
 (define (div x y) (quotient x y))
 (define (mod x y) (remainder x y))
-(define (mod6 x) 
-  (let ((z (mod x 6)))
-    (if (< z 0)
-      (+ 6 z)
-      z)))
-(define (div6 x) (div x 6))
+(define (% x) 
+  (let* ((z (mod x (bs))))
+    (if (< z 0) (+ (bs) z)  z)))
+(define ($ x) (div x (sqrt (length *alphabet*))))
 (define (++ x) (+ x 1))
 (define (-- x) (- x 1))
-(define (++% x) (mod6 (++ x)))
-
-(define *alphabet*  (string->list "#_23456789abcdefghijklmnopqrstuvwxyz"))
+(define (++% x) (% (++ x)))
 
 (define (n->c n)
   (list-ref *alphabet* n))
@@ -67,16 +74,16 @@
              (loop (+ i 1) (cdr remaining)))))))
 
 (define (row-of state char)
-  (div6 (index-of state char)))
+  ($ (index-of state char)))
 
 (define (col-of state char)
-  (mod6 (index-of state char)))
+  (% (index-of state char)))
 
 (define (val-at state r c)
-  (list-ref state (+ (* r 6) c)))
+  (list-ref state (+ (* r (bs)) c)))
 
 (define (make-key)
-  (shuffle (range 0 36)))
+  (shuffle (range 0 (key-size))))
 
 (define (string->key text)
   (map c->n 
@@ -87,15 +94,15 @@
 (define (show-state state)
   (let loop ((remaining state))
     (cond ((not (null? remaining))
-           (display (list->string (map n->c (take remaining 6))))
+           (display (list->string (map n->c (take remaining (bs)))))
            (display " ")
-           (loop (drop remaining 6)))))
+           (loop (drop remaining (bs))))))
   (newline))
              
 
 (define (right-rotate-row state r)
-  (let* ((start (* 6 r))
-         (end   (+ start 6))) 
+  (let* ((start (* (bs) r))
+         (end   (+ start (bs)))) 
     (let loop ((i 0)
                (updated '()))
       (cond ((= i (length state)) (reverse updated))
@@ -104,7 +111,7 @@
                         (>= i end))
                     (loop (++ i) (cons (list-ref state i) updated)))
                    ((= i start)
-                    (loop (++ i) (cons (list-ref state (+ i 5)) updated)))
+                    (loop (++ i) (cons (list-ref state (+ i (-- (bs)))) updated)))
                    (else
                     (loop (++ i) (cons (list-ref state (-- i))
                                        updated)))))))))
@@ -115,11 +122,11 @@
            (reverse updated))
           ((= i c) 
            (loop (++ i)
-                 (cons (list-ref state (+ 30 c))
+                 (cons (list-ref state (+ (- (key-size) (bs)) c))
                        updated)))
-          ((= (mod6 i) c)
+          ((= (% i) c)
            (loop (++ i)
-                 (cons (list-ref state (- i 6))
+                 (cons (list-ref state (- i (bs)))
                        updated)))
           (else
            (loop (++ i) 
@@ -129,8 +136,8 @@
 (define (e-tick S i j P)
   (let* ((r (row-of S P))
          (c (col-of S P))
-         (x (mod6 (+ r (div6 (val-at S i j)))))
-         (y (mod6 (+ c (mod6 (val-at S i j)))))
+         (x (% (+ r ($ (val-at S i j)))))
+         (y (% (+ c (% (val-at S i j)))))
          (C (val-at S x y)))
     (let* ((S1 (right-rotate-row S r))
            (c (++% c))
@@ -141,8 +148,8 @@
              (r (if (= c y) (++% r) r))
              (i (if (= j y) (++% i) i)))
         (values S2 
-                (mod6 (+ i (div6 C)))
-                (mod6 (+ j (mod6 C)))
+                (% (+ i ($ C)))
+                (% (+ j (% C)))
                 (n->c C))))))
 
 (define (encrypt key nonce text signature)
@@ -160,8 +167,8 @@
 (define (d-tick S i j C)
   (let* ((x (row-of S C))
          (y (col-of S C))
-         (r (mod6 (- x (div6 (val-at S i j)))))
-         (c (mod6 (- y (mod6 (val-at S i j)))))
+         (r (% (- x ($ (val-at S i j)))))
+         (c (% (- y (% (val-at S i j)))))
          (P (val-at S r c))
          (Cn (c->n C)))
     (let* ((S1 (right-rotate-row S r))
@@ -173,8 +180,8 @@
              (r (if (= c y) (++% r) r))
              (i (if (= j y) (++% i) i)))
         (values S2 
-                (mod6 (+ i (div6 Cn)))
-                (mod6 (+ j (mod6 Cn)))
+                (% (+ i ($ Cn)))
+                (% (+ j (% Cn)))
                 (n->c P))))))
 
 (define (decrypt key nonce coded)
@@ -200,10 +207,6 @@
 (define sample-key
   (string->key "xv7ydq #opaj_ 39rzut 8b45wc sgehmi knf26l"))
 
-(define sample-e (encrypt sample-key "solwbf" "im_about_to_put_the_hammer_down" "#rubberduck"))
-(decrypt sample-key "solwbf" sample-e)
-
-
 (define (show-run key nonce text signature)
   (newline)
   (newline)
@@ -217,5 +220,6 @@
       (say "Decrypted: " d)))
   (newline))
 
-(show-run sample-key "solwbf" "im_about_to_put_the_hammer_down" "#rubberduck")
-(show-run sample-key "argvpx" "hurrrraaaaaaaaaaaaaaaaaaaaaay" "#ben")
+
+; (show-run sample-key "solwbf" "im_about_to_put_the_hammer_down" "#rubberduck")
+; (show-run sample-key "argvpx" "hurrrraaaaaaaaaaaaaaaaaaaaaay" "#ben")
