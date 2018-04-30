@@ -223,3 +223,15 @@
 
 ; (show-run sample-key "solwbf" "im_about_to_put_the_hammer_down" "#rubberduck")
 ; (show-run sample-key "argvpx" "hurrrraaaaaaaaaaaaaaaaaaaaaay" "#ben")
+
+(define tiny-alphabet
+  (string->list "abcdefginoprst*_"))
+
+(parameterize ((*alphabet* tiny-alphabet))
+  (let ((key (string->key "opne ig*_ sbac fdrt"))
+        (nonce "sbop_i")
+        (message "atnn_pin_is_i_iii_ii_ate")
+        (sig "*baes"))
+    (show-run key nonce message sig)))
+                 
+                
