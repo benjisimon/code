@@ -1,10 +1,11 @@
 OLED.init(64, 128);
 basic.showIcon(IconNames.Square);
 
-let DURATION     = 60 * 60;
-let timerNow     = 0;
-let timerStep    = 0;
-let timerRunning = false;
+let DURATIONS     = [ 60, 60 * 60, 60 * 60 * 24 ];
+let durationIndex = 1;
+let timerNow      = 0;
+let timerStep     = 0;
+let timerRunning  = false;
 
 function eachLed(fn : ( x : number, y : number, i : number) => void) : void {
   for(let i = 0; i < 25; i++) {
@@ -17,11 +18,9 @@ function eachLed(fn : ( x : number, y : number, i : number) => void) : void {
 function timerReset() {
   timerRunning = true;
   timerNow     = 0;
-  timerStep    = DURATION / 25;
+  timerStep    = DURATIONS[durationIndex] / 25;
 
-  eachLed((x, y, i) => {
-    led.unplot(x, y);
-  });
+  basic.clearScreen();
 };
 
 function timerTick() {
@@ -39,11 +38,18 @@ function timerTick() {
   led.toggle(2,2);
 }
 
-input.onButtonPressed(Button.B, () => {
-  if(input.buttonIsPressed(Button.A)) {
-    timerReset();
-  }
-});
+function timerSelect(offset : number) {
+  timerRunning = false;
+  durationIndex = (DURATIONS.length + (durationIndex + offset)) % DURATIONS.length;
+  basic.clearScreen();
+  basic.showNumber(durationIndex);
+  basic.pause(1500);
+  timerReset();
+}
+
+input.onButtonPressed(Button.A, () => { timerSelect(-1); });
+input.onButtonPressed(Button.B, () => { timerSelect(1); });
+
 
 basic.forever(() => {
   if(input.pinIsPressed(TouchPin.P0) && !timerRunning) {
