@@ -1,8 +1,10 @@
 OLED.init(64, 128);
+basic.showIcon(IconNames.Square);
 
-let DURATION = 60 * 60;
-let timerNow = 0;
-let timerStep = 0;
+let DURATION     = 60 * 60;
+let timerNow     = 0;
+let timerStep    = 0;
+let timerRunning = false;
 
 function eachLed(fn : ( x : number, y : number, i : number) => void) : void {
   for(let i = 0; i < 25; i++) {
@@ -13,8 +15,9 @@ function eachLed(fn : ( x : number, y : number, i : number) => void) : void {
 }
 
 function timerReset() {
-  timerNow = 0;
-  timerStep  = DURATION / 25;
+  timerRunning = true;
+  timerNow     = 0;
+  timerStep    = DURATION / 25;
 
   eachLed((x, y, i) => {
     led.unplot(x, y);
@@ -22,6 +25,10 @@ function timerReset() {
 };
 
 function timerTick() {
+  if(!timerRunning) {
+    return;
+  }
+
   timerNow++;    
   eachLed((x, y, i) => {
     let special = (x == 2 && y == 2);
@@ -32,18 +39,23 @@ function timerTick() {
   led.toggle(2,2);
 }
 
-timerReset();
-
 input.onButtonPressed(Button.B, () => {
   if(input.buttonIsPressed(Button.A)) {
     timerReset();
-  } else {
-    OLED.clear();
-    OLED.showString("Passed: " + timerNow + " sec");
   }
 });
 
 basic.forever(() => {
+  if(input.pinIsPressed(TouchPin.P0) && !timerRunning) {
+    timerReset();
+  }
+
   timerTick();
   basic.pause(1000);
 })
+
+
+input.onPinReleased(TouchPin.P0, () => {
+  timerRunning = false;
+  basic.showIcon(IconNames.Target)
+}) 
