@@ -1,0 +1,14 @@
+{
+    "name": "countdown_grid",
+    "dependencies": {
+        "core": "*",
+        "radio": "*",
+        "Tinkercademy": "github:tinkertanker/pxt-tinkercademy-tinker-kit#v1.0.4"
+    },
+    "description": "",
+    "files": [
+        "main.blocks",
+        "main.ts",
+        "README.md"
+    ]
+}
