@@ -1,12 +1,11 @@
 ;; https://programmingpraxis.com/2018/05/29/blockchain/
 
-
-
 (import (srfi 27)
         (srfi 151)
-        (srfi 69))
+        (srfi 69)
+        (srfi 1))
 
-
+;; Utilities
 (define (%256 x)
   (modulo x 256))
 
@@ -34,7 +33,7 @@
     (cons lower (range (+ 1 lower) upper))
     '()))
 
-
+;; Pearson Hashing
 (define *PEARSON-HASH-TABLE* #(249 40 2 210 228 60 134 7 97 80 219 26 140 4 142 239 169
 177 67 98 253 108 87 183 56 153 171 59 124 29 159 62 185 8 115 163 164
 5 231 38 168 9 27 58 12 109 175 238 16 81 195 147 221 76 182 86 241 57
@@ -72,6 +71,7 @@
              (loop (s++ text) (-- bytes) 
                    (cons (phash text) results))))))
 
+;; Blockchains
 (define (make-block index data previous-hash hash)
   (list index data previous-hash hash))
 (define (block-index b)
@@ -116,6 +116,42 @@
                      #f)))))))
 
 (define (bc-show bc)
-  (for-each show
-            bc))
+  (if (bc-valid? bc)
+      (for-each show bc)
+      (error "Refusing to show blockchain because it's not valid" bc)))
     
+
+;; Example from: 
+;; https://waterdata.usgs.gov/md/nwis/uv?cb_00060=on&cb_00065=on&format=rdb&site_no=01646500&period=1&begin_date=2018-05-29&end_date=2018-06-05
+(define water-guage-levels 
+  '("USGS    2018-06-04 00:00    EST    70200    P    7.78    P"
+    "USGS    2018-06-04 00:15    EST    70600    P    7.80    P"
+    "USGS    2018-06-04 00:30    EST    70900    P    7.81    P"
+    "USGS    2018-06-04 00:45    EST    71500    P    7.84    P"
+    "USGS    2018-06-04 01:00    EST    72300    P    7.88    P"
+    "USGS    2018-06-04 01:15    EST    72500    P    7.89    P"
+    "USGS    2018-06-04 01:30    EST    73300    P    7.93    P"
+    "USGS    2018-06-04 01:45    EST    74200    P    7.97    P"
+    "USGS    2018-06-04 02:00    EST    75000    P    8.01    P"
+    "USGS    2018-06-04 02:15    EST    76100    P    8.06    P"
+    "USGS    2018-06-04 02:30    EST    76500    P    8.08    P"
+    "USGS    2018-06-04 02:45    EST    77400    P    8.12    P"
+    "USGS    2018-06-04 03:00    EST    79100    P    8.20    P"
+    "USGS    2018-06-04 03:15    EST    79800    P    8.23    P"
+    "USGS    2018-06-04 03:30    EST    81100    P    8.29    P"
+    "USGS    2018-06-04 03:45    EST    82500    P    8.35    P"))
+
+(define water-guage-levels-bc
+  (fold (lambda (entry bc)
+          (bc-adjoin bc entry))
+        (bc-init)
+        water-guage-levels))
+
+(define (attack-water-guage-levels)
+  (let ((target (list-ref water-guage-levels-bc 3)))
+    (list-set! target 1 "USGS    2018-06-04 03:00    EST    79100    P    7.90    P")
+    (list-set! water-guage-levels-bc 3 target)))
+
+          
+
+
