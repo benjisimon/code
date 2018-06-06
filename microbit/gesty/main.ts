@@ -1,7 +1,6 @@
 let debug     = true;
 let nextNote  = input.runningTime();
 
-
 if(debug) {
   OLED.init(64, 128);
 }
@@ -26,11 +25,8 @@ basic.forever(() => {
     music.playTone(freq + (input.buttonIsPressed(Button.A) ? fudge  : 0) , 
                    duration + (input.buttonIsPressed(Button.B) ? fudge  : 0));
   }
-
+  
   if(debug) {
     OLED.showString(roll + "/" + freq + "::" + pitch + "/" + duration + "::" + fudge);
   }
 });
-
-
-music.playTone(400, 1000);
