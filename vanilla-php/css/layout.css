@@ -1,0 +1,54 @@
+/*
+ * A CSS file for implementing our site's layout. Which, because this is a text
+ * layout is pretty crude.
+ */
+
+.clear { clear: both; }
+
+body {
+  background-color: black;
+  color: #E4E4E4;
+  font-family: arial;
+}
+
+body a {
+  color: steelblue;
+}
+
+
+body > .footer, body > .nav, body > .body {
+  margin: auto;
+  width: 100%;
+  max-width: 800px;
+}
+
+body .body {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  background-color: #222;
+  padding: 20px;
+  border: solid 3px #444;
+  border-radius: 8px;
+}
+
+body > .footer {
+  font-style: italic;
+}
+
+.nav > ul {
+  list-style-type: none;
+  margin: 0px;
+  padding: 0px;
+}
+
+.nav li {
+  float: left;
+  margin-right: 20px;
+}
+
+.nav li a {
+  display: block;
+  border: 1px solid steelblue;
+  padding: 5px;
+  border-radius: 8px;
+}
