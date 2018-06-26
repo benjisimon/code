@@ -1,0 +1,26 @@
+/*
+ * A CSS file for implementing the layout of basic UI 
+ */
+
+body {
+  font-family: arial;
+  background-color: #003f74;
+}
+
+.editor {
+  height: 90%;
+  display: flex;
+  flex-direction: column;
+  margin: 20px;
+}
+
+.editor textarea {
+  flex: 1;
+  padding: 5px;
+}
+
+.editor .save {
+  font-size: 26px;
+  padding: 8px;
+  white-space: normal;
+}
