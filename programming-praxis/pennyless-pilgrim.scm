@@ -77,10 +77,8 @@
          (cons (next-street x y direction)
                walked)))
                
-
 (define (solve x y owed walked)
-  (show (list x y owed (length walked)))
-  (cond ((arrived? x y) (list (= owed 0) owed walked))
+  (cond ((arrived? x y) (list (= owed 0) owed (reverse walked)))
         (else
          (let loop ((options
                      (apply 
