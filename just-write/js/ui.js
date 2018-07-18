@@ -4,6 +4,21 @@
 
 var GOAL_COUNT = 500;
 
+function onSignIn(googleUser) {
+  var profile = googleUser.getBasicProfile();
+  $('.auth-info').html("Welcome " + profile.getName() + ". <a href='#' class='sign-out'>(Sign Out)</a>");
+  $('.sign-in').hide();
+  $('.editor').css({display: 'flex'});
+}
+
+$(document).on('click', 'a.sign-out', function() {
+  var auth2 = gapi.auth2.getAuthInstance();
+  auth2.signOut().then(function () {
+    location.reload();
+  });
+  return false;
+});
+
 $(document).on('keyup', 'textarea', function() {
   var text = $(this).val();
   var count = text.trim().split(/\s+/).length;
