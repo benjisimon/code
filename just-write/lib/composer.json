@@ -1,0 +1,5 @@
+{
+    "require": {
+        "flatbase/flatbase": "^0.3.1"
+    }
+}

@@ -7,6 +7,7 @@
  *
  * This implements our sign-in page.
  */
+require_once('lib/siteconfig.php');
 ?>
 <!DOCTYPE>
 <html>

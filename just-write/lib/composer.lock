@@ -1,0 +1,216 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "8468a7960692af75840cb6a4aaa9f590",
+    "packages": [
+        {
+            "name": "flatbase/flatbase",
+            "version": "0.3.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/adamnicholson/flatbase.git",
+                "reference": "c56ba73a2ea2a2fa3a346311d79d53e3c716d7cb"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/adamnicholson/flatbase/zipball/c56ba73a2ea2a2fa3a346311d79d53e3c716d7cb",
+                "reference": "c56ba73a2ea2a2fa3a346311d79d53e3c716d7cb",
+                "shasum": ""
+            },
+            "require": {
+                "php-serializer/php-serializer": "0.1.*",
+                "symfony/console": "~2.6",
+                "symfony/var-dumper": "~2.6"
+            },
+            "require-dev": {
+                "devster/ubench": "~1.1",
+                "phpunit/phpunit": "^5"
+            },
+            "bin": [
+                "flatbase"
+            ],
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Flatbase\\": [
+                        "src/",
+                        "tests/"
+                    ]
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "authors": [
+                {
+                    "name": "Adam Nicholson",
+                    "email": "adamnicholson10@gmail.com"
+                }
+            ],
+            "description": "Standalone queryable flat file database",
+            "time": "2015-12-06T14:20:20+00:00"
+        },
+        {
+            "name": "php-serializer/php-serializer",
+            "version": "0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/adamnicholson/php-serializer.git",
+                "reference": "3c0998323a14f3c6baf8a44c2bb2a5497e10e6eb"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/adamnicholson/php-serializer/zipball/3c0998323a14f3c6baf8a44c2bb2a5497e10e6eb",
+                "reference": "3c0998323a14f3c6baf8a44c2bb2a5497e10e6eb",
+                "shasum": ""
+            },
+            "require-dev": {
+                "devster/ubench": "~1.1"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "PHPSerializer\\": [
+                        "src/",
+                        "tests/"
+                    ]
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "authors": [
+                {
+                    "name": "Adam Nicholson",
+                    "email": "adamnicholson10@gmail.com"
+                }
+            ],
+            "time": "2015-02-23T22:37:00+00:00"
+        },
+        {
+            "name": "symfony/console",
+            "version": "v2.6.13",
+            "target-dir": "Symfony/Component/Console",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/console.git",
+                "reference": "0e5e18ae09d3f5c06367759be940e9ed3f568359"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/console/zipball/0e5e18ae09d3f5c06367759be940e9ed3f568359",
+                "reference": "0e5e18ae09d3f5c06367759be940e9ed3f568359",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.3"
+            },
+            "require-dev": {
+                "psr/log": "~1.0",
+                "symfony/event-dispatcher": "~2.1",
+                "symfony/phpunit-bridge": "~2.7",
+                "symfony/process": "~2.1"
+            },
+            "suggest": {
+                "psr/log": "For using the console logger",
+                "symfony/event-dispatcher": "",
+                "symfony/process": ""
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "2.6-dev"
+                }
+            },
+            "autoload": {
+                "psr-0": {
+                    "Symfony\\Component\\Console\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Symfony Console Component",
+            "homepage": "https://symfony.com",
+            "time": "2015-07-26T09:08:40+00:00"
+        },
+        {
+            "name": "symfony/var-dumper",
+            "version": "v2.6.13",
+            "target-dir": "Symfony/Component/VarDumper",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/var-dumper.git",
+                "reference": "5fba957a30161d8724aade093593cd22f815bea2"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/var-dumper/zipball/5fba957a30161d8724aade093593cd22f815bea2",
+                "reference": "5fba957a30161d8724aade093593cd22f815bea2",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.3"
+            },
+            "require-dev": {
+                "symfony/phpunit-bridge": "~2.7"
+            },
+            "suggest": {
+                "ext-symfony_debug": ""
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "2.6-dev"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "Resources/functions/dump.php"
+                ],
+                "psr-0": {
+                    "Symfony\\Component\\VarDumper\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nicolas Grekas",
+                    "email": "p@tchwork.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Symfony mechanism for exploring and dumping PHP variables",
+            "homepage": "https://symfony.com",
+            "keywords": [
+                "debug",
+                "dump"
+            ],
+            "time": "2015-07-01T10:03:42+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": [],
+    "platform-dev": []
+}
