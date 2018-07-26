@@ -5,6 +5,8 @@
 body {
   font-family: arial;
   background-color: #003f74;
+  margin: 0px;
+  padding: 0px;
 }
 
 h1 {
@@ -47,4 +49,10 @@ h1 {
 .sign-in {
   width: 300px;
   margin: 10% auto 0;
+}
+
+.message {
+  background-color: orange;
+  padding: 10px 20px;
+  border: 1px solid orange;
 }

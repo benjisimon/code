@@ -9,6 +9,7 @@ function onSignIn(googleUser) {
   $('.auth-info').html("Welcome " + profile.getName() + ". <a href='#' class='sign-out'>(Sign Out)</a>");
   $('.sign-in').hide();
   $('.editor').css({display: 'flex'});
+  $('input[name=email]').val(profile.getEmail());
 }
 
 $(document).on('click', 'a.sign-out', function() {

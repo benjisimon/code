@@ -8,6 +8,15 @@
  * This implements our sign-in page.
  */
 require_once('lib/siteconfig.php');
+
+$message = false;
+
+if(($content = g($_POST, 'entry')) && ($email = g($_POST, 'email'))) {
+  $e = new_entry($email, $content);
+  $count = entries_send($email);
+  $message = "Entry Saved. Sent out $count historic " . ($count == 1 ? "entry" : "entries") . " to $email.";
+}
+
 ?>
 <!DOCTYPE>
 <html>
@@ -20,7 +29,9 @@ require_once('lib/siteconfig.php');
   </head>
 
   <body>
-
+    <? if($message) { ?>
+      <div class="message"><?= $message?></div>
+    <? } ?>
 
     <div class="sign-in">
       <h1>Just Write</h1>
@@ -28,11 +39,12 @@ require_once('lib/siteconfig.php');
       <div class="g-signin2" data-width="300" data-onsuccess="onSignIn"></div>
     </div>
 
-    <div class="editor hidden">
+    <form class="editor hidden" method="POST" action="/just-write/">
       <div class="auth-info"></div>
-      <textarea></textarea>
-      <input type="button" value="Just Write." class="save" disabled="true"/>
-    </div>
+      <input name="email" type="hidden" value=""/>
+      <textarea name="entry"></textarea>
+      <input type="submit" value="Just Write." class="save" disabled="true"/>
+    </form>
     
     <meta name="google-signin-client_id" content="1032759647828-rfam6ogeaemq890t3pmuv319td9j2tt2.apps.googleusercontent.com"/>
     <script src="https://apis.google.com/js/platform.js" async defer></script>
