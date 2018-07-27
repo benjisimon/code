@@ -13,38 +13,28 @@
 #include <Adafruit_ILI9341.h> // Hardware-specific library
 #include <Adafruit_STMPE610.h>
 
-   #define STMPE_CS 32
-   #define TFT_CS   15
-   #define TFT_DC   33
-   #define SD_CS    14
+#define STMPE_CS 32
+#define TFT_CS   15
+#define TFT_DC   33
+#define SD_CS    14
 
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 Adafruit_STMPE610 ts = Adafruit_STMPE610(STMPE_CS);
 
 
-// This is calibration data for the raw touch data to the screen coordinates
-#define TS_MINX 3800
-#define TS_MAXX 100
-#define TS_MINY 100
-#define TS_MAXY 3750
-
-// Size of the color selection boxes and the paintbrush size
-#define BOXSIZE 40
-#define PENRADIUS 3
 long started = millis() / 1000;
 
 void setup(void) {
   Serial.begin(115200);
 
   delay(10);
-  Serial.println("FeatherWing TFT");
+  Serial.println("Timer Time!");
   
 
   if (!ts.begin()) {
     Serial.println("Couldn't start touchscreen controller");
     while (1);
   }
-  Serial.println("Touchscreen started");
 }
 
 void loop(void) {
@@ -55,11 +45,8 @@ void loop(void) {
   remaining = minutes == 0 ? remaining : remaining % (60 * minutes);
   int seconds = remaining;
 
-  int red = minutes/2;
-  int green = 61 - minutes;
-  int blue = 31;
-  int fg = ((red) << 11) | ((green) << 6) | blue;
-  int bg = ~fg;
+  int fg = textFg(hours, minutes, seconds);
+  int bg = textBg(hours, minutes, seconds);
   
   tft.begin();
   tft.setRotation(3);
@@ -81,6 +68,17 @@ void loop(void) {
   tft.print(seconds);
 
   delay(750);
+}
+
+int textFg(int hours, int minutes, int seconds) {
+  int red = minutes/2;
+  int green = 61 - minutes;
+  int blue = 31;
+  return ((red) << 11) | ((green) << 6) | blue;
+}
+
+int textBg(int hours, int minutes, int seconds) {
+  return ~ textFg(hours, minutes, seconds);
 }
 
 
