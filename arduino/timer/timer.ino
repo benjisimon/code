@@ -47,29 +47,33 @@ void loop(void) {
 
   int fg = textFg(hours, minutes, seconds);
   int bg = textBg(hours, minutes, seconds);
+  int y   = (tft.height() / 3) - 60;
   
   tft.begin();
-  tft.setRotation(3);
+  tft.setRotation(2);
   tft.fillScreen(fg);
-  tft.setCursor(10,(tft.height() / 2) - 30);
   tft.setTextColor(bg);
   tft.setTextSize(7);
 
-  tft.print(hours);
-  tft.print(":");
-  if(minutes < 10) {
-    tft.print("0");
-  }
-  tft.print(minutes);
-  tft.print(":");
-  if(seconds < 10) {
-    tft.print("0");
-  }
-  tft.print(seconds);
+  showTime(tft, hours + 1, "h", y);
+  showTime(tft, minutes + 1, "m", y + 90);
+  showTime(tft, seconds, "s", y + 180);
+  
 
   delay(750);
 }
 
+void showTime(Adafruit_ILI9341 tft, int value, String unit, int y) {
+  tft.setCursor(40, y);
+  if(value > 0) {
+    if(value < 10) {
+      tft.print("0");
+    }
+    tft.print(value);
+    tft.print(unit);
+    tft.println();
+  }
+}
 int textFg(int hours, int minutes, int seconds) {
   int red = minutes/2;
   int green = 61 - minutes;
