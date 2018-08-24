@@ -55,8 +55,8 @@ void loop(void) {
   tft.setTextColor(bg);
   tft.setTextSize(7);
 
-  showTime(tft, hours + 1, "h", y);
-  showTime(tft, minutes + 1, "m", y + 90);
+  showTime(tft, hours, "h", y);
+  showTime(tft, minutes, "m", y + 90);
   showTime(tft, seconds, "s", y + 180);
   
 
