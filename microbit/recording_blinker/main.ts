@@ -21,26 +21,26 @@ basic.forever(() => {
     startRecording();
   } else if(current.mode == Modes.Recording && input.buttonIsPressed(Button.B) && isTwistedRight()) {
     startPlaying();
-  }
-
-  if(current.mode == Modes.Recording) {
-    if(input.buttonIsPressed(Button.A) && input.buttonIsPressed(Button.B)) {
-      record(IconNames.Target);
-    } else if(input.buttonIsPressed(Button.A)) {
-      record(IconNames.No);
-    } else if(input.buttonIsPressed(Button.B)) {
-      record(IconNames.Square);
-    } else {
-      record(Symbols.None);
-    }
   } else {
-    let offset = input.runningTime() - current.started;
-    if(offset > current.sequence[current.step].t) {
-      render(current.sequence[current.step].s);
-      if(current.step+1 < current.sequence.length) {
-        current.step++;
+    if(current.mode == Modes.Recording) {
+      if(input.buttonIsPressed(Button.A) && input.buttonIsPressed(Button.B)) {
+        record(IconNames.Target);
+      } else if(input.buttonIsPressed(Button.A)) {
+        record(IconNames.No);
+      } else if(input.buttonIsPressed(Button.B)) {
+        record(IconNames.Square);
       } else {
-        startPlaying();
+        record(Symbols.None);
+      }
+    } else {
+      let offset = input.runningTime() - current.started;
+      if(offset > current.sequence[current.step].t) {
+        render(current.sequence[current.step].s);
+        if(current.step+1 < current.sequence.length) {
+          current.step++;
+        } else {
+          startPlaying();
+        }
       }
     }
   }
