@@ -1,0 +1,16 @@
+{
+    "name": "recording-blinker",
+    "version": "0.1.0",
+    "description": "It Blinks. It Records. It's a Recording Blinker.",
+    "license": "MIT",
+    "dependencies": {
+        "core": "*",
+        "radio": "*",
+        "Tinkercademy": "github:tinkertanker/pxt-tinkercademy-tinker-kit#v1.0.4"
+    },
+    "files": [
+        "README.md",
+        "main.ts"
+    ],
+    "public": true
+}
