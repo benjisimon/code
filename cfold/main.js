@@ -47,23 +47,26 @@ function cfold(start, end, steps, init, fn) {
   return carry;
 }
 
+var show = 6;
 var canvas = document.getElementById('canvas');
 var line = 0;
-if(false) {
+
+
+if(show == 0) {
   var html = cfold("#00 00 00", "#FF FF FF", 100, "",
                    (html, color) => {
-                     return html + "<div style='height: 3px; background-color: " + cpack(color) + "'>" + cpack(color) + ":" + (++line) + "</div>\n";
+                     return html + "<div style='height: 5px; background-color: " + cpack(color) + "'>" + cpack(color) + ":" + (++line) + "</div>\n";
                    });
 }
 
-if(false) {
+if(show == 1) {
   var html = cfold("#00 00 AA", "#FF AA 00", 100, "",
                    (html, color) => {
                      return html + "<div style='height: 3px; background-color: " + cpack(color) + "'></div>\n";
                    });
 }
 
-if(false) {
+if(show == 2) {
   var data = cfold("#00 00 AA", "#FF AA 00", 100, [],
                    (all, color) => {
                      all.push(color);
@@ -81,7 +84,7 @@ if(false) {
   setInterval(tick, 200);
 }
 
-if(false) {
+if(show == 3) {
   var html = cfold("#00 FF 11", "#33 55 FF", 1000, '',
                    (html, color) => {
                      html += ("<div style='height: 20px; width: 20px; float: left; " +
@@ -90,7 +93,7 @@ if(false) {
                    });
 }
 
-if(false) {
+if(show == 4) {
   var html = cfold("#00 FF 30", "#FF 00 40", 1000, '',
                    (html, color) => {
                      html += ("<div style='height: 20px; width: 20px; float: left; " +
@@ -99,7 +102,7 @@ if(false) {
                    });
 }
 
-if(false) {
+if(show == 5) {
   var html = cfold("#00 55 22", "#FF 88 36", 1000, '',
                    (html, color) => {
                      html += ("<div style='height: 20px; width: 20px; float: left; " +
@@ -109,7 +112,7 @@ if(false) {
 }
 
 
-if(true) {
+if(show == 6) {
   var i = 0;
   var text = "Hello World!".split('');
   var html = cfold("#00 AA FF", "#FF 88 FF", text.length, '',
