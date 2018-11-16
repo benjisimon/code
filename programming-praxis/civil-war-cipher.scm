@@ -5,6 +5,12 @@
 ;; http://www.civilwarsignals.org/pages/crypto/crypto.html
 ;;
 
+(define (show . x)
+  (for-each (lambda (x)
+              (display x)
+              (newline))
+            x))
+
 (define (take n src)
   (cond ((= n 0) '())
         ((null? src) '())
@@ -26,18 +32,11 @@
            (cons g (group-into size (drop size src)))))))
 
 (define (jumble src route)
-  (if (null? route) 
-      '()
-      (let ((i (car route)))
-        (cons (list-ref src i)
-              (jumble src (cdr route))))))
-
-(define (unjumble src seq)
-  (let ((buffer (make-list (length seq) '_)))
+  (let ((buffer (make-list (length route) '_)))
     (for-each (lambda (elt i)
                 (list-set! buffer i elt))
               src
-              seq)
+              route)
     buffer))
 
 (define (encode word dictionary)
@@ -54,28 +53,32 @@
         (else 
          (decode word (cdr dictionary)))))
 
+(define (encode-all words dictionary)
+  (map (lambda (w)
+         (encode w dictionary))
+       words))
+         
+
+(define (decode-all words dictionary)
+  (map (lambda (w)
+         (decode w dictionary))
+       words))
+
 (define (encrypt src routes dict)
   (let ((found (assoc (car src) routes)))
     (if found
         (let* ((route-name (car found))
                (seq (cdr found))
-               (lhs (take (length seq) src))
+               (lhs (encode-all (take (length seq) (cdr src)) dict))
                (rhs (drop (length seq) src)))
           (append
            (list route-name)
-           (jumble (map (lambda (w) 
-                          (encode w dict)) 
-                        lhs)
-                   seq)
+           (jumble lhs seq)
            (encrypt rhs routes dict)))
         '())))
            
           
-       
-
- (let ((seq (assoc (car src) routes) =>
-             (lambda (
-
+      
 (define (decrypt src routes dict)
   (unjumble (map (lambda (w) 
                  (decode w dict)) 
@@ -129,7 +132,7 @@
 
 (define msg 
   '(enemy 
-    __ __ __ boy greatly __ __
+    __ __ __ boy greatly __
     for burnside the enemy are preparing
     pontoons and increasing numbers on our
     front if they cross between us
@@ -163,8 +166,3 @@
     men truly gorden __ __ __))
 
 (encrypt msg routes dict)
-    
-
-                  
-                
-      
