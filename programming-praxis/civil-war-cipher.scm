@@ -65,17 +65,19 @@
        words))
 
 (define (encrypt src routes dict)
-  (let ((found (assoc (car src) routes)))
-    (if found
-        (let* ((route-name (car found))
-               (seq (cdr found))
-               (lhs (encode-all (take (length seq) (cdr src)) dict))
-               (rhs (drop (length seq) src)))
-          (append
-           (list route-name)
-           (jumble lhs seq)
-           (encrypt rhs routes dict)))
-        '())))
+  (cond ((null? src) '())
+        (else
+         (let ((found (assoc (car src) routes)))
+           (if found
+               (let* ((route-name (car found))
+                      (seq (cdr found))
+                      (lhs (encode-all (take (length seq) (cdr src)) dict))
+                      (rhs (drop (+ 1 (length seq)) src)))
+                 (append
+                  (list route-name)
+                  (jumble lhs seq)
+                  (encrypt rhs routes dict)))
+               `(error unknown-route ,(car src)))))))
            
           
       
@@ -158,11 +160,11 @@
     mcdowell
     must __ __ __ mind horses
     you in ten days our cavalry
-    drove the rebel across the tennessee 
+    drove the rebels across the tennessee 
     at lambs ferry with loss to
     them of two thousand killed wounded
     prisoners and deserters also five pieces
-    of artillery yours rosecrans answer quick seven-pm
+    artillery yours rosecrans answer quick seven-pm
     men truly gorden __ __ __))
 
 (encrypt msg routes dict)
