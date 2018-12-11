@@ -11,6 +11,24 @@
               (newline))
             x))
 
+(define (show-6 x)
+  (cond ((null? x) #t)
+        (else
+         (show (take 6 x))
+         (fmt-show (drop 6 x)))))
+
+(define (range low high)
+  (if (= low high) '()
+      (cons low (range (+ 1 low) high))))
+
+(define (index-of x seq)
+  (cond ((null? seq) 
+         (show `(error index-of ,x))
+         #f)
+        ((equal? (car seq) x) 0)
+        (else
+         (+ 1 (index-of x (cdr seq))))))
+
 (define (take n src)
   (cond ((= n 0) '())
         ((null? src) '())
@@ -38,6 +56,16 @@
               src
               route)
     buffer))
+
+(define (unjumble src route)
+  (let ((buffer (make-list (length route) '_)))
+    (for-each (lambda (elt i)
+                (list-set! buffer (index-of i route) elt))
+              src
+              (range 0 (length src)))
+    buffer))
+  
+              
 
 (define (encode word dictionary)
   (cond ((null? dictionary) word)
@@ -82,27 +110,52 @@
           
       
 (define (decrypt src routes dict)
-  (unjumble (map (lambda (w) 
-                 (decode w dict)) 
-               src) 
-          seq))
+  (cond ((null? src) '())
+        (else
+         (let ((found (assoc (car src) routes)))
+           (if found
+               (let* ((route-name (car found))
+                      (seq (cdr found))
+                      (lhs (decode-all (take (length seq) (cdr src)) dict))
+                      (rhs (drop (+ 1 (length seq)) src)))
+                 (append
+                  (list route-name)
+                  (unjumble lhs seq)
+                  (decrypt rhs routes dict)))
+               `(error unknow-route ,(car src)))))))
+                   
+(define (fmt src routes)
+  (cond ((null? src) '())
+        (else
+         (let ((found (assoc (car src) routes)))
+           (if found
+               (let* ((route-name (car found))
+                      (seq (cdr found))
+                      (lhs (take (length seq) (cdr src)))
+                      (rhs (drop (+ 1 (length seq)) src)))
+                 (show '())
+                 (show `(cipher ,route-name))
+                 (show-6 lhs)
+                 (fmt rhs routes))
+               `(error unknown-route ,(car src)))))))
+               
 
 ;;
 ;; Routes, dictionary and message from http://www.civilwarsignals.org/pages/crypto/crypto.html
 ;;
 (define routes
-  '((enemy . (46 24 00 23 47 69
-              47 25 01 22 46 68
-              48 26 02 21 45 67
-              49 27 03 20 44 66
-              50 28 04 19 43 65
-              51 29 05 18 42 64
-              52 30 06 17 41 63
-              53 31 07 16 40 62
-              54 32 08 15 39 61
-              55 33 09 14 38 60
-              56 34 10 13 37 59
-              57 35 11 12 36 58))
+  '((enemy . (48 24 00 23 47 71
+              49 25 01 22 46 70
+              50 26 02 21 45 69
+              51 27 03 20 44 68
+              52 28 04 19 43 67
+              53 29 05 18 42 66
+              54 30 06 17 41 65
+              55 31 07 16 40 64
+              56 32 08 15 39 63
+              57 33 09 14 38 62
+              58 34 10 13 37 61
+              59 35 11 12 36 60))
 
     (stanton . (07 20 34 47 33 19
                 06 21 35 46 32 18
@@ -167,4 +220,6 @@
     artillery yours rosecrans answer quick seven-pm
     men truly gorden __ __ __))
 
-(encrypt msg routes dict)
+(fmt (encrypt msg routes dict) routes)
+
+(fmt (decrypt (encrypt msg routes dict) routes dict) routes)
