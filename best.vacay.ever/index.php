@@ -54,7 +54,7 @@ function recommend($grade) {
       $recs['top_activity'] = $activity;
       $recs['top_score'] = $value;
     }
-    if($value > $recs['top_activity']) {
+    if($value > $recs['top_score']) {
       $recs['top_activity'] = $activity;
       $recs['top_score'] = $value;
     }
@@ -63,7 +63,7 @@ function recommend($grade) {
       $recs['bottom_activity'] = $activity;
       $recs['bottom_score'] = $value;
     }
-    if($value < $recs['top_activity']) {
+    if($value < $recs['top_score']) {
       $recs['bottom_activity'] = $activity;
       $recs['bottom_score'] = $value;
     }
@@ -100,6 +100,7 @@ function slurp($grade) {
       $scores[$worst] -= 100;
     }
   }
+
   return $scores;
 }
 
