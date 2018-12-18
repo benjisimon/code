@@ -63,7 +63,7 @@ function recommend($grade) {
       $recs['bottom_activity'] = $activity;
       $recs['bottom_score'] = $value;
     }
-    if($value < $recs['top_score']) {
+    if($value < $recs['bottom_score']) {
       $recs['bottom_activity'] = $activity;
       $recs['bottom_score'] = $value;
     }
