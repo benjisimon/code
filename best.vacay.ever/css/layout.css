@@ -1,0 +1,53 @@
+body {
+  padding: 0px;
+  margin: 0px;
+  font-family: arial;
+  color: #0A2463;
+  font-size: 18px;
+  background-color: #333;
+}
+
+.page {
+  max-width: 1024px;
+  margin: auto;
+  background-color: #FFFAFF;
+  min-height: 800px;
+  padding: 20px;
+  border-left: 1px solid #666;
+  border-right: 1px solid #666;
+  border-bottom: 1px solid #666;
+  border-radius: 0px 0px 30px 30px;
+}
+
+h1 {
+  font-size: 40px;
+}
+
+.grades {
+  display: flex;
+  justify-content: space-around;
+}
+
+.grades a {
+  background-color: #3E92CC;
+  padding: 5px;
+  margin: 10px;
+  color: white;
+  border: 2px solid #0A2463;
+}
+
+.grades a.selected {
+  background-color: #D8315B;
+}
+
+.recommendation {
+  padding: 20px;
+  background-color: #1E1B18;
+  color: #FFFAFF;
+  width: 600px;
+  margin: 20px auto;
+  border: 4px solid #D8315B;
+}
+
+.leading { margin-top: 10px;}
+.leading2 { margin-top: 20px;}
