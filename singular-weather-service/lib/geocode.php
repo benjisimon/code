@@ -8,7 +8,7 @@ function geocode($location, $options = []) {
   $info = curl_get('https://maps.googleapis.com/maps/api/geocode/json', [
     'address' => $location,
     'key'     => GEOCODING_API_KEY,
-  ], ['ttl' => 60 * 60 * 25 * 365 * 10]);
+  ], ['ttl' => true]);
   
   if(g($options, 'debug')) {
     var_dump($location);

@@ -6,11 +6,9 @@ $debug = g($_GET, 'debug') == 'on';
 ($loc  = g($_GET, 'loc')) || die("Must provide location");
 ($loc  = geocode($loc, ['debug' => $debug]))  || die("Unable to geocode provided location");
 ($attr = g($_GET, 'attr')) || die("Must provide attribute");
-($date = g($_GET, 'd')) || die("Must provide date");
-($date = strtotime($date)) || die("Invalidate date provided");
+($date = g($_GET, 'date')) || die("Must provide date");
+($date = strtotime_tz($date, 'America/New_York')) || die("Invalidate date provided");
 
-var_dump($loc);
-var_dump($attr);
-var_dump($date);
+echo forecast($loc, $date, $attr);
 
 ?>

@@ -18,5 +18,12 @@ function g($array, $key, $default = false) {
   }
 }
 
+function strtotime_tz($text, $tz) {
+  $orig_tz = date_default_timezone_get();
+  date_default_timezone_set($tz);
+  $t = strtotime($text);
+  date_default_timezone_set($orig_tz);
+  return $t;
+}
 
 ?>
