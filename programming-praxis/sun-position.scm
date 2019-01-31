@@ -15,11 +15,27 @@
              (loop (cdr fns)
                    ((car fns) result)))))))
 
+(define (range low high)
+  (if (> low high) '()
+      (cons low (range (+ 1 low) high))))
+
+(define (show . words)
+  (display words)
+  (newline))
+
 (define (r->d r)
   (* r  57.2958))
 
 (define (d->r d)
   (* d 0.0174533))
+
+(define (hh->ts hh)
+  (let* ((h (floor hh))
+         (m (* (- hh h) 60)))
+    (list h m)))
+
+(define (ts->hh ts)
+  (+ (car ts) (/ (cadr ts) 60)))
 
 ;; /d means these work in degrees.
 (define cos/d (compose cos d->r))
@@ -98,11 +114,13 @@
                       (tan/d decl/v))))
         (/ tcf/v 60))))
 
+(define dc-lat  39)
+(define dc-lng  -77)
+(define dc-tz  -5)
+
 ;; Check it.
 ;; https://www.pveducation.org/pvcdrom/properties-of-sunlight/sun-position-calculator
-(let* ((dc-lstm (lstm -5))
-       (dc-lat  39)
-       (dc-lng  -77)
+(let* ((dc-lstm (lstm dc-tz))
        (doy     30)
        (lt     (+ 9 (/ 9 60)))
        (eot/v   (eot doy))
@@ -116,4 +134,23 @@
        (ss/v  (sunset decl/v dc-lat tcf/v)))
   (list e/v a/v))
 
+(define (sun-posn lat lng tz-offset day-of-year hour-of-day)
+  (let* ((lstm/v (lstm -5))
+         (eot/v   (eot day-of-year))
+         (tcf/v   (tcf lng lstm/v eot/v))
+         (decl/v (decl day-of-year))
+         (lst/v  (lst hour-of-day tcf/v))
+         (hra/v (hra lst/v))
+         (e/v   (elevation decl/v lat hra/v))
+         (a/v   (azimuth decl/v lat hra/v)))
+    (cons e/v a/v)))
 
+(for-each (lambda (hour)
+            (define (p offset)
+              (show (+ hour offset) ': (sun-posn dc-lat dc-lng dc-tz 30 (+ hour offset))))
+            (p 0)
+            (p .25)
+            (p .5)
+            (p .75))
+          (range 6 18))
+         
