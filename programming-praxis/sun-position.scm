@@ -145,12 +145,17 @@
          (a/v   (azimuth decl/v lat hra/v)))
     (cons e/v a/v)))
 
-(for-each (lambda (hour)
-            (define (p offset)
-              (show (+ hour offset) ': (sun-posn dc-lat dc-lng dc-tz 30 (+ hour offset))))
-            (p 0)
-            (p .25)
-            (p .5)
-            (p .75))
-          (range 6 18))
+
+(sun-posn dc-lat dc-lng dc-tz 30 14.75)
+(sun-posn dc-lat dc-lng dc-tz 30 (ts->hh '(7 23)))
+
+(let ((ys-lat 44.560184)
+      (ys-lng -110.574387)
+      (ys-tz -7)
+      (doy 196)) ; July 15th
+  (for-each (lambda (hour)
+              (show hour ': (sun-posn ys-lat ys-lng ys-tz doy hour)))
+            (range 6 22)))
+
          
+
