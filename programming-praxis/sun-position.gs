@@ -2,7 +2,6 @@
  *
  * Google Sheets Script Editor version of the sun-position code
  */
-
 /*
 * See:
 * http://www.blogbyben.com/2019/01/go-towards-light-direction-and-time.html
@@ -12,10 +11,10 @@
 
 eval(UrlFetchApp.fetch('https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.js').getContentText());
 
-function solarPosition(lat, lng, ts) {
+function solarPosition(lat, lng, ts, tzOffset) {
   var doy = moment(ts).dayOfYear();
   var hod = moment(ts).hour() + (moment(ts).minute() / 60);
-  var tz  = moment(ts).utcOffset() / 60;
+  var tz  = tzOffset === undefined ? (moment(ts).utcOffset() / 60) : tzOffset;
   
   var usingDegrees = function(fn) {
     return function(dd) { return fn(dd * 0.0174533); };
@@ -73,11 +72,12 @@ function solarPosition(lat, lng, ts) {
  * @param lat latitude of interest
  * @param lng longitude of interest
  * @param ts timestamp
+ * @param tzOffset optional timezone offset from UTC. 
  * @return elevation in degrees
  * @customfunction
  */
-function elevation(lat, lng, ts) {
-  return solarPosition(lat, lng, ts).elevation;
+function elevation(lat, lng, ts, tzOffset) {
+  return solarPosition(lat, lng, ts, tzOffset).elevation;
 }
 
 /**
@@ -86,11 +86,12 @@ function elevation(lat, lng, ts) {
  * @param lat latitude of interest
  * @param lng longitude of interest
  * @param ts timestamp
+ * @param tzOffset optional timezone offset from UTC. 
  * @return azimuth in degrees
  * @customfunction
  */
-function azimuth(lat, lng, ts) {
-  return solarPosition(lat, lng, ts).azimuth;
+function azimuth(lat, lng, ts, tzOffset) {
+  return solarPosition(lat, lng, ts, tzOffset).azimuth;
 }
 
 /**
@@ -99,11 +100,12 @@ function azimuth(lat, lng, ts) {
  * @param lat latitude of interest
  * @param lng longitude of interest
  * @param ts timestamp
+ * @param tzOffset optional timezone offset from UTC. 
  * @return sunrise as Google Sheets time
  * @customfunction
  */
-function sunrise(lat, lng, ts) {
-  return solarPosition(lat, lng, ts).sunrise;
+function sunrise(lat, lng, ts, tzOffset) {
+  return solarPosition(lat, lng, ts, tzOffset).sunrise;
 }
 
 /**
@@ -112,9 +114,10 @@ function sunrise(lat, lng, ts) {
  * @param lat latitude of interest
  * @param lng longitude of interest
  * @param ts timestamp
+ * @param tzOffset optional timezone offset from UTC. 
  * @return sunset as Google Sheets time
  * @customfunction
  */
-function sunset(lat, lng, ts) {
-  return solarPosition(lat, lng, ts).sunset;
+function sunset(lat, lng, ts, tzOffset) {
+  return solarPosition(lat, lng, ts, tzOffset).sunset;
 }
