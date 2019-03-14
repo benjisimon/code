@@ -10,11 +10,17 @@ $lineup = make_lineup($subject);
 start_snippet('shell');
 ?>
 <? if($lineup) { ?>
+  <div class="instructions">
+    Click on the images below to zoom in.
+  </div>
+
   <div class="previews">
     <? foreach($lineup as $i => $name) { ?>
       <div class="frame">
-        <div class="id"><?= lineup_id($i) ?></div>
-        <img src="<?= lineup_img_src($subject, $name) ?>"/>
+        <div class="id"><?= lineup_id($subject, $name) ?></div>
+        <a href="<?= lineup_view_href($subject, $name)?>">
+          <img src="<?= lineup_img_src($subject, $name) ?>"/>
+        </a>
       </div>
     <? } ?>
   </div>

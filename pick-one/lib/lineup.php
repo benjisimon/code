@@ -24,7 +24,13 @@ function lineup_img_src($subject, $name) {
   return resource_url("subjects/$subject/$name");
 }
 
-function lineup_id($i) {
+
+function lineup_view_href($subject, $name) {
+  return resource_url("view.php", ['s' => $subject, 'n' => $name]);
+}
+
+function lineup_id($subject, $name) {
+  $i = array_search($name, make_lineup($subject));
   return chr($i + 65);
 }
 ?>
