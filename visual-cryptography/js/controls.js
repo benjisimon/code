@@ -19,6 +19,8 @@ $(document).ready(function() {
     $('#source').show();
     $('#share-1').hide();
     $('#share-2').hide();
+    $('.decrypt').hide();
+    $('.encrypt').show();
 
     ctx.clearRect(0, 0, source.width, source.height);
   });
@@ -69,6 +71,12 @@ $(document).ready(function() {
     ctx1.putImageData(share1Data, 0, 0);
     ctx2.putImageData(share2Data, 0, 0);
 
+    $('.encrypt').hide();
+    $('.decrypt').show();
+
+  });
+
+  $(document).on('click', '.decrypt', function() {
   });
 
 });

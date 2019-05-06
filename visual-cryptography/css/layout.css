@@ -34,4 +34,15 @@ canvas {
   border-radius: 8px;
 }
 
+.bounds {
+  position: relative;
+  background-color: #FFF;
+}
+
+.bounds canvas {
+  position: relative;
+  background-color: transparent;
+}
+
+
 .hidden { display: none; } 

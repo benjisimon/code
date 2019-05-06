@@ -23,10 +23,13 @@ require_once('lib/siteconfig.php');
   <body>
     <div class="page">
       <canvas id="source" width="400" height="300"></canvas>
-      <canvas id="share-1" width="400" height="300" class="hidden"></canvas>
-      <canvas id="share-2" width="400" height="300" class="hidden"></canvas> 
+      <div class="bounds">
+        <canvas id="share-1" width="400" height="300" class="hidden"></canvas>
+        <canvas id="share-2" width="400" height="300" class="hidden"></canvas> 
+      </div>
      
       <div class="controls">
+        <button class="decrypt hidden">Decrypt</button>
         <button class="encrypt">Encrypt</button>
         <button class="reset">Start Over</button>
       </div>
