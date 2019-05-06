@@ -1,0 +1,35 @@
+/*
+ * A CSS file for impelmenting the look of our page
+ */
+
+body {
+  margin: 0px;
+  padding: 0px;
+  background-color :#0C8346;
+}
+
+.page {
+  width: 400px;
+  margin: auto;
+  padding: 30px 0px 0px 0px;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-around;
+}
+
+button {
+  background-color: #E5C2C0;
+  border: 1px solid #0D5D56;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: bold;
+  padding: 5px 15px;
+}
+
+#canvas {
+  background-color: #FFF;
+  border: 2px solid #0D5D56;
+  border-radius: 8px;
+}
