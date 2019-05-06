@@ -3,33 +3,72 @@
  */
 
 $(document).ready(function() {
-  var canvas = $('#canvas').get(0);
-  var ctx = canvas.getContext ? canvas.getContext('2d') : null;
+
+  function coinFlip() {
+    return (Math.floor(Math.random() * 2) == 0);
+  }
+
+  function paintPixel(imageData, i) {
+    imageData.data[i + 3] = 255;
+  }
+
+  var source = $('#source').get(0);
+  var ctx = source.getContext ? source.getContext('2d') : null;
   
   $(document).on('click', '.reset', function() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    $('#source').show();
+    $('#share-1').hide();
+    $('#share-2').hide();
+
+    ctx.clearRect(0, 0, source.width, source.height);
   });
 
   $(document).on('click', '.encrypt', function() {
-    var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    console.log(imageData.data);
-    for(var i = 0; i < imageData.data.length; i += 4) {
-      var r = imageData.data[i];
-      var g = imageData.data[i+1];
-      var b = imageData.data[i+2];
-      var a = imageData.data[i+3];
+    $('#source').hide();
+    $('#share-1').show();
+    $('#share-2').show();
 
-      if(a == 0) {
-        continue;
+    var share1 =  $('#share-1').get(0);
+    var share2 =  $('#share-2').get(0);
+    var ctx1   = share1.getContext('2d');
+    var ctx2   = share2.getContext('2d');
+
+    ctx1.clearRect(0, 0, ctx1.width, ctx1.height);
+    ctx2.clearRect(0, 0, ctx2.width, ctx2.height);
+
+
+    var srcData = ctx.getImageData(0, 0, source.width, source.height);
+    console.log(ctx1);
+    var share1Data = ctx1.getImageData(0, 0, share1.width, share1.height);
+    var share2Data = ctx2.getImageData(0, 0, share2.width, share2.height);
+
+    for(var x = 0; x < srcData.width; x += 2) {
+      for(var y = 0; y < srcData.height; y++) {
+        var i = ((y * srcData.width * 4) + (x * 4));
+        var isBlack = srcData.data[i+3] == 255;
+        if(isBlack) {
+          if(coinFlip()) {
+            paintPixel(share1Data, i);
+            paintPixel(share2Data, i + 4);
+          } else {
+            paintPixel(share1Data, i + 4);
+            paintPixel(share2Data, i);
+          }
+        } else {
+          if(coinFlip()) {
+            paintPixel(share1Data, i);
+            paintPixel(share2Data, i);
+          } else {
+            paintPixel(share1Data, i + 4);
+            paintPixel(share2Data, i + 4);
+          }
+        }
       }
-
-      if(a == 255 & (r == g == b == 0)) {
-        var x  = i % canvas.width;
-        var y  = Math.floor(i / 4 / canvas.width);
-        console.log(x, y);
-      }
-
     }
+
+    ctx1.putImageData(share1Data, 0, 0);
+    ctx2.putImageData(share2Data, 0, 0);
+
   });
 
 });

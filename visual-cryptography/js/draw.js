@@ -3,7 +3,7 @@
  */
 
 $(document).ready(function() {
-  var canvas = $('#canvas').get(0);
+  var canvas = $('#source').get(0);
   var ctx = canvas.getContext ? canvas.getContext('2d') : null;
   if(ctx) {
     ctx.lineWidth = 20;
@@ -22,12 +22,12 @@ $(document).ready(function() {
 
   var prev = { x: null, y: null };
   
-  $(document).on('mousedown', '#canvas', function(evt) {
+  $(document).on('mousedown', '#source', function(evt) {
     prev.x = evt.offsetX;
     prev.y = evt.offsetY;
   });
 
-  $(document).on('mousemove', '#canvas', function(evt) {
+  $(document).on('mousemove', '#source', function(evt) {
     if(evt.which == 1) {
       curr = { x: evt.offsetX, y: evt.offsetY };
       drawLine(prev, curr);

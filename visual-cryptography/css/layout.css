@@ -28,8 +28,10 @@ button {
   padding: 5px 15px;
 }
 
-#canvas {
+canvas {
   background-color: #FFF;
   border: 2px solid #0D5D56;
   border-radius: 8px;
 }
+
+.hidden { display: none; } 
