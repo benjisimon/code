@@ -10,7 +10,7 @@ function g($array, $key, $default = false) {
 function app_url($path = '', $params = []) {
   $host = $_SERVER['SERVER_NAME'];
 
-  return "http://$host/visual-encryption/$path" . ($params ? '?'. http_build_query($params, false, '&') : '');
+  return "http://$host/visual-cryptography/$path" . ($params ? '?'. http_build_query($params, false, '&') : '');
 }
 
 function resource_url($path, $params = []) {
