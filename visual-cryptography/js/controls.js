@@ -77,6 +77,7 @@ $(document).ready(function() {
 
   $(document).on('click', '.decrypt', function() {
     $('.bounds').animate({height: '304px'}, {duration: 5000});
+    $('.decrypt').hide();
   });
 
 });
