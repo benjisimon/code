@@ -15,6 +15,7 @@ body {
 }
 
 .controls {
+  margin-top: 20px;
   display: flex;
   justify-content: space-around;
 }
@@ -35,14 +36,25 @@ canvas {
 }
 
 .bounds {
+  width: 404px;
   position: relative;
   background-color: #FFF;
+  height: 610px;
+  border: 2px solid #FFF;
+  border-radius: 8px;
+  
 }
 
 .bounds canvas {
-  position: relative;
+  position: absolute;
+  height: 300px;
+  display: block;
   background-color: transparent;
 }
 
+.bounds #share-1 { top: 0px; }
+.bounds #share-2 { bottom: 0px; }
 
-.hidden { display: none; } 
+
+
+.bounds canvas.hidden, .hidden { display: none; } 

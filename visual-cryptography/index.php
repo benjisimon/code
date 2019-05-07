@@ -23,9 +23,9 @@ require_once('lib/siteconfig.php');
   <body>
     <div class="page">
       <canvas id="source" width="400" height="300"></canvas>
-      <div class="bounds">
-        <canvas id="share-1" width="400" height="300" class="hidden"></canvas>
-        <canvas id="share-2" width="400" height="300" class="hidden"></canvas> 
+      <div class="bounds hidden">
+        <canvas id="share-1" width="400" height="300"></canvas>
+        <canvas id="share-2" width="400" height="300"></canvas> 
       </div>
      
       <div class="controls">

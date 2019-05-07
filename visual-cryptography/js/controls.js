@@ -14,33 +14,32 @@ $(document).ready(function() {
 
   var source = $('#source').get(0);
   var ctx = source.getContext ? source.getContext('2d') : null;
+
+  var share1 =  $('#share-1').get(0);
+  var share2 =  $('#share-2').get(0);
+  var ctx1   = share1.getContext('2d');
+  var ctx2   = share2.getContext('2d');
   
   $(document).on('click', '.reset', function() {
     $('#source').show();
-    $('#share-1').hide();
-    $('#share-2').hide();
+    $('.bounds').hide().css('height', '610px');
     $('.decrypt').hide();
     $('.encrypt').show();
 
     ctx.clearRect(0, 0, source.width, source.height);
+    ctx1.clearRect(0, 0, source.width, source.height);
+    ctx2.clearRect(0, 0, source.width, source.height);
   });
 
   $(document).on('click', '.encrypt', function() {
     $('#source').hide();
-    $('#share-1').show();
-    $('#share-2').show();
-
-    var share1 =  $('#share-1').get(0);
-    var share2 =  $('#share-2').get(0);
-    var ctx1   = share1.getContext('2d');
-    var ctx2   = share2.getContext('2d');
+    $('.bounds').show();
 
     ctx1.clearRect(0, 0, ctx1.width, ctx1.height);
     ctx2.clearRect(0, 0, ctx2.width, ctx2.height);
 
 
     var srcData = ctx.getImageData(0, 0, source.width, source.height);
-    console.log(ctx1);
     var share1Data = ctx1.getImageData(0, 0, share1.width, share1.height);
     var share2Data = ctx2.getImageData(0, 0, share2.width, share2.height);
 
@@ -77,6 +76,7 @@ $(document).ready(function() {
   });
 
   $(document).on('click', '.decrypt', function() {
+    $('.bounds').animate({height: '304px'}, {duration: 5000});
   });
 
 });
