@@ -5,15 +5,12 @@
 $(document).ready(function() {
   var canvas = $('#source').get(0);
   var ctx = canvas.getContext ? canvas.getContext('2d') : null;
-  if(ctx) {
-    ctx.lineWidth = 20;
-    ctx.lineCap   = 'round';
-    ctx.fillStyle = '#000';
-  }
 
   function drawLine(from, to) {
     if(ctx) {
       ctx.beginPath();
+      ctx.lineWidth = 20;
+      ctx.lineCap   = 'round';
       ctx.moveTo(from.x, from.y);
       ctx.lineTo(to.x, to.y);
       ctx.stroke();
@@ -22,17 +19,29 @@ $(document).ready(function() {
 
   var prev = { x: null, y: null };
   
-  $(document).on('mousedown', '#source', function(evt) {
-    prev.x = evt.offsetX;
-    prev.y = evt.offsetY;
+  $(document).on('touchstart mousedown', '#source', function(evt) {
+    prev.x = evt.clientX;
+    prev.y = evt.clientY;
   });
 
   $(document).on('mousemove', '#source', function(evt) {
     if(evt.which == 1) {
-      curr = { x: evt.offsetX, y: evt.offsetY };
+      curr = { x: evt.clientX, y: evt.clientY };
       drawLine(prev, curr);
       prev = curr;
     }
+  });
+  
+  $(document).on('touchmove', '#source', function(evt) {
+    var touch = evt.originalEvent.touches[0] || evt.originalEvent.changedTouches[0];
+
+    var elm = $(this).offset();
+    var x = touch.pageX - elm.left;
+    var y = touch.pageY - elm.top;
+    
+    curr = { x: x, y: y };
+    drawLine(prev, curr);
+    prev = curr;
   });
   
 });

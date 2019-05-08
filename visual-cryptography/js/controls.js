@@ -4,6 +4,19 @@
 
 $(document).ready(function() {
 
+  function packUi() {
+    var padding     = 20;
+    var canvasWidth = Math.floor($(window).width() - (padding * 2));
+    var canvasHeight = (Math.floor($(window).height() / 2) - (padding * 5));
+
+    $('canvas').attr('width', canvasWidth);
+    $('canvas').attr('height', canvasHeight);
+    $('.page').width(canvasWidth + 2);
+    $('.bounds').height((canvasHeight * 2) + 40).width(canvasWidth);
+    $('.bounds').attr('expanded-height', $('.bounds').height());
+  }
+
+
   function coinFlip() {
     return (Math.floor(Math.random() * 2) == 0);
   }
@@ -19,10 +32,12 @@ $(document).ready(function() {
   var share2 =  $('#share-2').get(0);
   var ctx1   = share1.getContext('2d');
   var ctx2   = share2.getContext('2d');
+
+  packUi();
   
   $(document).on('click', '.reset', function() {
     $('#source').show();
-    $('.bounds').hide().css('height', '610px');
+    $('.bounds').hide().height($('.bounds').attr('expanded-height'));
     $('.decrypt').hide();
     $('.encrypt').show();
 
@@ -76,7 +91,7 @@ $(document).ready(function() {
   });
 
   $(document).on('click', '.decrypt', function() {
-    $('.bounds').animate({height: '304px'}, {duration: 5000});
+    $('.bounds').animate({height: $('#share-1').height() + 4}, {duration: 5000});
     $('.decrypt').hide();
   });
 

@@ -36,7 +36,6 @@ canvas {
 }
 
 .bounds {
-  width: 404px;
   position: relative;
   background-color: #FFF;
   height: 610px;
@@ -47,7 +46,6 @@ canvas {
 
 .bounds canvas {
   position: absolute;
-  height: 300px;
   display: block;
   background-color: transparent;
 }
