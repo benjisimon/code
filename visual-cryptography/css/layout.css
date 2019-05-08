@@ -8,6 +8,7 @@ body {
   background-color :#0C8346;
 }
 
+
 .page {
   width: 400px;
   margin: auto;
@@ -30,6 +31,7 @@ button {
 }
 
 canvas {
+  touch-action: none;
   background-color: #FFF;
   border: 2px solid #0D5D56;
   border-radius: 8px;

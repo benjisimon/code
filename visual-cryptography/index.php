@@ -12,7 +12,7 @@ require_once('lib/siteconfig.php');
 <html>
   <head>
     <title>Visual Cryptography</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     
     <script
       src="https://code.jquery.com/jquery-3.4.1.js"

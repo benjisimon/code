@@ -20,6 +20,7 @@ $(document).ready(function() {
   var prev = { x: null, y: null };
   
   $(document).on('touchstart mousedown', '#source', function(evt) {
+    evt.preventDefault();
     prev.x = evt.clientX;
     prev.y = evt.clientY;
   });
@@ -33,6 +34,7 @@ $(document).ready(function() {
   });
   
   $(document).on('touchmove', '#source', function(evt) {
+    evt.preventDefault();
     var touch = evt.originalEvent.touches[0] || evt.originalEvent.changedTouches[0];
 
     var elm = $(this).offset();
