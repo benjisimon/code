@@ -1,0 +1,68 @@
+/*
+ * A CSS file for styling our app
+ */
+
+@import url('https://fonts.googleapis.com/css?family=Bad+Script|Permanent+Marker&display=swap');
+
+
+body {
+  margin: 0px;
+  padding: 0px;
+  background-color: #FAF0CA;
+  color: #222;
+  font-family: arial;
+  display: flex;
+  flex-direction: column;
+}
+
+a {
+  color: #EE964B;
+}
+
+.body {
+  flex: 1;
+  max-width: 600px;
+  margin: auto;
+}
+
+.header {
+  padding: 30px;
+  text-align: center;
+}
+
+
+.footer {
+  text-align: center;
+  padding: 30px;
+  font-size: 11px;
+}
+
+h1 {
+  color: #0D3B66;
+  font-family: 'Permanent Marker';
+  margin: 0px;
+  padding: 0px;
+}
+
+h2 {
+  font-size: 10px;
+}
+
+.prompt label,
+.prompt input {
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+}
+
+.entry {
+  margin-bottom: 30px;
+  border: 2px solid #F95738;
+  padding: 15px;
+  background-color: #FFF;
+  border-radius: 12px;
+}
+
+.entry p {
+  font-family: 'Bad Script';
+}

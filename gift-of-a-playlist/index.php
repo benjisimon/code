@@ -12,6 +12,10 @@ $playlist = $doc_id && $sheet_id ? gsheet_playlist($doc_id, $sheet_id) : false;
 <html>
   <head>
     <title>Gift-of-a-Playlist</title>
+    <link rel="Stylesheet" 
+          href="css/layout.css?v=<?= filemtime(__DIR__ . '/css/layout.css') ?>"
+          type="text/css"/>
+          
   </head>
 
   <body>

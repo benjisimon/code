@@ -41,9 +41,12 @@ function gsheet_playlist($doc_id, $sheet_id) {
   foreach($feed->entry as $entry) {
     $ns = $entry->getNamespaces(true);
     $attrs = $entry->children($ns['gsx']);
+    $message = $attrs->message;
+    $message = strpos($message, '<') === false ? nl2br($message) : $message;
+
     $playlist[] = [
       'youtube_id' => youtube_video_id($attrs->video . ""),
-      'message' => $attrs->message . ""
+      'message' => $message
     ];
   }
 
