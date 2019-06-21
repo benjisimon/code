@@ -16,7 +16,11 @@ $playlist = $doc_id && $sheet_id ? gsheet_playlist($doc_id, $sheet_id) : false;
     <link rel="Stylesheet" 
           href="css/layout.css?v=<?= filemtime(__DIR__ . '/css/layout.css') ?>"
           type="text/css"/>
-          
+    
+    <script
+      src="https://code.jquery.com/jquery-3.4.1.min.js"
+      integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+      crossorigin="anonymous"></script>      
   </head>
 
   <body>
@@ -40,5 +44,7 @@ $playlist = $doc_id && $sheet_id ? gsheet_playlist($doc_id, $sheet_id) : false;
     <div class="footer">
       Powered by <i><a href="index.php">Gift-of-a-Playlist</a></i>
     </div>
+
+    <script src="js/ui.js?v=<?= filemtime(__DIR__ . '/js/ui.js') ?>"></script>
   </body>
 </html>

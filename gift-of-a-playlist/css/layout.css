@@ -80,10 +80,29 @@ h2 {
 
 .video-container iframe,
 .video-container object,
-.video-container embed {
+.video-container embed,
+.video-container .cover {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
+}
+
+.cover {
+  background-color: #EE964B;
+  border: 2px solid #F95738;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cover input {
+  font-size: 250%;
+  color: #0D3B66;
+  font-family: 'Permanent Marker';
+  background-color: #F95738;
+  border-radius: 12px;
+  padding: 1em;
 }
