@@ -2,8 +2,8 @@
 ;; Work with Shamir Secret Sharing
 ;; http://kimh.github.io/blog/en/security/protect-your-secret-key-with-shamirs-secret-sharing/
 ;; https://en.wikipedia.org/wiki/Shamir%27s_Secret_Sharing#Example
+;; https://www.youtube.com/watch?v=_zK_KhHW6og
 ;;
-
 
 
 (define ^ expt)
@@ -16,36 +16,84 @@
 
 (define (neg x) (* -1 x))
 
-'
-(define (poly-3 t1 t2 t3)
+(define (show . words)
+  (display words)
+  (newline))
+
+(define (pick items indexes)
+  (map (lambda (i)
+         (g items i))
+       indexes))
+
+
+(define make-share cons)
+(define share-x car)
+(define share-y cdr)
+
+(define (make-share-poly secret threshold)
+  (let ((coeffs (cons secret (map (lambda (i)
+                                    (modulo (random-next) 300))
+                                  (range 1 (- threshold 1))))))
+    (lambda (x)
+      (let loop ((coeffs coeffs)
+                 (i 0)
+                 (sum 0))
+        (cond ((null? coeffs) sum)
+              (else
+               (loop (cdr coeffs)
+                     (+ i 1)
+                     (+ sum (* (car coeffs) (^ x i))))))))))
+
+(define (lagr xs i x)
+  (let loop ((product 1)
+             (j 0))
+    (cond ((= i j) (loop product (+ j 1)))
+          ((= j (length xs))  product)
+          (else 
+           (loop (* (/ (- x (g xs j))
+                       (- (g xs i) (g xs j)))
+                    product)
+                 (+ j 1))))))
+
+(define (make-soln-poly shares)
   (lambda (x)
-    (+ t1
-       (* t2 x)
-       (* t3 (^ x 2)))))
+    (let loop ((j 0)
+               (remaining shares)
+               (sum 0))
+      (cond ((null? remaining) sum)
+            (else
+             (loop (+ 1 j)
+                   (cdr remaining)
+                   (+ sum (* (share-y (car remaining))
+                             (lagr (map share-x shares) j x)))))))))
 
 
-(define secret 1234)
-(define poly (poly-3 secret 166 94)
+;;
+;; Example
+;;  - Secret: 911
+;;  - Threshold: 7 - need 7 individuals to pool their shares to decode
+;;                   the secret
+;;
+(define share-poly (make-share-poly 911 7))
 
-(define (share poly x)
-  (cons x (poly x)))
 
+;;
+;; Generate 20 shares.
+;;
+;; Note: (share-poly 0) is our secret -- so don't hand it out.
+;;
 (define shares (map (lambda (i)
-                      (share poly i))
-                    (range 1 6)))
-(define sx car)
-(define sy cdr)
+                      (make-share i (share-poly i)))
+                    (range 1 20)))
 
+;;
+;; Take any 7 shares from the list and generate our solution function.
+;;
+(define soln (make-soln-poly (pick shares '(0 1 2 4 5 15 17))))
 
-(define lp (lambda (x)
-             (+
-              (* 1942 ((poly-3 (/ 10 3) (neg (/ 3 2))  (/ 1 6)) x))
-              (* 3402 ((poly-3 (neg 5)  (/ 7 2)        (neg (/ 1 2))) x))
-              (* 4414 ((poly-3 (/ 8 3)  (neg 2)        (/ 1 3)) x)))))
+;;
+;; x = 0 is our secret, just like it's our secret in the share fn.
+;;
+(soln 0)
 
-(lp 0)
-(lp 1)
-(lp 2)
-shares
-              
 
