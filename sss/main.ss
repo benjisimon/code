@@ -14,8 +14,6 @@
   (if (> lower upper) '()
       (cons lower (range (+ 1 lower) upper))))
 
-(define (neg x) (* -1 x))
-
 (define (show . words)
   (display words)
   (newline))
@@ -30,19 +28,16 @@
 (define share-x car)
 (define share-y cdr)
 
-(define (make-share-poly secret threshold)
-  (let ((coeffs (cons secret (map (lambda (i)
-                                    (modulo (random-next) 300))
-                                  (range 1 (- threshold 1))))))
-    (lambda (x)
-      (let loop ((coeffs coeffs)
-                 (i 0)
-                 (sum 0))
-        (cond ((null? coeffs) sum)
-              (else
-               (loop (cdr coeffs)
-                     (+ i 1)
-                     (+ sum (* (car coeffs) (^ x i))))))))))
+(define (make-poly coeffs)
+  (lambda (x)
+    (let loop ((coeffs coeffs)
+               (i 0)
+               (sum 0))
+      (cond ((null? coeffs) sum)
+            (else
+             (loop (cdr coeffs)
+                   (+ i 1)
+                   (+ sum (* (car coeffs) (^ x i)))))))))
 
 (define (lagr xs i x)
   (let loop ((product 1)
@@ -55,7 +50,7 @@
                     product)
                  (+ j 1))))))
 
-(define (make-soln-poly shares)
+(define (make-lagr-poly shares)
   (lambda (x)
     (let loop ((j 0)
                (remaining shares)
@@ -74,7 +69,7 @@
 ;;  - Threshold: 7 - need 7 individuals to pool their shares to decode
 ;;                   the secret
 ;;
-(define share-poly (make-share-poly 911 7))
+(define share-poly (make-poly '(911 2 27 17 10 37 19))) 
 
 
 ;;
@@ -89,7 +84,7 @@
 ;;
 ;; Take any 7 shares from the list and generate our solution function.
 ;;
-(define soln (make-soln-poly (pick shares '(0 1 2 4 5 15 17))))
+(define soln (make-lagr-poly (pick shares '(0 1 2 4 5 15 17))))
 
 ;;
 ;; x = 0 is our secret, just like it's our secret in the share fn.
