@@ -1,0 +1,25 @@
+/*
+ * A CSS file for styling our page.
+ */
+
+body {
+  margin: 0px;
+  padding: 1em 3em;
+  background-color: #222;
+  color: white;
+}
+
+body, input {
+  font-size: 18px;
+  font-family: 'Stoke', serif;
+}
+
+input {
+  display: block;
+  width: 100%;
+}
+
+.feedback {
+  color: Orange;
+  margin-top: 1em;
+}
