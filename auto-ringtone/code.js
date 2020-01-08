@@ -4,6 +4,8 @@
 
 $(document).ready(function() {
 
+  var tick = 250;
+
   function textToCode(text) {
     var code      = "";
     var letters   = text.toUpperCase().split("");
@@ -30,38 +32,50 @@ $(document).ready(function() {
       }
     }
 
-    return code;
+    return code.split('');
   }
-  
 
-  function play(code) {
+  // Inspired by:
+  // https://modernweb.com/audio-synthesis-in-javascript/
+  function tone(units) {
     var ctx = new (window.AudioContext || window.webkitAudioContext)();
     var osc = ctx.createOscillator();  
+    var duration = units * tick;
+    var attack = 10;
+    var gain = ctx.createGain();
+    
+    gain.connect(ctx.destination);
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(1, ctx.currentTime + (attack / 1000));
+    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + (duration / 1000));
+
     osc.type = "sine";
     osc.frequency.value = 523;
-    
-    var gain = ctx.createGain();
     osc.connect(gain);
-    gain.connect(ctx.destination);
 
-
-    var tick = .25
-
-    var clock = 0;
-    for(var i = 0; i < code.length; i++) {
-      var c = code[i];
-      console.log('x', c, clock);
-      if(c == ' ') {
-        clock += (tick * 3);
-      } else {
-        var duration = tick * (c == '.' ? 1 : 3);
-        gain.gain.linearRampToValueAtTime(1, ctx.currentTime + clock + duration);
-        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + clock + duration + tick);
-        clock += tick;
-      }
-    }
     osc.start();
-    osc.stop(ctx.currentTime + clock);
+    setTimeout(() => {
+      osc.stop();
+      osc.disconnect(gain);
+      gain.disconnect(ctx.destination);
+    }, duration);
+  }
+
+  function play(code) {
+    if(code.length > 0) {
+      var c = code.shift();
+      if(c == ' ') {
+        var snooze = tick;
+      } else {
+        var units = (c == '.' ? 1 : 3)
+        var snooze = tick * units;
+        tone(units);
+      }
+      snooze += tick;
+      setTimeout(() => {
+        play(code);
+      }, snooze);
+    }
   }
 
 
@@ -70,7 +84,7 @@ $(document).ready(function() {
     var seed  = input.replace(/[^A-Za-z]/, '').toUpperCase().substring(0, 3);
     var seed  = seed ? seed : 'UKN';
     var code  = textToCode(seed);
-    $('.feedback').html("Playing ringtone for <u>"+ input + "</u>: " + seed + " &raquo; <u>" + code + "</u>");
+    $('.feedback').html("Playing ringtone for <u>"+ input + "</u>: " + seed + " &raquo; <u>" + code.join('') + "</u>");
     play(code);
   }
   
