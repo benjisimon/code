@@ -4,7 +4,7 @@
 
 $(document).ready(function() {
 
-  var tick = 250;
+  var tick = 120;;
 
   function textToCode(text) {
     var code      = "";
@@ -41,7 +41,7 @@ $(document).ready(function() {
     var ctx = new (window.AudioContext || window.webkitAudioContext)();
     var osc = ctx.createOscillator();  
     var duration = units * tick;
-    var attack = 10;
+    var attack = 1;
     var gain = ctx.createGain();
     
     gain.connect(ctx.destination);
@@ -50,7 +50,7 @@ $(document).ready(function() {
     gain.gain.linearRampToValueAtTime(0, ctx.currentTime + (duration / 1000));
 
     osc.type = "sine";
-    osc.frequency.value = 523;
+    osc.frequency.value = units == 1 ? 440.000 : 880.0000;
     osc.connect(gain);
 
     osc.start();
@@ -81,7 +81,7 @@ $(document).ready(function() {
 
   function go() {
     var input = $('input').val();
-    var seed  = input.replace(/[^A-Za-z]/, '').toUpperCase().substring(0, 3);
+    var seed  = input.replace(/[^A-Za-z]/, '').toUpperCase().substring(0, 6);
     var seed  = seed ? seed : 'UKN';
     var code  = textToCode(seed);
     $('.feedback').html("Playing ringtone for <u>"+ input + "</u>: " + seed + " &raquo; <u>" + code.join('') + "</u>");
