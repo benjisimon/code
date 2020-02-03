@@ -40,7 +40,7 @@ function renderMap(points) {
     return { x: x, y: y };
   }
 
-
+  ctx.font = "12px Arial";
   ctx.beginPath();
 
   var points = points.map(p => {
@@ -60,6 +60,8 @@ function renderMap(points) {
     } 
 
     ctx.beginPath();
+
+    ctx.fillText("#" + i + ": " + p.notes, p.posn.x + 2, p.posn.y - 5);
     ctx.arc(p.posn.x, p.posn.y, 4, 0, Math.PI * 2, true);
     ctx.fill();
   });

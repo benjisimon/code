@@ -26,7 +26,7 @@ function add_xy($data) {
 
   foreach($data as $i => $row) {
     $last_point = $points[count($points) - 1];
-    $rad = deg2rad($row['heading']);
+    $rad = deg2rad($row['heading'] - 180);
     $walked_x = round($row['distance'] * cos($rad), 1);
     $walked_y = round($row['distance'] * sin($rad), 1);
     $row['x'] = $last_point['x'] + $walked_x;
