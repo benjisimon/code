@@ -23,6 +23,7 @@ if(($data = g($_POST, 'data'))) {
 
       <? if($data) { ?>
         <div class="map">
+          <canvas></canvas>
         </div>
       <? } ?>
 
@@ -30,7 +31,7 @@ if(($data = g($_POST, 'data'))) {
         <p>
           Enter the data you collected:
         </p>
-        <textarea name="data" placeholder="Bearing, Distance, Notes"></textarea>
+        <textarea name="data" placeholder="Bearing, Distance, Notes"><?= g($_POST, 'data')?></textarea>
         <input type="submit" value="Show Map"/>
       </form>
 
@@ -38,10 +39,20 @@ if(($data = g($_POST, 'data'))) {
         Learn about the <a href="https://www.youtube.com/watch?v=Oo_soAz26gI">P.A.U.L. Method of Map Making</a>
       </h4>
 
+      <script
+        src="https://code.jquery.com/jquery-3.4.1.min.js"
+        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+        crossorigin="anonymous"></script>
+
+      <script
+        src="code.js?ver=<?= filemtime(__DIR__ . "/code.js")?>"></script>
+
       <? if($data) { ?>
-        <pre>
-         renderMap(<?= json_encode($data, JSON_PRETTY_PRINT) ?>);
-        </pre>
+        <script>
+         $(document).ready(function() {
+           renderMap(<?= json_encode($data, JSON_PRETTY_PRINT) ?>);
+         });
+        </script>
       <? } ?>
     </div>
   </body>

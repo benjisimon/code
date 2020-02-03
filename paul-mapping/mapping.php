@@ -53,6 +53,18 @@ function normalize_xy($points) {
     $points[$i]['x'] += $x_padding;
     $points[$i]['y'] += $y_padding;
   }
+
+  $max_x = $max_y = 0;
+  foreach($points as $i => $p) {
+    $max_x = max($max_x, $p['x']);
+    $max_y = max($max_y, $p['y']);
+  }
+
+  foreach($points as $i => $p) {
+    $points[$i]['max_x'] = $max_x;
+    $points[$i]['max_y'] = $max_y;
+  }
+
   return $points;
 }
 

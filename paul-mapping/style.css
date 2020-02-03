@@ -14,6 +14,16 @@ html, body {
   height: 100%;
 }
 
+.page .map {
+  flex: 2;
+}
+
+.page .map canvas {
+  border: 1px solid #C4C4C4;
+  margin: auto;
+  display: block;
+}
+
 .page form {
   flex: 1;
   display: flex;
