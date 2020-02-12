@@ -1,0 +1,31 @@
+/*
+ * A CSS file for rendering our page
+ */
+
+
+html {
+  height: 100%;
+}
+
+body {
+  height: 100%;
+  margin: 0;
+  padding: 5em;
+  background-color: #555;
+  font-size: 1.3em;
+}
+
+input {
+  font-size: 1.3em;
+}
+
+.page {
+  max-width: 30em;
+  margin: auto;
+}
+
+.page input, .page .board {
+  width: 100%;
+}
+
+.ui-helper-hidden-accessible { display:none; }
