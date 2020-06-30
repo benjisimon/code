@@ -1,0 +1,47 @@
+/*
+ * A CSS file for rendering the look of our site
+ */
+
+html, body {
+  padding: 0;
+  margin: 0;
+  height: 100%;
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.page .map {
+  flex: 2;
+}
+
+.page .map canvas {
+  border: 1px solid #C4C4C4;
+  margin: auto;
+  display: block;
+}
+
+.page form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.page form textarea {
+  display: block;
+  flex: 1;
+}
+
+.page form input {
+  display: block;
+  margin: 1em 0;
+  text-align: center;
+}
+
+h1, h2, h3, h4, form {
+  margin: 0;
+  padding: 5px 25px;
+}
