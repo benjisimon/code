@@ -4,7 +4,7 @@
 
 do_push() {
   m=$1 ; shift;
-  body=$(echo $m | cut -d : -f 2)
+  body=$(echo $m | sed 's/^push://')
   prep_stack
   (echo $body ; cat $STACK_FILE.last) > $STACK_FILE
 }

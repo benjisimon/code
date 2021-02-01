@@ -7,9 +7,13 @@
 
 MOS_BROKER_IP=100.25.165.97
 STACK_FILE=$HOME/.pimg.stack
+IMAGE_DIR=$(dirname $0)/img
 
 . $(dirname $0)/lib/mos.sh
 . $(dirname $0)/lib/stack.sh
+. $(dirname $0)/lib/image.sh
+
+img_display
 
 while true; do
   message=$(mos_sub pimgstack/1)
@@ -29,6 +33,5 @@ while true; do
       do_error $message
       ;;
   esac
-  top=$(stack_top)
-  echo $top
+  img_display
 done
