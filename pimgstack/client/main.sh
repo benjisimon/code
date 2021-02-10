@@ -5,10 +5,10 @@
 ## instructions from the queue
 ##
 
-MOS_BROKER_IP=100.25.165.97
 STACK_FILE=$HOME/.pimg.stack
 IMAGE_DIR=$(dirname $0)/img
 
+. $HOME/.pimg.settings
 . $(dirname $0)/lib/mos.sh
 . $(dirname $0)/lib/stack.sh
 . $(dirname $0)/lib/image.sh
