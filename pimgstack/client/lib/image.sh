@@ -5,7 +5,7 @@
 img_display() {
   top_url=$(stack_top)
   if [ -z "$top_url" ] ; then
-    img_render $IMAGE_DIR/empty.jpgpng
+    img_render $IMAGE_DIR/empty.jpg
   else
     wget -O $IMAGE_DIR/top.png -o $IMAGE_DIR/top.info $top_url
     img_render $IMAGE_DIR/top.png
