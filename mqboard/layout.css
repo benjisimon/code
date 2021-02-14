@@ -3,6 +3,8 @@
  */
 
 @import url('https://fonts.googleapis.com/css2?family=Playball&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600&display=swap');
+
 
 html {
   margin: 0;
@@ -21,9 +23,17 @@ body {
 
 .message {
   font-family: 'Playball', cursive;
-  font-size: 72px;
+  font-size:5em;
   text-align: center;
   margin: 1em;
   flex: 1;
   color: #000066;
+}
+
+.seq {
+  position: absolute;
+  bottom: 1em;
+  right: 1em;
+  font-family: 'Cinzel', serif;
+  font-size: 2em;
 }
