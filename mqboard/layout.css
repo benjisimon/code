@@ -1,0 +1,29 @@
+/*
+ * A CSS file for rendering the layout
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Playball&display=swap');
+
+html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  background-color: #E4E4E4;
+}
+
+.message {
+  font-family: 'Playball', cursive;
+  font-size: 72px;
+  text-align: center;
+  margin: 1em;
+  flex: 1;
+  color: #000066;
+}
