@@ -5,6 +5,8 @@
  *
  * The goal: let me leave love notes to the wife remotely
  * on an old iPad
+ *
+ * Pair this script with Tasker: https://taskernet.com/shares/?user=AS35m8l5RQjTRe3TULACE9yEJktuWU6aAnSRKY16uyMSAb3bzu7qeuaheX4adap2hJHO4tg%3D&id=Task%3AMq+Board+Publisher
  */
 
 $env = [

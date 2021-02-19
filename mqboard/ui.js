@@ -5,7 +5,9 @@
 var client = new Paho.MQTT.Client(Env.host, Env.port, Env.path, Env.clientId);
 
 client.onMessageArrived = function(m) {
-  $('.message').html(m.payloadString);
+  var p = JSON.parse(m.payloadString);
+  $('.message').html(p.message);
+  $('.seq').html(p.sequence);
 };
 
 client.connect({
