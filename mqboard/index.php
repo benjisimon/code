@@ -14,7 +14,7 @@ $env = [
   'port'     => 61619,
   'path'     => '/',
   'username' => 'mqboard',
-  'password' => 'c50504b9789548f371836c112d6aba62',
+  'password' => g($_GET, 'p'),
   'clientId' => 'MqBoardSubscriber',
   'topic'    => 'mqboard/1'
 ];
@@ -36,6 +36,15 @@ $env = [
     </div>
     <div class="seq">
     </div>
+    <div class="status">
+      Loading...
+    </div>
+
   </body>
   <script src="ui.js?ver=<?= md5_file(__DIR__ . '/ui.js')?>"></script>
 </html>
+
+<?
+function g($array, $key, $default = false) {
+  return array_key_exists($key, $array) ? $array[$key] : $default;
+}

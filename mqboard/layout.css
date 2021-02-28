@@ -37,3 +37,11 @@ body {
   font-family: 'Cinzel', serif;
   font-size: 2em;
 }
+
+.status {
+  position: absolute;
+  bottom: 1em;
+  left: 1em;
+  font-family: Courier New,Courier,Lucida Sans Typewriter,Lucida Typewriter,monospace;
+  font-size: 1em;
+}
