@@ -13,10 +13,10 @@ $env = [
   'host'     => 'b-fb1df8e2-cf9a-44f6-8071-40ecdc7a772c-1.mq.us-east-1.amazonaws.com',
   'port'     => 61619,
   'path'     => '/',
-  'username' => 'mqboard',
+  'username' => 'mqboard' . g($_GET, 'u', ''),
   'password' => g($_GET, 'p'),
-  'clientId' => 'MqBoardSubscriber',
-  'topic'    => 'mqboard/1'
+  'clientId' => 'web-' . uniqid(),
+  'topic'    => 'mqboard/' . g($_GET, 't', '1')
 ];
 
 ?>
@@ -41,6 +41,7 @@ $env = [
     </div>
 
   </body>
+  <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
   <script src="ui.js?ver=<?= md5_file(__DIR__ . '/ui.js')?>"></script>
 </html>
 

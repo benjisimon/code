@@ -2,6 +2,7 @@
  * A CSS file for rendering the layout
  */
 
+@import url('https://fonts.googleapis.com/css2?family=Arimo&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Playball&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600&display=swap');
 
@@ -22,7 +23,7 @@ body {
 }
 
 .message {
-  font-family: 'Playball', cursive;
+  font-family: 'Arimo', cursive;
   font-size:5em;
   text-align: center;
   margin: 1em;

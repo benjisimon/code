@@ -4,15 +4,25 @@
 
 var client = new Paho.MQTT.Client(Env.host, Env.port, Env.path, Env.clientId);
 
-client.onConnectionLost = function() {
-  $('.status').html("Connection Lost");
+function renderMessage(text) {
+  var p = JSON.parse(text);
+  $('.message').html(p.message);
+  $('.seq').html(p.sequence);
+}
+
+function renderStatus(m) {
+  $('.status').html(m);
+  console.log("status: ", m);
+}
+
+client.onConnectionLost = function(rs) {
+  renderStatus("Lost Connection: " + rs.errorMessage);
 }
 
 client.onMessageArrived = function(m) {
-  $('.status').html("Message Arrived");
-  var p = JSON.parse(m.payloadString);
-  $('.message').html(p.message);
-  $('.seq').html(p.sequence);
+  renderStatus("Message Arrived");
+  Cookies.set('last_message', m.payloadString, {expires: 365});
+  renderMessage(m.payloadString);
 };
 
 try {
@@ -22,15 +32,19 @@ try {
     useSSL: true,
     mqttVersion: 3,
     onFailure: function(e) {
-      $('.status').html("Connection Failed");
+      renderStatus("Connection Failed");
       $('.message').html(JSON.stringify(e));
     },
     onSuccess: function() {
-      $('.status').html("Connection Success");
+      renderStatus("Connection Success");
       client.subscribe(Env.topic);
+      var m = Cookies.get('last_message');
+      if(m) {
+        renderMessage(m);
+      }
     }
   });
 } catch(ex) {
-  $('.status').html("Connection Error");
+  renderStatus("Connection Error: " + ex);
 }
 
