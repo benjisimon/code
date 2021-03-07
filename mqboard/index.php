@@ -32,6 +32,9 @@ $env = [
     <meta name="apple-mobile-web-app-capable" content="yes"/>
   </head>
   <body>
+    <div class="intro">
+      I love...
+    </div>
     <div class="message">
     </div>
     <div class="seq">
