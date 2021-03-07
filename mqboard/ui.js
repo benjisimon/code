@@ -4,10 +4,17 @@
 
 var client = new Paho.MQTT.Client(Env.host, Env.port, Env.path, Env.clientId);
 
+function fontFamily() {
+  var max = Env.fonts.length;
+  var index = Math.floor(Math.random() * Math.floor(max));
+  return Env.fonts[index];
+}
+
 function renderMessage(text) {
   var p = JSON.parse(text);
-  $('.message').html(p.message);
-  $('.seq').html(p.sequence);
+  var ff = fontFamily();
+  $('.message').css('font-family', ff).html(p.message);
+  $('.seq').html(p.sequence + " / " + ff);
 }
 
 function renderStatus(m) {
