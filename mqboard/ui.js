@@ -14,7 +14,7 @@ function renderMessage(text) {
   var p = JSON.parse(text);
   var ff = fontFamily();
   $('.message').css('font-family', ff).html(p.message);
-  $('.seq').html(p.sequence + " / " + ff);
+  $('.seq').html(p.sequence);
 }
 
 function renderStatus(m) {
