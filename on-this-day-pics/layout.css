@@ -1,0 +1,73 @@
+/*
+ * A CSS file for laying out app
+ */
+
+html, body  {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: Arial;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+h1 {
+  color: #3C91E6;
+}
+
+h2 {
+  color: #FA824C;
+}
+
+a {
+  color: #3C91E6;
+}
+
+.main {
+  flex: 1;
+  background-color: #FAFFFD;
+  color: #342E37;
+  padding: 1em;
+}
+
+.footer {
+  padding: 1em;
+  text-align: center;
+  background-color: #342E37; 
+  border-top: 1px solid #222;
+  color: #FAFFFD;
+  font-size: .75em;
+                    
+}
+
+.photos {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.photos .photo {
+  margin: .5em;
+}
+
+.photos .photo > a {
+  border: 1px solid  #342E37;
+  display: block;
+}
+
+.photos .photo .controls {
+  display: flex;
+}
+
+.photos .photo .controls a {
+  flex: 1;
+  display: block;
+  margin: .2em;
+  font-size: .75em;
+}
+
+.ar { text-align: right; }
+.al { text-align: left; }
+.ac { text-align: center; }
