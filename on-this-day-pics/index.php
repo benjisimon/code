@@ -8,10 +8,11 @@
 require_once(__DIR__ . '/lib/siteconfig.php');
 
 
-$num_years = 11;
 $is_authenticated = handle_oauth2();
-$today = ['month' => date('m', time()),
-          'day'   => date('d', time())];
+$now = g($_GET, 'date', "now");
+$now = ($t = strtotime($now)) ? $t : time();
+$today = ['month' => date('m', $now),
+          'day'   => date('d', $now)];
 
 ?>
 <html>
@@ -26,8 +27,8 @@ $today = ['month' => date('m', time()),
       <h1>On This Day | Pics</h1>
       
       <? if($is_authenticated) { ?>
-        <? foreach(range(date('Y') - $num_years, date('Y')) as $year) { ?>
-          <h2><?= date('F, jS') ?> <?= $year ?></h2>
+        <? foreach(range(2010, date('Y')) as $year) { ?>
+          <h2><?= fmt_date($today, $year) ?></h2>
 
           <div class="photos">
             <? $photos = photo_date_search(['year' => $year] + $today); ?>

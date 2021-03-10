@@ -21,3 +21,7 @@ function nuke_session() {
   );
   session_destroy();
 }
+
+function fmt_date($today, $year) {
+  return date('l, F jS Y', strtotime("$year-{$today['month']}-{$today['day']}"));
+}
