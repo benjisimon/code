@@ -8,7 +8,7 @@ function g($array, $key, $default = false) {
 }
 
 function app_url($path = '', $params = []) {
-  return "https://{$_SERVER['SERVER_NAME']}/on-this-day-pics/$path" .
+  return "https://{$_SERVER['SERVER_NAME']}/on-this-day/$path" .
          ($params ? '?' . http_build_query($params) : '');
 }
 
@@ -24,4 +24,11 @@ function nuke_session() {
 
 function fmt_date($today, $year) {
   return date('l, F jS Y', strtotime("$year-{$today['month']}-{$today['day']}"));
+}
+
+function snippet($_path, $_vars = []) {
+  ob_start();
+  extract($_vars);
+  require(__DIR__ . "/../snippets/$_path.php");
+  return ob_get_clean();
 }
