@@ -37,12 +37,12 @@ $today = ['month' => date('m', $now),
           <? }  ?>
           
           <p>
-            <a href="<?= app_url('', ['code' => 'clear'])?>">Log Out</a></a>
+            <a href="<?= app_url('', ['code' => 'clear', 'subject' => $subject])?>">Log Out</a></a>
           </p>
         <? } else { ?>
           <p>
             Welcome. To continue
-            <a href="<?= app_url('', ['code' => 'create'])?>">grant access.</a>
+            <a href="<?= app_url('', ['code' => 'create', 'subject' => $subject])?>">grant access.</a>
           </p>
         <? } ?>
       <? } else { ?>

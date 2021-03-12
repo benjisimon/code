@@ -12,7 +12,17 @@ use Google\Auth\OAuth2;
 // https://github.com/google/php-photoslibrary/blob/samples/src/common/common.php
 //
 function handle_oauth2() {
-  $path = g($_SERVER, 'REQUEST_URI');
+  $scopes = [
+    'pics' => ['https://www.googleapis.com/auth/photoslibrary.readonly'],
+    'posts' => ['https://www.googleapis.com/auth/blogger']
+  ];
+
+  $subject = g($_GET, 'subject');
+
+  if(!$subject) {
+    return false;
+  }
+  
   $clientSecretJson = json_decode(
     file_get_contents(CREDENTIALS_JSON),
     true
@@ -24,11 +34,9 @@ function handle_oauth2() {
     'clientId' => $clientId,
     'clientSecret' => $clientSecret,
     'authorizationUri' => 'https://accounts.google.com/o/oauth2/v2/auth',
-    // Where to return the user to if they accept your request to access their account.
-    // You must authorize this URI in the Google API Console.
-    'redirectUri' => app_url(),
+    'redirectUri' => app_url('', ['subject' => $subject]),
     'tokenCredentialUri' => 'https://www.googleapis.com/oauth2/v4/token',
-    'scope' => ['https://www.googleapis.com/auth/photoslibrary.readonly']
+    'scope' => g($scopes, $subject)
   ]);
 
   if(g($_GET, 'code') == 'clear') {
@@ -36,7 +44,7 @@ function handle_oauth2() {
     header("Location: " . app_url());
     exit();    
   } else if(g($_GET, 'code') == 'create') {
-    $url = $oauth2->buildFullAuthorizationUri(['access_type' => 'offline']);
+    $url = $oauth2->buildFullAuthorizationUri();
     header("Location: $url");
     exit();
   } else if(g($_GET, 'code')) {
@@ -46,17 +54,17 @@ function handle_oauth2() {
 
     // The UserRefreshCredentials will use the refresh token to 'refresh' the credentials when
     // they expire.
-    $_SESSION['credentials'] = new UserRefreshCredentials(
-      $scopes,
+    $_SESSION["{$subject}_credentials"] = new UserRefreshCredentials(
+      g($scopes, $subject),
       [
         'client_id' => $clientId,
         'client_secret' => $clientSecret,
         'refresh_token' => $refreshToken
       ]
     );
-    header("Location: " . app_url());
+    header("Location: " . app_url('', ['subject' => $subject]));
     exit();
-  } else if(g($_SESSION, 'credentials')) {
+  } else if(g($_SESSION, "${subject}_credentials")) {
     return true;
   } else {
     return false;

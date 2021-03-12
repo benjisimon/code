@@ -11,7 +11,7 @@ use Google\Type\Date;
 
 
 function photo_date_search($date, $options = []) {
-  $client = new PhotosLibraryClient(['credentials' => $_SESSION['credentials']]);
+  $client = new PhotosLibraryClient(['credentials' => $_SESSION['pics_credentials']]);
 
   $builder = new FiltersBuilder();
   $builder->addDate(new Date($date));
