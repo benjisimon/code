@@ -12,6 +12,7 @@ use Google\Auth\OAuth2;
 // https://github.com/google/php-photoslibrary/blob/samples/src/common/common.php
 //
 function handle_oauth2() {
+  $path = g($_SERVER, 'REQUEST_URI');
   $clientSecretJson = json_decode(
     file_get_contents(CREDENTIALS_JSON),
     true
