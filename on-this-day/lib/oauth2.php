@@ -64,7 +64,13 @@ function handle_oauth2() {
     );
     header("Location: " . app_url('', ['subject' => $subject]));
     exit();
-  } else if(g($_SESSION, "${subject}_credentials")) {
+  } else if(($c = g($_SESSION, "${subject}_credentials"))) {
+    try {
+      $auth_token = $c->fetchAuthToken();
+    } catch(Exception $ex) {
+      return false;
+    }
+    
     return true;
   } else {
     return false;
