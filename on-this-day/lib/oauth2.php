@@ -12,16 +12,55 @@ use Google\Auth\OAuth2;
 // https://github.com/google/php-photoslibrary/blob/samples/src/common/common.php
 //
 function handle_oauth2() {
+  $subject = g($_GET, 'subject');
+
+  if(g($_GET, 'code') == 'clear') {
+    nuke_session();
+    header("Location: " . app_url());
+    exit();    
+  } else if(!$subject) {
+    return false;
+  } else {
+    return call_user_func("handle_{$subject}_oauth2");
+  }
+
+}
+
+function handle_posts_oauth2() {
+  $client = new Google\Client();
+  $client->setAuthConfig(CREDENTIALS_JSON);
+  $client->setRedirectUri(app_url('', ['subject' => 'posts']));
+  $client->addScope("https://www.googleapis.com/auth/blogger.readonly");
+
+
+  if(g($_GET, 'code') == 'create') {
+    $url = $client->createAuthUrl();
+    header("Location: $url");
+    exit();
+  } else if(g($_GET, 'code')) {
+    $_SESSION['posts_credentials'] = $client->fetchAccessTokenWithAuthCode($_GET['code']);
+    header("Location: " . app_url('', ['subject' => $subject]));
+    exit();
+  } else if(($c = g($_SESSION, "posts_credentials"))) {
+    $client->setAccessToken($c);
+    if ($client->isAccessTokenExpired()) {
+      return false;
+    } else {
+      return true;
+    }
+  } else {
+    return false;
+  }
+}
+
+
+function handle_photos_oauth2() {
+  $subject = 'pics';
   $scopes = [
     'pics' => ['https://www.googleapis.com/auth/photoslibrary.readonly'],
     'posts' => ['https://www.googleapis.com/auth/blogger']
   ];
 
-  $subject = g($_GET, 'subject');
-
-  if(!$subject) {
-    return false;
-  }
   
   $clientSecretJson = json_decode(
     file_get_contents(CREDENTIALS_JSON),
@@ -39,11 +78,7 @@ function handle_oauth2() {
     'scope' => g($scopes, $subject)
   ]);
 
-  if(g($_GET, 'code') == 'clear') {
-    nuke_session();
-    header("Location: " . app_url());
-    exit();    
-  } else if(g($_GET, 'code') == 'create') {
+  if(g($_GET, 'code') == 'create') {
     $url = $oauth2->buildFullAuthorizationUri();
     header("Location: $url");
     exit();

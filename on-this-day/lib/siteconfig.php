@@ -10,5 +10,6 @@ require_once(__DIR__ . '/vendor/autoload.php');
 require_once(__DIR__ . '/utils.php');
 require_once(__DIR__ . '/oauth2.php');
 require_once(__DIR__ . '/photos.php');
+require_once(__DIR__ . '/blogger.php');
 
 session_start();
