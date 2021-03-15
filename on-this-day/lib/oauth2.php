@@ -39,7 +39,7 @@ function handle_posts_oauth2() {
     exit();
   } else if(g($_GET, 'code')) {
     $_SESSION['posts_credentials'] = $client->fetchAccessTokenWithAuthCode($_GET['code']);
-    header("Location: " . app_url('', ['subject' => $subject]));
+    header("Location: " . app_url('', ['subject' => 'posts']));
     exit();
   } else if(($c = g($_SESSION, "posts_credentials"))) {
     $client->setAccessToken($c);

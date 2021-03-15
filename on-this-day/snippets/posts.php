@@ -2,18 +2,27 @@
 /*
  * A PHP file for retrieving posts on a given day and year
  */
-$blog = g($_GET, 'blog');
-if(!$blog) {
+$blog_id = g($_GET, 'blog');
+if(!$blog_id) {
   $blogs = blogger_all_user_blogs();
 } else {
-  // XXX - get posts
-  $posts = false;
+  $posts = blogger_posts_on($blog_id, $today, $year);
 }
 ?>
-<? if($blog) { ?>
-  <p>
-    Would get posts for <? var_dump($today); ?> on <?= $year ?>.
-  </p>
+<? if($blog_id) { ?>
+  <? if($posts) { ?>
+    <div class="posts">
+      <? foreach($posts->items as $i => $p) { ?>
+        <p>
+          <a href="<?= $p->url ?>"><?= $p->title?></a>
+        </p>
+      <? } ?>
+    </div>
+  <? } else { ?>
+    <p>
+      Nothing published on this date
+    </p>
+  <? } ?>
 <? } else { ?>
   <p>
     Select a blog:
