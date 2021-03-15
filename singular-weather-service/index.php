@@ -3,6 +3,9 @@ require_once('lib/config.php');
 header("Content-Type: text/plain");
 $debug = g($_GET, 'debug') == 'on';
 
+
+die("Inactive. Mail Ben to reactivate.");
+
 ($loc  = g($_GET, 'loc')) || die("Must provide location");
 ($loc  = geocode($loc, ['debug' => $debug]))  || die("Unable to geocode provided location");
 ($attr = g($_GET, 'attr')) || die("Must provide attribute");
