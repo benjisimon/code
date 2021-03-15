@@ -62,12 +62,6 @@ function handle_oauth2() {
         'refresh_token' => $refreshToken
       ]
     );
-
-    $_SESSION["{$subject}_auth"] = [
-      'access_token' => $authToken,
-      '
-    ];
-    
     header("Location: " . app_url('', ['subject' => $subject]));
     exit();
   } else if(g($_SESSION, "${subject}_credentials")) {
