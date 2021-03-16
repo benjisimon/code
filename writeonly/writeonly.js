@@ -49,27 +49,27 @@
   }
 
   function keypress(e) {
-   if(e.ctrlKey || e.metaKey) {
+    if(e.ctrlKey || e.metaKey) {
      return;
-   }
-   e.preventDefault();
-   if(e.key == 'Enter') {
-     insertBr();
-   } else if(e.key == ' ') {
-     insertSpace();
-   } else if(e.key == '-') {
-     if(last.char == '-') {
-       strikeLastWord();
-     } else {
-       insertChar('-');
-     }
-   } else if(e.keyCode == 0) {
-     insertChar(e.key);
-   } else {
-     feedback("D'oh! No " + e.key + " allowed");
-   }
+    }
+    e.preventDefault();
+
+    if(e.key == 'Enter') {
+      insertBr();
+    } else if(e.key == ' ') {
+      insertSpace();
+    } else if(e.key == '-') {
+      if(last.char == '-') {
+        strikeLastWord();
+      } else {
+        insertChar('-');
+      }
+    } else if(e.key.match(/[A-Za-z0-9.?!\']/)) {
+      insertChar(e.key);
+    } else {
+      feedback("D'oh! No [" + e.key + "] (" + e.keyCode + ") allowed");
+    }
   }
- 
 
   $('.writeonly').keypress(keypress);
   $('.writeonly').focus();
