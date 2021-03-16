@@ -54,7 +54,7 @@ function handle_posts_oauth2() {
 }
 
 
-function handle_photos_oauth2() {
+function handle_pics_oauth2() {
   $subject = 'pics';
   $scopes = [
     'pics' => ['https://www.googleapis.com/auth/photoslibrary.readonly'],
