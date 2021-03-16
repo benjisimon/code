@@ -31,7 +31,7 @@ $today = ['month' => date('m', $now),
         </h1>
         
         <? if($is_authenticated) { ?>
-          <? foreach(range(2010, date('Y')) as $year) { ?>
+          <? foreach(range(2005, date('Y')) as $year) { ?>
             <h2><?= fmt_date($today, $year) ?></h2>
             <?= snippet($subject, ['today' => $today, 'year' => $year]) ?>
           <? }  ?>
