@@ -1,0 +1,33 @@
+/*
+ * A JS file for making jquery based forms
+ * easier to work with.
+ */
+
+
+var $ = window.$;
+
+function rand(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min) + min);
+}
+
+function token(len) {
+  var text = "";
+  for(var i = 0; i < len; i++) {
+    var c = String.fromCharCode(rand(0, 26) + 65);
+    text += c;
+  }
+  return text;
+}
+
+function S(name, val) {
+  var elt = $('*[name="' + name + '"]');
+  if($(elt).attr('type') == 'checkbox') {
+    $(elt).prop('checked', val);
+  } else {
+    $(elt).val(val);
+  }
+
+  $(elt).change();
+}
