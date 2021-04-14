@@ -4,7 +4,7 @@
  */
 
 
-var $ = window.$;
+var $ = window.$ ? window.$ : window.jQuery;
 
 function rand(min, max) {
   min = Math.ceil(min);
