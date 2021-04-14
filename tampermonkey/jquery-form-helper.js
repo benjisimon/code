@@ -21,6 +21,14 @@ function token(len) {
   return text;
 }
 
+function randDob() {
+  return rand(1,12) + "/" + rand(1,29) + "/" + ((new Date().getYear()) - rand(10, 70));
+}
+
+function randPhone() {
+  return rand(200,799) + "-" + rand(200,999) + "-" + rand(1000,9999);
+}
+
 function S(name, val) {
   var elt = $('*[name="' + name + '"]');
   if($(elt).attr('type') == 'checkbox') {
