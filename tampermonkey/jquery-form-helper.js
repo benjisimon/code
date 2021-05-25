@@ -39,7 +39,9 @@ function randomOption(selector) {
 
 function S(name, val) {
   var elt = $('*[name="' + name + '"]');
-  if($(elt).attr('type') == 'checkbox') {
+  if(val == '*') {
+    $(elt).val(randomOption(elt));
+  } else if($(elt).attr('type') == 'checkbox') {
     $(elt).prop('checked', val);
   } else {
     $(elt).val(val);
