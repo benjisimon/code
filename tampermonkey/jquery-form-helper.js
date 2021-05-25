@@ -29,6 +29,12 @@ function randPhone() {
   return rand(200,799) + "-" + rand(200,999) + "-" + rand(1000,9999);
 }
 
+function randomOption(selector) {
+  var all = $(selector).find('option').toArray();
+  var index = rand(0, all.length);
+  return $(all[index]).val();
+}
+
 function S(name, val) {
   var elt = $('*[name="' + name + '"]');
   if($(elt).attr('type') == 'checkbox') {
