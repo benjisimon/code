@@ -30,7 +30,9 @@ function randPhone() {
 }
 
 function randomOption(selector) {
-  var all = $(selector).find('option').toArray();
+  var all = $(selector).find('option').toArray().filter(function(o) {
+    return $(o).attr('value') != '';
+  });
   var index = rand(0, all.length);
   return $(all[index]).val();
 }
