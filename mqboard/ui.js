@@ -24,6 +24,9 @@ function renderStatus(m) {
 
 client.onConnectionLost = function(rs) {
   renderStatus("Lost Connection: " + rs.errorMessage);
+  setTimeout(function() {
+    window.location.reload();
+  }, 3 * 1000);
 }
 
 client.onMessageArrived = function(m) {
