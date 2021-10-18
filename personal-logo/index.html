@@ -1,0 +1,104 @@
+<!--
+     Inspired by a friend recounting that they had to make a personal logo for
+     a training class. I thought that was an interesting challenge, and before
+     I knew it, I was mentally crafting my own.
+
+     Here's the code.
+-->
+<html>
+  <head>
+    <title>Ben's Personal Logo</title>
+  </head>
+
+  <body>
+
+    <div style='max-width: 300px; margin: 4em auto 0'>
+      <div id="bens-personal-logo-small">
+      </div>
+    </div>
+
+    <div style='max-width: 800px; margin: 4em auto 0'>
+      <div id="bens-personal-logo-big">
+      </div>
+    </div>
+
+    <script>
+     function renderBensPersonalLogo(rootId) {
+       var morseify = function(text) {
+         var source = text.toUpperCase().split('');
+         var dict = {
+           A: '.-', B: '-...',  C: '-.-.', D: '-..', E: '.',
+           F: '..-.', G: '--.', H: '....', I: '..', J: '.---',
+           K: '-.-', L: '.-..', M: '--', N: '-.', O: '---',
+           P: '.--.', Q: '--.-', R: '.-.', S: '...', T: '-',
+           U: '..-', V: '...-', W: '.--', X: '-..-', Y: '-.--',
+           Z: '--..'
+         };
+
+         return source.reduce((carry, letter) => {
+           var m = dict[letter];
+           if(m) {
+             return carry + (m + '/');
+           } else {
+             return carry;
+           }
+         }, '');
+         
+       }
+       
+       var root =document.getElementById(rootId);
+       var quote = "Start where you are. Use what you have. Do what you can.";
+       var icons = [
+         "&#x1F368",
+         "&#x1F6BD",
+         "&#x1F6E0"
+       ];
+
+       var code = morseify(quote)
+         .replaceAll('.', 'x')
+         .replaceAll('-', 'v')
+         .replaceAll('/', 'z');
+       var chunkLength = code.length / 2;
+       
+       var topText = code.substring(0, chunkLength);
+       var bottomText = code.substring(chunkLength);
+       
+       root.innerHTML += icons.reduce((carry, icon) => {
+         return carry + "<div class='icon'>" + icon + "</div>";
+       }, '');
+       root.innerHTML += "<div class='border top'>" + topText + "</div>";
+       root.innerHTML += "<div class='border bottom'>" + bottomText + "</div>";
+
+       root.style.display = 'flex';
+       root.style.position = 'relative';
+       root.style.justifyContent = 'space-around';
+       root.style.border = '1px solid #999';
+       root.style.borderRadius = '10px';
+       
+       var css = (any) => {
+         return document.querySelectorAll("#" + rootId + " " + any);
+       };
+
+       var rootWidth = root.offsetWidth;
+       
+       css('.icon').forEach(icon => {
+         icon.style.margin = '.2em';
+         icon.style.fontSize = (rootWidth / 5) + "px";
+       });
+
+       css('.border').forEach(b => {
+         b.style.position = 'absolute';
+         b.style.fontSize = (rootWidth / 40) + "px";
+         b.style.fontFamily = 'helvetica';
+         b.style.color = '#CCC';
+       });
+
+       css('.border.bottom').forEach(b => b.style.bottom = '0');
+       
+     }
+          
+     renderBensPersonalLogo('bens-personal-logo-small');
+     renderBensPersonalLogo('bens-personal-logo-big');
+    </script>
+  </body>
+</html>
