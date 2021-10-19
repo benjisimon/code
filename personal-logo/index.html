@@ -55,9 +55,21 @@
        ];
 
        var code = morseify(quote)
-         .replaceAll('.', 'x')
-         .replaceAll('-', 'v')
-         .replaceAll('/', 'z');
+         .replaceAll('.', 'A')
+         .replaceAll('-', 'T')
+         .split('')
+         .map(c => {
+           if(c == '/') {
+             if(Math.floor(Math.random() * 2) == 0) {
+               return 'C';
+             } else {
+               return 'G';
+             }
+           } else {
+             return c;
+           }
+         })
+       .join('');
        var chunkLength = code.length / 2;
        
        var topText = code.substring(0, chunkLength);
@@ -88,7 +100,7 @@
 
        css('.border').forEach(b => {
          b.style.position = 'absolute';
-         b.style.fontSize = (rootWidth / 40) + "px";
+         b.style.fontSize = (rootWidth / 52) + "px";
          b.style.fontFamily = 'helvetica';
          b.style.color = '#CCC';
        });
