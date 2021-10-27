@@ -25,6 +25,12 @@ function randDob() {
   return rand(1,12) + "/" + rand(1,29) + "/" + ((new Date().getYear()) - rand(10, 70));
 }
 
+function dateify(numDays) {
+  var t = new Date((new Date()).getTime() + (numDays * 24 * 60 * 60 * 1000));
+  var p = function(x) { return x < 10 ? "0" + x : x; };
+  return t.getFullYear() + "-" + p(t.getMonth() + 1) + "-" + p(t.getDate());
+}
+
 function randPhone() {
   return rand(200,799) + "-" + rand(200,999) + "-" + rand(1000,9999);
 }
