@@ -10,3 +10,7 @@
 : rank ( card -- rank )
     #ranks mod ;
 
+create suit-symbols char H c, char C c,  char S c, char D c,
+
+: suit>sym ( suit -- c )
+    suit-symbols + c@ ;
