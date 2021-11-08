@@ -7,7 +7,10 @@ create foo 0 ,
 : memory
     assert( foo @ 0 = )
     foo ++!
-    assert( foo @ 1 = )
-;
+    assert( foo @ 1 = ) ;
 
-memory
+: logic
+    assert( 1 1 + 3 = not )
+    assert( 1 1 + 2 = not not ) ;
+
+memory logic
