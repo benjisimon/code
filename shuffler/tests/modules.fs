@@ -5,29 +5,27 @@ s" ../utils.fs" required
 
 module
 
-+++
+:private x 100 ;
 
-: x 100 ;
-  
+:private 100x x * ;
 
----
+: grade 3 100x ;
 
-: y 200 ;
+: inner-test
+    assert( s" x" find-name 0 = not )
+    assert( s" 100x" find-name 0 = not )
+    assert( s" grade" find-name 0 = not ) ;
 
-+++
-
-: z 300 x * ;
+inner-test
 
 publish
 
-: core
-    assert( x 100 = )
-    assert( x z + 30100 = )
-    assert( s" x" find-name 0 = not )
-    assert( s" y" find-name 0 = )
-;
 
-core
-  
+: outer-test
+    assert( s" x" find-name 0 =  )
+    assert( s" 100x" find-name 0 = )
+    assert( s" grade" find-name 0 = not ) ;
+
+outer-test
 
   
