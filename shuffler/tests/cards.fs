@@ -11,6 +11,9 @@ s" ../cards.fs" required
     assert( 1 suit>sym [char] C = )
     assert( 2 suit>sym [char] S = )
     assert( 3 suit>sym [char] D = )
+    assert( 3 rank>sym [char] 3 = )
+    assert( 11 rank>sym [char] J = )
+    assert( 0 rank>sym [char] A = )
 ;
 
 core
