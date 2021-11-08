@@ -16,4 +16,11 @@ s" ../cards.fs" required
     assert( 0 rank>sym [char] A = )
 ;
 
-core
+: print
+    cr
+    52 0 +do
+        i .card
+        i 13 mod 0 = i 0 > and if cr else bl emit then
+    loop ;
+     
+core print
