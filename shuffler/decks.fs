@@ -22,6 +22,11 @@ deck# 2 * constant deck#*2
 : peek ( n deck -- nth-card )
     swap cells + @ ;
 
+: replace ( new-card position deck -  )
+    swap cells + ! ;
+
+    
+
 : .deck ( deck -- )
     cr
     deck# 0 +do
