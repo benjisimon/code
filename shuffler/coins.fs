@@ -13,7 +13,7 @@ face tails
 : coin? ( c -- b) dup heads? swap tails? or ;
 
 : flip ( -- c )
-    100 random
-    50 < if heads else tails endif ;
+    100000 random
+    odd? if heads else tails endif ;
 
 
