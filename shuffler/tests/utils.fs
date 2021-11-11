@@ -14,6 +14,18 @@ create foo 0 ,
     assert( 1 1 + 2 = not not )
     assert( 10 >0 )
     assert( 0 >0 not )
+    assert( 3 odd? )
+    assert( 383837721 odd? )
+    assert( 383732 odd? not )
 ;
 
-memory logic
+: math
+    assert( 100 random 0 = )
+    assert( 100 random 0 = )
+    assert( 100 random 0 = )
+    assert( 100 random 17 = )
+    randomize
+    assert( 100 random 78 = not )
+;
+
+memory logic math
