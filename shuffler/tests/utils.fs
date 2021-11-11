@@ -28,4 +28,11 @@ create foo 0 ,
     assert( 100 random 78 = not )
 ;
 
-memory logic math
+: others
+    100 stash
+    [char] X stash
+    assert( unstash [char] X = )
+    assert( unstash 100 = )
+;
+
+memory logic math others
