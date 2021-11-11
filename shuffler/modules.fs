@@ -1,22 +1,22 @@
 \ crude impl of modules
 
-: public-mode ( -- )
+: public-words ( -- )
     get-order >r
     over set-current
     r> set-order ;
     
-: private-mode ( -- )
+: private-words ( -- )
     get-order >r
     dup set-current
     r> set-order ;
 
 
-: :private private-mode : public-mode ;
+: :private private-words : public-words ;
 
 : module ( )
     wordlist >order ( public )
     wordlist >order ( private )
-    public-mode ;
+    public-words ;
 
 : publish ( )
     previous ;
