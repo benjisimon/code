@@ -53,3 +53,5 @@ public-words
     unload destroy ;
     
     
+: shuffle-n ( deck n-times -- deck )
+    0 +do shuffle loop ;
