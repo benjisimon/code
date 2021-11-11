@@ -7,14 +7,14 @@ randomize
 : core
     new-deck shuffle .deck
     cr
-    new-deck 7 shuffle-n .deck
+    new-deck 7*shuffle .deck
     cr
 ;
 
 create 5th-card
 : 5th-test
     10 0 +do
-        new-deck 7 shuffle-n 5 swap peek 5th-card i cells + ! 
+        new-deck 7*shuffle 5 swap peek 5th-card i cells + ! 
     loop ;
 
 : 5th-results
