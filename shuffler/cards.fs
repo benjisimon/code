@@ -1,6 +1,8 @@
 \ library for working with play cards
 
 require modules.fs
+require utils.fs
+
 module
 
 4 constant #suites
@@ -25,9 +27,25 @@ char 9 c, char X c, char J c, char Q c, char K c,
 : rank>sym ( rank -- c )
     rank-symbols + c@ ;
 
+: blank ( -- b )
+    -1 ;
+
+: blank? ( c -- t|f )
+    blank = ;
+
+: .blank ( b -- )
+    [char] _ emit
+    [char] _ emit ;
+
+
 : .card ( card -- )
     dup suit suit>sym
     swap rank rank>sym
     emit emit ;
-    
+
+: .card ( card -- )
+    dup blank? if .blank else .card then ;
+
+
+
 publish
