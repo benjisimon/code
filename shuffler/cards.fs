@@ -1,7 +1,6 @@
 \ library for working with play cards
 
-require modules.fs
-require utils.fs
+require project.fs
 
 module
 

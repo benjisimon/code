@@ -1,5 +1,7 @@
 \ crude impl of modules
 
+require project.fs
+
 : public-words ( -- )
     get-order >r
     over set-current

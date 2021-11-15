@@ -1,6 +1,6 @@
 \ test out our cards
 
-s" ../cards.fs" required
+s" ../project.fs" required
 
 : core
     assert( 15 rank 2 = )

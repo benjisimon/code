@@ -1,6 +1,6 @@
 \ test out decks
 
-s" ../decks.fs" required
+s" ../project.fs" required
 
 : core
     assert( deck# 52 = )

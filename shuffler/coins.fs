@@ -1,7 +1,6 @@
 \ Simple library to implement flipping a coin.
 
-require random.fs
-require utils.fs
+require project.fs
 
 : face ( -- ) create ;
 

@@ -1,6 +1,6 @@
 \ test out utils
 
-s" ../utils.fs" required
+s" ../project.fs" required
 
 create foo 0 ,
 

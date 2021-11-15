@@ -1,7 +1,6 @@
 \ forth utilities
 
-require random.fs
-require modules.fs
+require project.fs
 
 : ++! ( addr -- )
     dup @ 1+ swap ! ;

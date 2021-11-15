@@ -1,8 +1,6 @@
 \ Forth shuffle impl.
 
-require modules.fs
-require coins.fs
-require decks.fs
+require project.fs
 
 private-words
 

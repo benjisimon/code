@@ -1,7 +1,6 @@
 \ test out our modules
 
-s" ../modules.fs" required
-s" ../utils.fs" required
+s" ../project.fs" required
 
 module
 

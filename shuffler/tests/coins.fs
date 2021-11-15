@@ -1,6 +1,6 @@
 \ test out coin.fs
 
-s" ../coins.fs" required
+s" ../project.fs" required
 
 : basics
     assert( heads heads? )

@@ -1,6 +1,6 @@
 \ test out shuffle functionality
 
-s" ../shuffle.fs" required
+s" ../project.fs" required
 
 randomize
 

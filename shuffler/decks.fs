@@ -1,9 +1,7 @@
 \ library to work with a collection of cards,
 \ known as a deck
 
-require utils.fs
-require modules.fs
-require cards.fs
+require project.fs
 
 module
 
