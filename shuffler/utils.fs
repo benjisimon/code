@@ -12,6 +12,9 @@ require modules.fs
 : >0 ( n -- t|f )
     0 > ;
 
+: =0 ( n -- t|f )
+    0 = ;
+
 : odd? ( n -- is-odd? )
     1 and 1 = ;
 
@@ -38,6 +41,15 @@ public-words
     assert( stash-posn @ >0 )
     the-stash stash-posn @ 1- cells + @
     -1 stash-posn +! ;
+
+:private  pow { x y -- x^y }
+    x ( -- x )
+    y 1 +do
+        x *
+    loop ;
+
+: ^ ( x y -- x^y )
+    dup =0 if 1 else pow then ;
 
 
 publish

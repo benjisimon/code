@@ -26,6 +26,10 @@ create foo 0 ,
     assert( 100 random 17 = )
     randomize
     assert( 100 random 78 = not )
+
+    assert( 8 0 ^ 1 = )
+    assert( 8 1 ^ 8 = )
+    assert( 8 2 ^ 64 = )
 ;
 
 : others
