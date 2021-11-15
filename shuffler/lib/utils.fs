@@ -1,7 +1,5 @@
 \ forth utilities
 
-require project.fs
-
 : ++! ( addr -- )
     dup @ 1+ swap ! ;
 
