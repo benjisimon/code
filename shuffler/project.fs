@@ -1,9 +1,13 @@
 \ Main include file for the project
 
 require random.fs
-s" lib/modules.fs" required
-s" lib/utils.fs" required
-require coins.fs
-require cards.fs
-require decks.fs
-require shuffle.fs
+
+
+require lib/modules.fs
+require lib/utils.fs
+require lib/coins.fs
+require lib/cards.fs
+require lib/decks.fs
+require lib/shuffle.fs
+require lib/testing.fs
+

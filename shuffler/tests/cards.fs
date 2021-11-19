@@ -17,6 +17,7 @@ s" ../project.fs" required
     assert( 15 blank? false = )
     assert( 15 blank? not )
     assert( blank blank? )
+    assert( 1 suit 1 = )
 ;
 
 : print

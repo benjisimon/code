@@ -1,7 +1,5 @@
 \ Simple library to implement flipping a coin.
 
-require project.fs
-
 : face ( -- ) create ;
 
 face heads

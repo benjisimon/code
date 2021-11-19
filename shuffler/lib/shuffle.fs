@@ -1,7 +1,5 @@
 \ Forth shuffle impl.
 
-require project.fs
-
 private-words
 
 

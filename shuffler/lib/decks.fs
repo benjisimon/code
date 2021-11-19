@@ -1,8 +1,6 @@
 \ library to work with a collection of cards,
 \ known as a deck
 
-require project.fs
-
 module
 
 52 constant deck#
