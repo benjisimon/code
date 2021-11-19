@@ -2,12 +2,12 @@
 require project.fs
 
 :test foo ( -- )
-assert( true ) ;
+    assert( true ) ;
 
 :test bar ( -- )
-assert( false ) ;
+    assert( false ) ;
 
 :test baz ( -- )
-assert( true ) ;
+    assert( true ) ;
 
 run-all
