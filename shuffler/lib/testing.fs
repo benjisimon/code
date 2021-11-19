@@ -10,28 +10,24 @@ variable #tests
 
 : register-test ( xt -- )
     assert( #tests @  #max-tests < )
-    cr ." Registering a test" dup >name drop .name cr
-    all-tests !
+    #tests @ cells all-tests + !
     #tests ++! ;
 
 : nth-test ( n -- xt )
     cells all-tests + @ ;
 
+: .test-outcome ( error-code -- )
+    dup =0 if ." OK" else  ."  ( " . ." )"  then ;
+    
 public-words
 
 : :test ( -- ) : latestxt register-test ;
 
 : run-all ( -- )
-    #tests @ 0 0 +do
-        i nth-test >name .name ." :"
-        try
-            i nth-test execute
-            ." OK"
-            iferror
-                ." Fail"
-            endif
-        endtry
-        cr
+    #tests @ 0 +do
+        cr i nth-test >name .name ." : "
+        i nth-test catch
+        .test-outcome
     loop ;
 
 publish
