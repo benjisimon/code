@@ -17,15 +17,16 @@ variable #tests
     cells all-tests + @ ;
 
 : .test-outcome ( error-code -- )
+    \ XXX: prefix: sourcefilename 
     dup =0 if ." OK" else  ."  ( " . ." )"  then ;
     
 public-words
 
-: :test ( -- ) : latestxt register-test ;
+: :test ( -- ) :noname latestxt register-test ;
 
 : run-all ( -- )
     #tests @ 0 +do
-        cr i nth-test >name .name ." : "
+        cr ." : "
         i nth-test catch
         .test-outcome
     loop ;
