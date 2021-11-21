@@ -2,7 +2,8 @@
 
 s" ../project.fs" required
 
-:test core
+:test
+>>>>>>> refs/remotes/origin/master
     assert( 15 rank 2 = )
     assert( 1  suit 0 = )
     assert( 15 suit 1 = )
@@ -17,10 +18,10 @@ s" ../project.fs" required
     assert( 15 blank? false = )
     assert( 15 blank? not )
     assert( blank blank? )
-    assert( 1 suit 1 = )
+    assert( 1 suit 1 = not )
 ;
 
-:test print
+:test
     cr
     52 0 +do
         i .card
