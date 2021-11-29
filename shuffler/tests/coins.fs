@@ -2,7 +2,7 @@
 
 s" ../project.fs" required
 
-: basics
+:test
     assert( heads heads? )
     assert( tails tails? )
     assert( heads tails? false  = )
@@ -19,17 +19,16 @@ create #tails 0 ,
     - abs 30 < ;
 
 
-: flips
+:test
     assert( #heads @ 0 = )
     assert( #tails @ 0 = )
 
     100 0 +do
         flip
-        heads? if #heads else #tails endif ++!
+        heads? if #heads else #tails endif @+1!
     loop
 
     assert( #heads @  #tails @ close-enough? )
     
 ;
 
-basics flips

@@ -1,65 +1,70 @@
 \ tools to automate unit testing
 
+public-words
+
+struct
+    cell% field test-xt
+    cell% field test-name-length
+    cell% field test-name-addr
+    cell% field test-line
+end-struct test%
+
 private-words
 
-0 cells               constant xt-offset
-xt-offset 2 cells +   constant name-offset
-name-offset 1 cells + constant line-offset
-4 cells constant record-size
-
 200 constant #max-tests
-create all-tests
-#max-tests record-size * allot
+create all-tests 
+#max-tests test% %size * allot
 
 variable #tests
 0 #tests !
 
-: xt@ ( test-record -- xt )
-    xt-offset + @ ;
+public-words
 
-: name@ ( test-record -- c-addr n )
-    dup name-offset + @ stash
-    name-offset 1 cells + @ unstash ;
+: nth-test ( n -- test-record )
+    test% %size * all-tests + ;
 
-: line@ ( test-record -- line )
-    name-offset + @ ;
+: num-tests ( -- n )
+    #tests @ ;
 
-: xt! ( xt test-record -- )
-    xt-offset + ! ;
+: test-name ( test-record -- c-addr u )
+    dup test-name-addr @
+    swap test-name-length @ ;
 
-: name! ( c-addr n test-record -- )
-    stash swap unstash ( n c-addr test-record )
-    name-offset + dup stash !
-    unstash 1 cells + ! ;
+private-words
 
-: line! ( line-number test-record -- )
-    line-offset + ! ;
+: current-test ( -- test-record )
+    num-tests nth-test ;
 
-: current-test-addr ( -- test-record )
-    all-tests #tests 1 - record-size * + ;
 
 : register-test ( xt -- )
-    assert( #tests @  #max-tests < )
-    current-test-addr xt!
-    sourcefilename current-test-addr name!
-    sourceline current-test-addr line!
-    #tests ++! ;
+    assert( num-tests #max-tests < )
+    current-test test-xt  !
+    sourcefilename current-test test-name-length !
+    current-test test-name-addr !
+    sourceline# current-test test-line !
+    #tests @+1! ;
 
-: nth-test ( n -- xt )
-    cells all-tests + @ ;
+
 
 : .test-outcome ( error-code -- )
     \ XXX: prefix: sourcefilename 
-    dup =0 if ." OK" else  ."  ( " . ." )"  then ;
-    
+    dup =0 if ." OK" drop else  ."  ( " . ." )"  then ;
+
+: .test-name ( test -- )
+    dup test-name type
+    ." :" 
+    test-line @ . ;
+
+
 public-words
 
-: :test ( -- ) :noname latestxt register-test ;
+: :test ( -- ) noname : latestxt register-test ;
 
 : run-all ( -- )
-    #tests @ 0 +do
-        cr ." : "
-        i nth-test catch
+    #tests @ 0  +do
+        cr i nth-test .test-name
+        ." : "
+        i nth-test test-xt @ catch
         .test-outcome
     loop ;
 

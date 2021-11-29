@@ -1,6 +1,6 @@
 \ forth utilities
 
-: ++! ( addr -- )
+: @+1! ( addr -- )
     dup @ 1+ swap ! ;
 
 : not ( b -- not-b )
