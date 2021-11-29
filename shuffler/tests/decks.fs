@@ -2,7 +2,7 @@
 
 s" ../project.fs" required
 
-: core
+:test
     assert( deck# 52 = )
     assert( deck#/2 52 2 / = )
     assert( deck#*2 52 2 * = )
@@ -12,7 +12,7 @@ s" ../project.fs" required
 new-deck constant d1
 
 
-: more 
+:test 
     assert( d1 @ 0 = )
     assert( 1 d1 peek 1 = )
     assert( 15 d1 peek 15 = )
@@ -28,7 +28,7 @@ new-deck constant d1
     loop
 ;
 
-: print
+:test
     cr cr
     ." Half Replaced: "
     d1 .deck
@@ -37,7 +37,3 @@ new-deck constant d1
     new-deck .deck
     cr cr
 ;
-
-
-
-core more print

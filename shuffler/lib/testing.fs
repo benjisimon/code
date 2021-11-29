@@ -1,5 +1,7 @@
 \ tools to automate unit testing
 
+module
+
 public-words
 
 struct

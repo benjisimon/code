@@ -19,25 +19,20 @@ variable bob
 
 public-words
 
-: inner-test
-    assert( s" x" find-name 0 = not )
-    assert( s" 100x" find-name 0 = not )
-    assert( s" grade" find-name 0 = not )
+:test
+    assert( x 100 = )
+    assert(  3 100x 300 = )
     assert( alice bob @ + 300 = ) ;
-
-inner-test
-
 
 publish
 
 
-: outer-test
+:test
     assert( s" x" find-name 0 =  )
     assert( s" 100x" find-name 0 = )
     assert( s" grade" find-name 0 = not )
     assert( s" bob" find-name 0 = )
 ;
 
-outer-test
 
   

@@ -18,6 +18,9 @@
 : randomize ( -- )
     utime drop seed ! ;
 
+: unrandomize ( -- )
+    0 seed ! ;
+
 private-words
 
 10 constant stash-max
