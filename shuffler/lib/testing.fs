@@ -20,6 +20,20 @@ create all-tests
 variable #tests
 0 #tests !
 
+variable #passes
+variable #fails
+
+: reset-stats ( -- )
+    0 #passes !
+    0 #fails ! ;
+
+: track-outcome ( outcome -- )
+    0 = if #passes else #fails then @+1! ;
+
+: .stats ( -- )
+    ." Passed: "  #passes ?
+    ."   Failed: " #fails ? ;
+
 public-words
 
 : nth-test ( n -- test-record )
@@ -49,7 +63,6 @@ private-words
 
 
 : .test-outcome ( error-code -- )
-    \ XXX: prefix: sourcefilename 
     dup =0 if ." OK" drop else  ."  ( " . ." )"  then ;
 
 : .test-name ( test -- )
@@ -63,11 +76,12 @@ public-words
 : :test ( -- ) noname : latestxt register-test ;
 
 : run-all ( -- )
+    reset-stats
     #tests @ 0  +do
-        cr i nth-test .test-name
-        ." : "
         i nth-test test-xt @ catch
-        .test-outcome
-    loop ;
+        track-outcome
+        clearstack
+    loop
+    .stats ;
 
 publish

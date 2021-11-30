@@ -8,7 +8,6 @@ create foo 0 ,
     assert( foo @ 0 = )
     foo @+1!
     assert( foo @ 1 = ) ;
-
 :test
     assert( 1 1 + 3 = not )
     assert( 1 1 + 2 = not not )
