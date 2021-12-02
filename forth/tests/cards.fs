@@ -1,11 +1,5 @@
 \ test out our cards
 
-s" ../project.fs" required
-
-
-
-:test assert( true ) ;
-
 :test
     assert( 15 rank 2 = )
     assert( 1  suit 0 = )
@@ -25,10 +19,3 @@ s" ../project.fs" required
 ;
 
 
-
-:test
-    cr
-    52 0 +do
-        i .card
-        i 13 mod 0 = i 0 > and if cr else bl emit then
-    loop ;

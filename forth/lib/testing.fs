@@ -31,8 +31,9 @@ variable #fails
     0 = if #passes else #fails then @+1! ;
 
 : .stats ( -- )
-    ." Passed: "  #passes ?
-    ."   Failed: " #fails ? ;
+    #passes @ #fails @ + . ." Tests Run, "
+    #passes ? ." Passed, "
+     #fails ? ." Failed";
 
 public-words
 

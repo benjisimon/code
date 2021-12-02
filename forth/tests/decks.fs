@@ -1,7 +1,5 @@
 \ test out decks
 
-s" ../project.fs" required
-
 :test
     assert( deck# 52 = )
     assert( deck#/2 52 2 / = )
@@ -26,14 +24,4 @@ new-deck constant d1
         assert( suit suit>sym [char] C = )
         assert( rank rank>sym [char] 3 = )
     loop
-;
-
-:test
-    cr cr
-    ." Half Replaced: "
-    d1 .deck
-    cr cr
-    ." Fresh Deck: "
-    new-deck .deck
-    cr cr
 ;

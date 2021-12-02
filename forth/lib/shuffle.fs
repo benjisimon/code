@@ -1,5 +1,7 @@
 \ Forth shuffle impl.
 
+module
+
 private-words
 
 
@@ -54,3 +56,5 @@ public-words
 
 : 7*shuffle  ( deck -- deck )
     7 *shuffle ;
+
+publish

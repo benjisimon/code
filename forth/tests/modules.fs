@@ -1,7 +1,5 @@
 \ test out our modules
 
-s" ../project.fs" required
-
 module
 
 :private x 100 ;

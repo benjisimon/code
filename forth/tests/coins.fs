@@ -1,7 +1,5 @@
 \ test out coin.fs
 
-s" ../project.fs" required
-
 :test
     assert( heads heads? )
     assert( tails tails? )

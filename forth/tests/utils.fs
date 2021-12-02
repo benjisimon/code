@@ -1,7 +1,5 @@
 \ test out utils
 
-s" ../project.fs" required
-
 create foo 0 ,
 
 :test
