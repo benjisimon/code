@@ -23,19 +23,19 @@ variable #tests
 variable #passes
 variable #fails
 
-: reset-stats ( -- )
+public-words
+
+:private reset-stats ( -- )
     0 #passes !
     0 #fails ! ;
 
-: track-outcome ( outcome -- )
+:private track-outcome ( outcome -- )
     0 = if #passes else #fails then @+1! ;
 
-: .stats ( -- )
+:private .stats ( -- )
     #passes @ #fails @ + . ." Tests Run, "
     #passes ? ." Passed, "
      #fails ? ." Failed";
-
-public-words
 
 : nth-test ( n -- test-record )
     test% %size * all-tests + ;
@@ -43,17 +43,16 @@ public-words
 : num-tests ( -- n )
     #tests @ ;
 
-: test-name ( test-record -- c-addr u )
+:private test-name ( test-record -- c-addr u )
     dup test-name-addr @
     swap test-name-length @ ;
 
-private-words
 
-: current-test ( -- test-record )
+:private current-test ( -- test-record )
     num-tests nth-test ;
 
 
-: register-test ( xt -- )
+:private register-test ( xt -- )
     assert( num-tests #max-tests < )
     current-test test-xt  !
     sourcefilename current-test test-name-length !
@@ -61,18 +60,13 @@ private-words
     sourceline# current-test test-line !
     #tests @+1! ;
 
-
-
-: .test-outcome ( error-code -- )
+:private .test-outcome ( error-code -- )
     dup =0 if ." OK" drop else  ."  ( " . ." )"  then ;
 
-: .test-name ( test -- )
+:private .test-name ( test -- )
     dup test-name type
     ." :" 
     test-line @ . ;
-
-
-public-words
 
 : :test ( -- ) noname : latestxt register-test ;
 
