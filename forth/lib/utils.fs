@@ -42,6 +42,9 @@ public-words
     the-stash stash-posn @ 1- cells + @
     -1 stash-posn +! ;
 
+: clash ( -- x )
+    unstash dup stash ;
+
 :private  pow { x y -- x^y }
     x ( -- x )
     y 1 +do

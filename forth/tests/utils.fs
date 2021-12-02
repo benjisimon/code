@@ -34,4 +34,8 @@ create foo 0 ,
     [char] X stash
     assert( unstash [char] X = )
     assert( unstash 100 = )
+    1001 stash
+    assert( clash 1001 = )
+    assert( clash 1001 = )
+    assert( unstash 1001 = )
 ;
