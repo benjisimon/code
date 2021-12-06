@@ -26,12 +26,17 @@ new-deck 7*shuffle .deck cr cr
 
 variable #found
 
+randomize
+51 random constant mystery-card
+
+." Mystery card: " mystery-card . cr
+
 :private try-shuffle ( num-shuffles -- looks-to-be-shuffled? )
     0 #found !
     100 0 +do
         dup new-deck swap *shuffle
         50 swap peek
-        7 = if #found @+1! then
+        mystery-card = if #found @+1! then
     loop drop #found @ 0 > ;
 
 :private  try-shuffles ( -- )
