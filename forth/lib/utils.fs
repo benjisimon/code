@@ -1,4 +1,5 @@
 \ forth utilities
+module
 
 : @+1! ( addr -- )
     dup @ 1+ swap ! ;
@@ -15,11 +16,6 @@
 : odd? ( n -- is-odd? )
     1 and 1 = ;
 
-: randomize ( -- )
-    utime drop seed ! ;
-
-: unrandomize ( -- )
-    0 seed ! ;
 
 private-words
 
