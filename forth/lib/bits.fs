@@ -7,7 +7,11 @@ module
     1 +do
         2*
     loop ;
-    
+
+: << ( n places -- n )
+    0 +do
+        2* 
+    loop ;
 
 : bit-on ( n posn -- n )
     bit-mask or ;
