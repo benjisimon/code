@@ -2,11 +2,11 @@
 
 :test
     unrandomize
-    assert( rand 21103 = )
-    assert( rand 3003 = )
-    assert( rand 22911 = )
+    assert( rand 32583 = )
+    assert( rand 21078 = )
+    assert( rand 4470 = )
     randomize
-    assert( rand 21103 = not )
+    assert( rand 32583 = not )
     unrandomize
-    assert( rand 21103 = ) ;
+    assert( rand 32583 = ) ;
     
