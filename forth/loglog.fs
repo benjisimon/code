@@ -4,6 +4,7 @@
 require lib/modules.fs
 require lib/utils.fs
 require lib/bits.fs
+require lib/strings.fs
 require lib/random.fs
 require lib/testing.fs
 require lib/hashing.fs
@@ -15,3 +16,12 @@ require tests/random.fs
 require tests/hashing.fs
 
 cr run-all cr cr
+
+s" foo bar gaz" cstring xxx
+
+: random-words ( -- )
+    50 0 +do
+        random-word type space
+    loop ;
+
+random-words
