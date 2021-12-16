@@ -17,6 +17,12 @@ public-words
     dup seed !
     65536 / 32768 mod ;
 
+: rand ( -- )
+    1
+    rand 4 mod 1+ 0 +do
+        rand *
+    loop ;
+
 : randomize ( -- )
     utime drop seed ! ;
 
