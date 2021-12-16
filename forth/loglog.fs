@@ -20,7 +20,7 @@ cr run-all cr cr
 s" foo bar gaz" cstring xxx
 
 : random-words ( -- )
-    50 0 +do
+    4 0 +do
         random-word 2dup type space space hash . cr
     loop ;
 
