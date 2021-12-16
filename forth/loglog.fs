@@ -21,7 +21,7 @@ s" foo bar gaz" cstring xxx
 
 : random-words ( -- )
     50 0 +do
-        random-word type space
+        random-word 2dup type space space hash . cr
     loop ;
 
 random-words
