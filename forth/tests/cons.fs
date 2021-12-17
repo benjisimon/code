@@ -3,9 +3,16 @@
 :test
     100 200 cons stash
     assert( 100 clash car = )
-    assert( 200 clash cdr = )
+    assert( 200 clash cdr  = )
     9999 clash set-car!
     assert( 9999 clash car = )
     assert( 200 clash cdr = )
-    unstash
+    unstash drop
+;
+
+
+:test
+    assert( -1 1 cons cons? true = ) 
+    assert( 99 cons? false = ) 
+    assert( here cons? false = ) 
 ;

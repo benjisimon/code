@@ -2,22 +2,36 @@
 
 module
 
+private-words
+
+here constant cons-marker
+
+public-words
+
 : cons ( car cdr -- cons-addr )
-    here stash
+    here { h }
+    cons-marker ,
     , ,
-    unstash ;
+    h ;
 
 : car ( cons-addr -- car )
-    1 cells + @ ;
+    2 cells + @ ;
 
 : cdr ( cons-addr -- cdr )
-    @ ;
+    1 cells + @ ;
 
 : set-car! ( car cons-addr -- )
-    1 cells + ! ;
+    2 cells + ! ;
 
 : set-cdr! ( cdr cons-addr -- )
-    ! ;
+    1 cells + ! ;
 
+: cons? ( any -- bool )
+    ['] @ catch
+    =0 if
+        cons-marker =
+    else
+        drop false
+    then ;
 
 publish

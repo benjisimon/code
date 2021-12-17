@@ -18,12 +18,3 @@ require tests/hashing.fs
 require tests/cons.fs
 
 cr run-all cr cr
-
-s" foo bar gaz" cstring xxx
-
-: random-words ( -- )
-    4 0 +do
-        random-word 2dup type space space hash . cr
-    loop ;
-
-random-words
