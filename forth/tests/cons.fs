@@ -18,5 +18,5 @@
 ;
 
 :test
-    assert( 100 200 cons uncons  200 = )
-    assert( = 100 ) ;
+    assert( 100 200 cons uncons 200 =  )
+    assert( 100 = ) ;
