@@ -16,3 +16,7 @@
     assert( 99 cons? false = ) 
     assert( here cons? false = ) 
 ;
+
+:test
+    assert( 100 200 cons uncons  200 = )
+    assert( = 100 ) ;

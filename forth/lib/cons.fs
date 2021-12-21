@@ -34,4 +34,7 @@ public-words
         drop false
     then ;
 
+: uncons ( cons -- car cdr )
+    dup car swap cdr ;
+
 publish

@@ -54,4 +54,19 @@ create null
         cons
     then ;
 
+: list. recursive ( list -- )
+    assert( dup list? )
+    ." << "
+    begin
+        dup null? not
+    while
+            uncons swap
+            dup list? if
+                list.
+            else
+                .
+            then
+    repeat drop
+    ." >> " ;
+
 publish
