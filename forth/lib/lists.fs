@@ -11,26 +11,22 @@ create eol-marker
 
 public-words
 
-0 constant null
+create null
 
 : null? ( something -- bool )
     null = ;
 
 
-:private cons-based-list? ( n -- bool ) recursive
-    dup cons? if
-        cdr null? if
-            true
+: list? ( n -- bool ) recursive
+    dup null? if
+        drop true
+    else 
+        dup cons? if
+            cdr list?
         else
-            cons-based-list?
+            drop false
         then
-    else
-        drop false
     then ;
-
-: list? ( something -- bool )
-    dup null?
-    swap cons-based-list? or ;
 
 : << eol-marker ;
 
