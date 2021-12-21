@@ -16,7 +16,7 @@ variable h
     h ! ;
 
 : hash-char ( c -- )
-    hash-value 5 << hash-value + +
+    hash-value 5 <<= hash-value + +
     hash-update ;
 
 

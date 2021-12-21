@@ -8,7 +8,7 @@ module
         2*
     loop ;
 
-: << ( n places -- n )
+: <<= ( n places -- n )
     0 +do
         2* 
     loop ;
