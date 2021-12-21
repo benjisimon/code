@@ -69,4 +69,14 @@ create null
     repeat drop
     ." >> " ;
 
+:private last-cons recursive ( list -- cons )
+    dup cdr null? not if
+        cdr last-cons
+    then ;
+
+: append! ( item list -- )
+    assert( dup null? not )
+    swap null cons swap
+    last-cons set-cdr! ;
+
 publish
