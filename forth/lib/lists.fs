@@ -79,4 +79,10 @@ create null
     swap null cons swap
     last-cons set-cdr! ;
 
+:private count1 ( count x -- count+1 )
+    drop 1+ ;
+
+: length ( list -- n )
+    0 swap ['] count1 swap fold ;
+
 publish
