@@ -38,6 +38,11 @@ create null
             cons
     repeat nip ;
 
+: execute-list recursive { list -- }
+    list null? not if
+        list car execute
+        list cdr execute-list
+    then ;
 
 : fold recursive { xt list -- } 
     list null? not if

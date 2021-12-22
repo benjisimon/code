@@ -12,5 +12,8 @@
     4 x append!
     assert( x length 4 = )
     assert( x cdr cdr cdr car 4 = )
-
 ;
+
+:test
+    assert( 100 << ['] 2/ ['] dup ['] * >> execute-list 2500 = )
+    ;
