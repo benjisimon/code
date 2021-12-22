@@ -44,9 +44,16 @@ create null
         list cdr execute-list
     then ;
 
+:private exec ( list-or-xt -- )
+    dup list? if
+        execute-list
+    else
+        execute
+    then ;
+
 : fold recursive { xt list -- } 
     list null? not if
-        list car xt execute
+        list car xt exec
         xt list cdr fold
     then ;
 
@@ -54,7 +61,7 @@ create null
     list null? if
         null
     else
-        list car xt execute
+        list car xt exec
         xt list cdr map
         cons
     then ;

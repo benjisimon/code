@@ -16,4 +16,7 @@
 
 :test
     assert( 100 << ['] 2/ ['] dup ['] * >> execute-list 2500 = )
+    << 1 2 3 >> { x }
+    << ['] 1+  ['] + >> { ops } 
+    assert( 0 ops x fold 9 =  ) 
     ;
