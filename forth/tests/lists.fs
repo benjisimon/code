@@ -19,4 +19,8 @@
     << 1 2 3 >> { x }
     << ['] 1+  ['] + >> { ops } 
     assert( 0 ops x fold 9 =  ) 
-    ;
+;
+
+:test
+    assert( 0 << ['] drop ['] 1+ >> << 1 2 3 >> fold 3 = )
+;
