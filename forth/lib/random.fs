@@ -46,8 +46,9 @@ public-words
 
 : random-word ( -- c-addr u )
     words-path r/o open-file throw { fd }
-    fd random-seek
+    fd random-seek throw
     line-buffer max-line fd read-line throw drop drop 
-    line-buffer max-line fd read-line throw drop line-buffer swap ;
+    line-buffer max-line fd read-line throw drop line-buffer swap
+    fd close-file throw ;
 
 publish
