@@ -27,3 +27,11 @@ create foo 0 ,
     assert( clash 1001 = )
     assert( unstash 1001 = )
 ;
+
+:test
+    assert( 0 100 0 between? )
+    assert( 0 100 50 between? )
+    assert( 0 100 100 between? )
+    assert( 0 100 101 between? not )
+    assert( 0 100 999 between? not )
+;

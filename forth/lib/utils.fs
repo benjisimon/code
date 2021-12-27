@@ -16,6 +16,11 @@ module
 : odd? ( n -- is-odd? )
     1 and 1 = ;
 
+: between? { lower upper x -- boolean }
+    x lower >= 
+    x upper <=
+ and ;
+
 
 private-words
 
