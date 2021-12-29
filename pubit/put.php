@@ -5,9 +5,9 @@
 
 $body = g($_POST, 'body');
 $key  = g($_POST, 'key');
+$path = '/var/www/private/pubit.data';
 
 if($key == trim(file_get_contents('/usr/local/etc/pubit.key'))) {
-  $path = trim(file_get_contents('/usr/local/etc/pubit.path'));
   file_put_contents($path, $body);
   echo "OK\n";
 } else {
