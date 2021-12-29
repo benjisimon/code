@@ -7,7 +7,7 @@ header("Content-Type: text/plain");
 $key = g($_GET, 'key');
 
 if(strlen($key) >= 8 && strpos(current_key(), $key) === 0) {
-  file_put_contents('/var/www/private/pubit.data');
+  echo file_get_contents('/var/www/private/pubit.data');
 } else {
   echo "Nope";
 }
