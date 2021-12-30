@@ -75,4 +75,5 @@ function cache_get($symbol) {
 function cache_put($symbol, $value) {
   $today = date('Y-m-d', strtotime('today EST'));
   file_put_contents("/var/www/private/cache/pubit.$symbol", "$today:$value");
+  return $value;
 }
