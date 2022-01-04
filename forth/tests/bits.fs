@@ -18,4 +18,14 @@
     assert( 1 5 lshift 32 = )
     assert( 1 *33 33 = )
     assert( 94948 *33 94948 33 * = )
-    ;
+;
+
+:test
+    assert( 0 lsb 0 = )
+    assert( 1 lsb %1 = )
+    assert( 4 lsb %1111 = )
+    assert( %1111 4 lsb? )
+    assert( %1000001111 4 lsb? )
+    assert( %11111 4 lsb? )
+    assert( %11101 4 lsb? not )
+;
