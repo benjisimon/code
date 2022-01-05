@@ -1,7 +1,8 @@
 \ Test out arrays
 
-\ marker -tests
+module
 
+private-words
 
 10 constant #boxes
 #boxes array boxes
@@ -23,4 +24,4 @@
     assert( 0 ['] max array-values boxes 97 = )
 ;
 
-\ -tests
+publish
