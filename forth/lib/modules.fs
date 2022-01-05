@@ -19,4 +19,4 @@
     public-words ;
 
 : publish ( )
-    previous ;
+    public-words previous ;
