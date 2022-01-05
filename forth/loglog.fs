@@ -19,6 +19,7 @@ require tests/random.fs
 require tests/chars.fs
 require tests/hashing.fs
 require tests/arrays.fs
+require tests/files.fs
 
 cr run-all cr cr
 
