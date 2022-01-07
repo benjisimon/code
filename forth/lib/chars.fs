@@ -16,6 +16,11 @@ module
     c uppercase-char?
     c lowercase-char? or
     c [char] ' =
-    c [char] - = or or ;
+    c [char] - = or or
+    c 0 > and ;
+
+: non-word-char? { c -- flag }
+    c word-char? not
+    c 0 > and ;
 
 publish
