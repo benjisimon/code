@@ -7,10 +7,12 @@ private-words
 s" data/short.txt" r/o open-file throw value short-fd
 
 :test
-    assert( short-fd read-word s" Larry" str= )
-    assert( short-fd read-word s" Curly" str= )
-    assert( short-fd read-word s" AND" str= )
-    assert( short-fd read-word s" Moe" str= )
+    assert( short-fd file-peek-char [char] L = )
+    assert( short-fd file-peek-char [char] L = )
+    assert( short-fd file-read-char [char] L = )
+    assert( short-fd file-peek-char [char] a = )
+    assert( short-fd file-peek-char [char] a = )
+    assert( short-fd file-read-char [char] a = )
 ;
 
 publish
