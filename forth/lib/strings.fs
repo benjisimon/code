@@ -10,15 +10,15 @@ module
 
 : string-buffer ( length "name" -- )
     create  dup , 0 , chars 2 cells + allot
-  does> ( op flag addr|index addr -- op-results ... )
-    swap dup 0 < if
-        drop swap execute
+  does> ( op addr|index addr -- op-results ... )
+    over 0 < if
+        swap negate execute
     else
-        chars 2 cells + +
+        swap chars 2 cells + +
     then ;
     
 :private op ( -- op-flag )
-    -1 ;
+    negate ;
     
 :private length ( addr -- n )
     @ ;
