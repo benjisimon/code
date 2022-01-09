@@ -20,10 +20,14 @@ require tests/chars.fs
 require tests/hashing.fs
 require tests/arrays.fs
 require tests/files.fs
+require tests/strings.fs
 
 cr run-all cr cr
 
 s" data/macbeth.txt" r/o open-file throw value macbeth-fd
+s" data/short.txt" r/o open-file throw value short-fd
+
+
 
 
 : next-word ( -- c-addr u | 0 )
@@ -35,5 +39,6 @@ s" data/macbeth.txt" r/o open-file throw value macbeth-fd
 : collect-stats ( -- )
     begin
         next-word dup eof? not while
+            type
     repeat ;
 

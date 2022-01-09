@@ -29,7 +29,7 @@ public-words
 
 : file-read-char { wfileid -- char }
     wfileid file-has-char? if
-        char-buffer 1 wfileid read-file throw
+        char-buffer 1 wfileid read-file throw drop
         char-buffer c@
     else
         0
@@ -39,7 +39,7 @@ public-words
     wfileid file-has-char? if
         wfileid file-position throw d>s { before }
         wfileid file-read-char { c }
-        before s>d wfileid reposition-file throw
+        before  s>d wfileid reposition-file throw
         c
     else
         0
@@ -52,16 +52,16 @@ private-words
 public-words
 
 : read-sequence { xt wfileid -- c-addr count }
-    sb-reset seq-buffer
+    sb-reset seq-buffer 
     begin
         wfileid file-peek-char
-        xt execute while
+        xt execute  while
             wfileid file-read-char sb-append seq-buffer
     repeat
     sb-value seq-buffer ;
 
 : read-word ( wfileid -- c-addr count )
-    dup ['] non-word-char? swap read-sequence
+    ['] non-word-char? over read-sequence   2drop 
     ['] word-char? swap read-sequence ;
     
 publish
