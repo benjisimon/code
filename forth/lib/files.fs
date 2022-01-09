@@ -28,12 +28,12 @@ public-words
     file-size throw d>s < ;
 
 : file-read-char { wfileid -- char }
-    wfileid file-has-char? if
-        char-buffer 1 wfileid read-file throw drop
+    char-buffer 1 wfileid read-file throw if
         char-buffer c@
     else
         0
     then ;
+
 
 : file-peek-char { wfileid -- char }
     wfileid file-has-char? if
