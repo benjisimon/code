@@ -27,6 +27,9 @@ module
     x upper <=
  and ;
 
+: t% ( x y -- x/y-%-truncated )
+    100 swap */ ;
+
 
 private-words
 

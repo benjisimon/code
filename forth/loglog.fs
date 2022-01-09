@@ -58,7 +58,7 @@ s" data/short.txt" r/o open-file throw value short-fd
     repeat ;
 
 : bucket. ( i bucket -- )
-    swap lsb bin. ." : " @ . cr ; 
+    swap lsb bin. ." : " @ dup . ."  ( " #words t% . ." %)" cr ; 
     
 
 : stats. ( -- )
