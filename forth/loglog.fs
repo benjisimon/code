@@ -40,7 +40,7 @@ s" data/short.txt" r/o open-file throw value short-fd
 : #words++ ( -- )
     #words 1+ to #words ;
 
-10 array buckets
+15 array buckets
 0 array-fill buckets
 
 : analyze-bits { h i bucket -- hash }
@@ -58,7 +58,7 @@ s" data/short.txt" r/o open-file throw value short-fd
     repeat ;
 
 : bucket. ( i bucket -- )
-    swap lsb bin. ." : " @ dup . ."  ( " #words t% . ." %)" cr ; 
+    swap dup . lsb bin. ." : " @ dup . ."  ( " #words t% . ." %)" cr ; 
     
 
 : stats. ( -- )
