@@ -45,7 +45,7 @@ public-words
 
 : :test ( -- ) noname : latestxt register-test ;
 
-: run-all ( -- )
+: run-tests ( -- )
     reset-stats
     #tests @ 0  +do
         i nth-test @ catch
