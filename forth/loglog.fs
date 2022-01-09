@@ -22,11 +22,10 @@ require tests/arrays.fs
 require tests/files.fs
 require tests/strings.fs
 
-cr run-all cr cr
+cr run-tests cr cr
 
 s" data/macbeth.txt" r/o open-file throw value macbeth-fd
 s" data/short.txt" r/o open-file throw value short-fd
-
 
 
 
@@ -36,9 +35,32 @@ s" data/short.txt" r/o open-file throw value short-fd
 : eof? ( x -- b )
     0 = ;
 
+0 value #words
+
+: #words++ ( -- )
+    #words 1+ to #words ;
+
+10 array buckets
+0 array-fill buckets
+
+: analyze-bits { h i bucket -- hash }
+    h i lsb? 1 and bucket @+!
+    h ;
+    
+
+: analyze-hash ( hash -- )
+    ['] analyze-bits array-each buckets ;
+
 : collect-stats ( -- )
     begin
         next-word dup eof? not while
-            type
+            hash analyze-hash drop #words++
     repeat ;
 
+: bucket. ( i bucket -- )
+    swap lsb bin. ." : " @ . cr ; 
+    
+
+: stats. ( -- )
+    ." # Words w/ Prefix" cr
+    [']  bucket. array-each buckets ;
