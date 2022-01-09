@@ -4,6 +4,9 @@ module
 : @+1! ( addr -- )
     dup @ 1+ swap ! ;
 
+: @+! { u addr -- }
+    addr @ u + addr ! ;
+
 : not ( b -- not-b )
     if false else true then ;
 
