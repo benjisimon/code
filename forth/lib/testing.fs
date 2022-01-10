@@ -2,56 +2,77 @@
 
 module
 
+0 value #tests
+400 array tests
+0 array-fill tests
+
 private-words
 
-200 constant #max-tests
-create all-tests 
-#max-tests cells allot
+array-length tests array src-addrs
+array-length tests array src-counts
+array-length tests array src-lines
+array-length tests array outcomes
 
-variable #tests
-0 #tests !
+: register-test ( xt -- )
+    #tests tests !
+    sourcefilename #tests src-counts ! #tests src-addrs !
+    sourceline# #tests src-lines !
+    #tests 1+ to #tests ;
 
-variable #passes
-variable #fails
+: .test { i -- }
+    i src-addrs @ i src-counts @ type
+    ." :"  i src-lines @  . ;
+    
+: pass? ( outcome -- 0|1 )
+    0 = 1 and ;
+
+: failure? ( outcome -- 0|1 )
+    pass? not 1 and ;
+
+: any? ( outcome -- 1)
+    drop 1 ;
+
+: .outcome ( outcome -- )
+    dup pass? if
+        drop ." OK"
+    else
+        ." Fail: " .
+    then ;
+
+: .details { filter-xt -- }
+    #tests 0 +do
+        i outcomes @ filter-xt execute if
+            i . ."  " 
+            i outcomes @ .outcome ."  " i .test cr
+        then
+    loop ;
+
+: .summary ( -- )
+    0
+    #tests 0 +do
+        i outcomes @ failure? +
+    loop
+    . ." Failures, " #tests . ." Tests" cr ;
+
+
 
 public-words
 
-:private reset-stats ( -- )
-    0 #passes !
-    0 #fails ! ;
-
-:private track-outcome ( outcome -- )
-    0 = if #passes else #fails then @+1! ;
-
-:private .stats ( -- )
-    #passes @ #fails @ + . ." Tests Run, "
-    #passes ? ." Passed, "
-     #fails ? ." Failed";
-
-: nth-test ( n -- test-record )
-    cells all-tests + ;
-
-: num-tests ( -- n )
-    #tests @ ;
-
-:private current-test ( -- test-record )
-    num-tests nth-test ;
-
-
-:private register-test ( xt -- )
-    assert( num-tests #max-tests < )
-    current-test !
-    #tests @+1! ;
-
+  
 : :test ( -- ) noname : latestxt register-test ;
 
+: run-test ( n -- )
+    tests @ catch .outcome ;
+
+: tests. ( -- )
+    ['] any? .details ;
+
+: tests.failures ( -- )
+    ['] failure? .details ;
+
 : run-tests ( -- )
-    reset-stats
-    #tests @ 0  +do
-        i nth-test @ catch
-        track-outcome
-        clearstack
-    loop
-    .stats ;
+    #tests 0 +do
+        i tests @ catch i outcomes !
+    loop .summary ;
 
 publish
