@@ -5,7 +5,9 @@ create foo 0 ,
 :test
     assert( foo @ 0 = )
     foo @+1!
-    assert( foo @ 1 = ) ;
+    assert( foo @ 1 = )
+    0 foo !
+    assert( foo @ 0 = ) ;
 
 :test
     assert( 1 1 + 3 = not )
