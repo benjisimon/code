@@ -8,9 +8,10 @@ require lib/chars.fs
 require lib/strings.fs
 require lib/files.fs
 require lib/random.fs
+require lib/arrays.fs
 require lib/testing.fs
 require lib/hashing.fs
-require lib/arrays.fs
+
 
 require tests/modules.fs
 require tests/utils.fs
