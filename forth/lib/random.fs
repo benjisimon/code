@@ -3,30 +3,45 @@
 
 module
 
+defer rand
+
 private-words
 
 8961243219 constant seed-init
 variable seed
 seed-init seed !
 
-public-words
 
-
-: rand ( -- )
+: simple-seed-src ( -- )
     seed @ 110315245 * 12345 +
     dup seed !
     65536 / 32768 mod ;
 
-: rand ( -- )
+: simple-seed-rand ( -- )
     1
-    rand 4 mod 1+ 0 +do
-        rand *
+    simple-seed-src 4 mod 1+ 0 +do
+        simple-seed-src *
     loop ;
 
+s" /dev/urandom" r/o open-file throw constant /dev/urandom-fd
+
+create /dev/urandom-buffer 1 cells allot
+: /dev/urnadom-rand ( -- u )
+    /dev/urandom-buffer 1 cells /dev/urandom-fd read-file throw
+    assert( 1 cells = )
+    /dev/urandom-buffer @ ;
+
+' simple-seed-rand is rand
+
+public-words
+
+
+
 : randomize ( -- )
-    utime drop seed ! ;
+    ['] /dev/urnadom-rand is rand ;
 
 : unrandomize ( -- )
+    ['] simple-seed-rand is rand
     seed-init seed ! ;
 
 : random ( max -- rand )

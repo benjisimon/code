@@ -1,11 +1,10 @@
 \ Main include file for the project
 
-
-
-
 require lib/modules.fs
-require lib/random.fs
 require lib/utils.fs
+require lib/arrays.fs
+require lib/strings.fs
+require lib/random.fs
 require lib/testing.fs
 require lib/coins.fs
 require lib/cards.fs
@@ -23,7 +22,7 @@ require tests/random.fs
 
 module
 
-cr run-all cr cr
+cr run-tests cr cr
 new-deck shuffle .deck  cr
 new-deck 7*shuffle .deck cr cr
 
