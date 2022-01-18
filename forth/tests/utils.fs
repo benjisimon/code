@@ -37,3 +37,8 @@ create foo 0 ,
     assert( 0 100 101 between? not )
     assert( 0 100 999 between? not )
 ;
+
+:test
+    assert( s" foo/" s" bar/" str+ s" foo/bar/" str= )
+    assert( s" foo/" s" bar/" +str s" bar/foo/" str= )
+;

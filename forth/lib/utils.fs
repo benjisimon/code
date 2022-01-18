@@ -30,6 +30,14 @@ module
 : t% ( x y -- x/y-%-truncated )
     100 swap */ ;
 
+: str+ { a-addr a-len b-addr b-len -- c-addr c-len }
+    here { c-addr } a-len b-len + chars allot
+    a-addr c-addr a-len cmove
+    b-addr c-addr a-len chars + b-len cmove
+    c-addr a-len b-len + ;
+
+: +str ( c1-addr u1 c2-addr u2 -- c3-addr u3 )
+    2swap str+ ;
 
 private-words
 
@@ -64,5 +72,10 @@ public-words
 : ^ ( x y -- x^y )
     dup =0 if 1 else pow then ;
 
-
+: lib ( "name" -- )
+    parse-name 2dup 
+    s" lib/" +str  s" .fs" str+ required
+    s" tests/" +str s" .fs" str+ required ;
+    
+    
 publish
