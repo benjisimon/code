@@ -26,7 +26,6 @@ publish
 
 
 :test
-    assert( s" x" find-name 0 =  )
     assert( s" 100x" find-name 0 = )
     assert( s" grade" find-name 0 = not )
     assert( s" bob" find-name 0 = )
