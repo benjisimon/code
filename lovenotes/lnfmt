@@ -1,0 +1,10 @@
+#!/bin/bash
+
+##
+## take in an input stream of love notes and output formatted love notes.
+##
+
+while read line ; do
+  echo -n "I Love $line"
+  echo -e -n " \u2764 "
+done
