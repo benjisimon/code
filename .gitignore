@@ -4,3 +4,4 @@
 .*.cache
 misc
 imaginary-news/.auth.php
+*.rbxl.lock
