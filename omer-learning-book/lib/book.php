@@ -55,7 +55,8 @@ class Book extends FPDF {
       if($url = trim($entry['Learn More'])) {
         $short_url = bitly_shrink($url);
         $label = str_replace('https://', '', $short_url);
-        $this->Cell(0, 12, "Learn More at $label", 'B', 2, 'C', false, $url);
+        $text = "Learn More at $label";
+        $this->Cell($this->GetStringWidth($text), 14, $text, 'B', 2, 'C', false, $url);
       }
     });
     $this->Ln();
