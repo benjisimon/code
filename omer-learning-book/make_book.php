@@ -23,4 +23,4 @@ while($row = fgetcsv($fd)) {
   $book->addEntry($entry);
 }
 
-$book->Output('F', "book.pdf");
+$book->Output('F', __DIR__ . "/book.pdf");

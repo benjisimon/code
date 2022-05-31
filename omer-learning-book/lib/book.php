@@ -18,10 +18,10 @@ class Book extends FPDF {
 
     $this->styles = [
       'default' => ['helvetica', '', 12, [0, 0, 0]],
-      'book_title' => ['oswald', 'b', 24, [60, 60, 60]],
+      'book_title' => ['oswald', 'b', 24, [13, 49, 95]],
       'book_subtitle' => ['aller', '', 18, [0, 0, 0]],
-      'h1' => ['oswald', 'b', 16, [90, 90, 90]],
-      'h2' => ['aller', '', 14, [0, 0, 0]],
+      'h1' => ['oswald', 'b', 16, [13, 49, 95]],
+      'h2' => ['aller', '', 10, [0, 0, 0]],
       'link' => ['aller', '', 12, [0, 0, 0]]
     ];
     $this->setStyle('default');
@@ -42,24 +42,36 @@ class Book extends FPDF {
 
   public function addEntry($entry) {
     $this->withStyle('h1', function() use($entry){
-      $this->Cell(0, 12, $entry['The Count'], 0, 2);
+      $this->Cell(0, 16, $entry['The Count'], 0, 2);
     });
 
     $this->withStyle('h2', function() use($entry) {
-      $this->Cell(0, 12, $entry['Topic'], 0, 2);
+      $this->Cell(0, 20, $entry['Topic'], 0, 2);
     });
 
-    $this->MultiCell(0, 12, $entry['Content'], 1, 'L');
+    $y_before = $this->GetY();
 
-    $this->withStyle('link', function() use($entry) {
-      if($url = trim($entry['Learn More'])) {
-        $short_url = bitly_shrink($url);
-        $label = str_replace('https://', '', $short_url);
-        $text = "Learn More at $label";
-        $this->Cell($this->GetStringWidth($text), 14, $text, 'B', 2, 'C', false, $url);
-      }
-    });
-    $this->Ln();
+    $this->SetLeftMargin(45);
+    $this->SetRightMargin(45);
+    $this->MultiCell(0, 16, $entry['Content'], 0, 'L');
+    $this->SetLineWidth(3);
+    $this->SetDrawColor(200, 200, 200);
+
+    if($url = trim($entry['Learn More'])) {
+      $short_url = bitly_shrink($url);
+      $label = str_replace('https://', '', $short_url);
+      $text = "Read More at $label";
+      $this->Ln();
+      $this->Cell($this->GetStringWidth($text), 14, $text, '', 2, 'C', false, $url);
+    }
+    $y_after = $this->GetY();
+    $this->SetLeftMargin(36);
+    $this->SetRightMargin(36);
+
+    if($y_before < $y_after) {
+      $this->Line(40, $y_before, 40, $y_after);
+    }
+
     $this->Ln();
     $this->Ln();
   }
