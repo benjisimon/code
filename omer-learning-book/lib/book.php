@@ -17,12 +17,12 @@ class Book extends FPDF {
     $this->AddFont('aller', '', 'Aller_Rg.php');
 
     $this->styles = [
-      'default' => ['helvetica', '', 12],
-      'book_title' => ['oswald', 'b', 24],
-      'book_subtitle' => ['aller', '', 18],
-      'h1' => ['oswald', 'b', 16],
-      'h2' => ['aller', '', 14],
-      'link' => ['aller', '', 12]
+      'default' => ['helvetica', '', 12, [0, 0, 0]],
+      'book_title' => ['oswald', 'b', 24, [60, 60, 60]],
+      'book_subtitle' => ['aller', '', 18, [0, 0, 0]],
+      'h1' => ['oswald', 'b', 16, [90, 90, 90]],
+      'h2' => ['aller', '', 14, [0, 0, 0]],
+      'link' => ['aller', '', 12, [0, 0, 0]]
     ];
     $this->setStyle('default');
   }
@@ -49,7 +49,7 @@ class Book extends FPDF {
       $this->Cell(0, 12, $entry['Topic'], 0, 2);
     });
 
-    $this->MultiCell(0, 12, $entry['Content']);
+    $this->MultiCell(0, 12, $entry['Content'], 1, 'L');
 
     $this->withStyle('link', function() use($entry) {
       if($url = trim($entry['Learn More'])) {
@@ -69,6 +69,8 @@ class Book extends FPDF {
     $this->SetFont($this->styles[$name][0],
                    $this->styles[$name][1],
                    $this->styles[$name][2],);
+    [$r,$g,$b] = $this->styles[$name][3];
+    $this->SetTextColor($r, $g, $b);
   }
 
   public function withStyle($style, $thunk) {
