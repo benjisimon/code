@@ -60,7 +60,7 @@ class Book extends FPDF {
 
     $this->SetLeftMargin(45);
     $this->SetRightMargin(45);
-    $this->MultiCell(0, 16, $entry['Content'], 0, 'L');
+    $this->MultiCell(0, 16, $this->scrub($entry['Content']), 0, 'L');
     $this->SetLineWidth(3);
     $this->SetDrawColor(200, 200, 200);
 
@@ -99,4 +99,13 @@ class Book extends FPDF {
     $this->setStyle($before);
   }
 
+  private function scrub($text) {
+    $fixes = [
+      "’" => "'",
+      '“' =>  '"',
+      '”' =>  '”'
+    ];
+
+    return str_replace(array_keys($fixes), array_values($fixes), $text);
+  }
 }
