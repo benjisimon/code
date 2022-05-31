@@ -18,8 +18,8 @@ class Book extends FPDF {
 
     $this->styles = [
       'default' => ['helvetica', '', 12, [0, 0, 0]],
-      'book_title' => ['oswald', 'b', 24, [13, 49, 95]],
-      'book_subtitle' => ['aller', '', 18, [0, 0, 0]],
+      'book_title' => ['oswald', 'b', 48, [13, 49, 95]],
+      'book_subtitle' => ['aller', '', 36, [86, 135, 194]],
       'h1' => ['oswald', 'b', 16, [13, 49, 95]],
       'h2' => ['aller', '', 10, [0, 0, 0]],
       'link' => ['aller', '', 12, [0, 0, 0]]
@@ -30,13 +30,20 @@ class Book extends FPDF {
 
   public function addTitlePage() {
     $this->AddPage();
+    $this->SetY(72 * 2);
     $this->withStyle('book_title', function() {
-      $this->Cell(0, 12, "49 Days to Greener and More Equitable Community", 0, 2);
+      $this->Cell(0, 55, "49 Days to Greener and", 0, 2, 'C');
+      $this->Cell(0, 55, "More Equitable Community", 0, 2, 'C');
     });
 
+    $this->Ln(72);
+
     $this->withStyle('book_subtitle', function() {
-      $this->Cell(0, 12, "Omer Learning 2022", 0, 2);
+      $this->Cell(0, 12, "Omer Learning 2022", 0, 2, 'C');
     });
+
+    $this->Ln(72 * 4);
+    $this->Image(__DIR__ . "/../images/logo.png", 72 * 3);
     $this->AddPage();
   }
 
