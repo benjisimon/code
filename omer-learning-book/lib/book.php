@@ -58,7 +58,7 @@ class Book extends FPDF {
 
   public function addThanksPage() {
     $this->withStyle('thanks_intro', function() {
-      $this->Cell(0, 24, "Special thanks to this year's contibutors", 0, 1, 'C');
+      $this->Cell(0, 24, "Special thanks to this year's contributors", 0, 1, 'C');
     });
 
     $fd = fopen(__DIR__ . '/../data/contributors.csv', 'r');
