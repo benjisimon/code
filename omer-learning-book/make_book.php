@@ -11,12 +11,13 @@ require_once(__DIR__ . '/lib/book.php');
 
 php_sapi_name() == PHP_SAPI || die("Only via cli.");
 
-$fd = fopen(__DIR__ . "/content.csv", 'r');
+$fd = fopen(__DIR__ . "/data/content.csv", 'r');
 $headers = fgetcsv($fd);
 
 $book = new Book();
 
 $book->addTitlePage();
+$book->addThanksPage();
 
 while($row = fgetcsv($fd)) {
   $entry = array_combine($headers, $row);

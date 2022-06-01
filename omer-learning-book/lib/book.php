@@ -25,6 +25,7 @@ class Book extends FPDF {
       'default' => ['helvetica', '', 12, [0, 0, 0]],
       'book_title' => ['oswald', 'b', 48, [13, 49, 95]],
       'book_subtitle' => ['aller', '', 36, [86, 135, 194]],
+      'thanks_intro' => ['oswald', 'b', 16, [0, 0, 0]],
       'h1' => ['oswald', 'b', 16, [13, 49, 95]],
       'h2' => ['aller', '', 10, [0, 0, 0]],
       'link' => ['aller', '', 12, [0, 0, 0]]
@@ -52,6 +53,19 @@ class Book extends FPDF {
 
     $this->Ln(72 * 3);
     $this->Image(__DIR__ . "/../images/logo.png", 72 * 3);
+    $this->AddPage();
+  }
+
+  public function addThanksPage() {
+    $this->withStyle('thanks_intro', function() {
+      $this->Cell(0, 24, "Special thanks to this year's contibutors", 0, 1, 'C');
+    });
+
+    $fd = fopen(__DIR__ . '/../data/contributors.csv', 'r');
+    while($row = fgetcsv($fd)) {
+      $this->Cell(0, 20, $row[0], 0, 1, 'C');
+    }
+
     $this->AddPage();
   }
 
