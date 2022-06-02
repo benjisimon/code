@@ -41,7 +41,7 @@ class Book extends FPDF {
   public function addTitlePage() {
     $this->SetY(72 * 2);
     $this->withStyle('book_title', function() {
-      $this->Cell(0, 55, "49 Days to Greener and", 0, 2, 'C');
+      $this->Cell(0, 55, "49 Days to a Greener and", 0, 2, 'C');
       $this->Cell(0, 55, "More Equitable Community", 0, 2, 'C');
     });
 
