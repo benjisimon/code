@@ -38,3 +38,30 @@
         (display (next-show-board-char i))
         (loop (cdr board)
               (add1 i)))))))
+
+(define (next-turn t)
+  (if (x? t) 'o 'x))
+
+
+(define (mark-board board symbol location)
+  (let loop ((board board)
+             (i 0)
+             (accum '()))
+    (cond ((and (= i location) (_? (car board)))
+           (append (reverse accum) (list symbol) (cdr board)))
+          ((not (null? board))
+           (loop (cdr board)
+                 (add1 i)
+                 (cons (car board) accum)))
+          (else
+           (error (format "Invalid move: ~s\n" location))))))
+
+(define (play)
+  (let loop ((board (new-board))
+             (turn 'x))
+    (show-board board)
+    (display (format "Choose a location to place a ~s: " turn))
+    (let ((spot (read)))
+      (loop (mark-board board turn spot)
+            (next-turn turn)))))
+          
