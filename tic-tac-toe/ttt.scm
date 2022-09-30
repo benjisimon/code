@@ -56,12 +56,49 @@
           (else
            (error (format "Invalid move: ~s\n" location))))))
 
+
+(define (all-locations-are? to-check board player)
+  (cond ((null? to-check) #t)
+        (else
+         (let ((index (car to-check)))
+           (if (eq? (list-ref board index) player)
+               (all-locations-are? (cdr to-check) board player)
+               #f)))))
+
+(define (won? board player)
+  (let ((winners '((0 1 2)
+                   (3 4 5)
+                   (6 7 8)
+                   (0 3 6)
+                   (1 4 7)
+                   (2 5 8)
+                   (0 4 8)
+                   (2 4 6))))
+    (let loop ((winners winners))
+      (cond ((null? winners) #f)
+            (else
+             (let ((w (car winners)))
+               (if (all-locations-are? w board player)
+                   #t
+                   (loop (cdr winners)))))))))
+
+(define (draw? board)
+  (let ((available (filter _? board)))
+    (null? available)))
+        
+
 (define (play)
   (let loop ((board (new-board))
              (turn 'x))
     (show-board board)
-    (display (format "Choose a location to place a ~s: " turn))
-    (let ((spot (read)))
-      (loop (mark-board board turn spot)
-            (next-turn turn)))))
-          
+    (let ((last-player (next-turn turn)))
+    (cond ((won? board last-player)
+           (display (format "WINNER: ~s\n" (next-turn turn))))
+          ((draw? board)
+           (display  "Draw :-(\n"))
+          (else
+           (display (format "Choose a location to place a ~s: " turn))
+           (let ((spot (read)))
+             (loop (mark-board board turn spot)
+                   (next-turn turn))))))))
+    
