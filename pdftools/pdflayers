@@ -1,0 +1,91 @@
+#!/bin/env python3
+
+##
+## MuPDF to the rescue
+## See:
+## https://pymupdf.readthedocs.io/en/latest/document.html#Document.get_layer
+## https://pymupdf.readthedocs.io/en/latest/document.html#Document.set_layer
+##
+## You might think that get_layer and set_layer worked on an individual layer.
+## They do not. They work on all the layers--aka Optional Content Groups (OCGS).
+##
+##
+## You need to do:
+##  python3 -m pip install --upgrade pymupdf
+##
+import fitz
+import pprint
+import getopt, sys
+import os.path
+
+def usage():
+    cmd = os.path.basename(sys.argv[0])
+    print("Usage:", cmd, "-l foo.pdf")
+    print("Usage:", cmd, "[-e layer,..] -i input.pdf -o output.pdf")
+    print("Usage:", cmd, "[-d layer,..] -i input.pdf -o output.pdf")
+    exit()
+
+def list_layers(input_path):
+    doc = fitz.open(input_path);
+    ocgs = doc.get_ocgs();
+    layers = doc.get_layer();
+    on = layers['on'] if 'on' in layers else [];
+    for ocg in ocgs:
+        dispo = 'on' if ocg in on else 'off'
+        print(":".join((dispo, str(ocg), ocgs[ocg]['name'])))
+
+def process_layers(action, input_path, output_path, to_enable, to_disable):
+    doc = fitz.open(input_path);
+    if action == "enable":
+        doc.set_layer(config=-1, on=to_enable, off=[], basestate='OFF')
+    else:
+        doc.set_layer(config=-1, off=to_disable, on=[], basestate='ON')
+    doc.save(output_path)
+
+
+argumentList = sys.argv[1:]
+options = "hl:e:d:i:o:"
+action="none-set"
+to_enable = []
+to_disable = []
+input_path = False
+output_path = False
+
+try:
+    arguments, values =  getopt.getopt(argumentList, options)
+    for arg, val in arguments:
+        if arg in ("-h"):
+            usage()
+        elif arg in ("-l"):
+            action="list"
+            input_path = val
+        elif arg in ('-e'):
+            action="enable"
+            to_enable = list(map(int, val.split(',')))
+        elif arg in ('-d'):
+            action="disable"
+            to_disable = list(map(int, val.split(',')))
+        elif arg in ('-i'):
+            input_path = val
+        elif arg in ('-o'):
+            output_path = val
+
+except getopt.error as err:
+    print (str(err))
+
+
+if(input_path == False):
+    print("No -i input set")
+    exit()
+
+
+if(action in ("list")):
+  list_layers(input_path)
+elif(action in ("enable", "disable")):
+    if(output_path == False):
+        print("No -o output set")
+        exit()
+    process_layers(action, input_path, output_path, to_enable, to_disable)
+else:
+    print("Unknown action:", action)
+    exit()
