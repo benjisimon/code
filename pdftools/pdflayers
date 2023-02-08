@@ -21,12 +21,10 @@ import os.path
 def usage():
     cmd = os.path.basename(sys.argv[0])
     print("Usage:", cmd, "-l foo.pdf")
-    print("Usage:", cmd, "[-e layer,..] -i input.pdf -o output.pdf")
-    print("Usage:", cmd, "[-d layer,..] -i input.pdf -o output.pdf")
+    print("Usage:", cmd, "[-e layer,..] [-d layer,...] [-E] [-D] -i input.pdf -o output.pdf")
     exit()
 
-def list_layers(input_path):
-    doc = fitz.open(input_path);
+def list_layers(doc):
     ocgs = doc.get_ocgs();
     layers = doc.get_layer();
     on = layers['on'] if 'on' in layers else [];
@@ -34,20 +32,55 @@ def list_layers(input_path):
         dispo = 'on' if ocg in on else 'off'
         print(":".join((dispo, str(ocg), ocgs[ocg]['name'])))
 
-def process_layers(action, input_path, output_path, to_enable, to_disable):
-    doc = fitz.open(input_path);
-    if action == "enable":
-        doc.set_layer(config=-1, on=to_enable, off=[], basestate='OFF')
-    else:
-        doc.set_layer(config=-1, off=to_disable, on=[], basestate='ON')
+def layer_id_lookup(doc):
+    def layer_id(text_or_id):
+        if(text_or_id.isnumeric()):
+            return int(text_or_id)
+
+        ocgs = doc.get_ocgs();
+        for ocg in doc.get_ocgs():
+            if ocgs[ocg]['name'] == text_or_id:
+                return ocg
+        print("Layer:", text_or_id, "not found")
+        exit();
+    return layer_id;
+
+
+def process_layers(action, doc, output_path, to_enable, to_disable, basestate):
+    lookup = layer_id_lookup(doc);
+    to_enable = list(map(lookup, to_enable))
+    to_disable = list(map(lookup, to_disable))
+    layers = doc.get_layer();
+    current_on = layers['on'] if 'on' in layers else [];
+    current_off = layers['off'] if 'off' in layers else [];
+
+    on = []
+    off = []
+    ocgs = doc.get_ocgs();
+    for ocg in doc.get_ocgs():
+        if(ocg in to_enable):
+            on.append(ocg);
+        elif(ocg in to_disable):
+            off.append(ocg);
+        elif(basestate == "Unchanged" and ocg in current_on):
+            on.append(ocg)
+        elif(basestate == "Unchanged" and ocg in current_off):
+            off.append(ocg)
+        elif(basestate == "On"):
+            on.append(ocg)
+        else:
+            off.append(ocg)
+
+    doc.set_layer(config=-1, on=on, off=off, basestate=basestate)
     doc.save(output_path)
 
 
 argumentList = sys.argv[1:]
-options = "hl:e:d:i:o:"
+options = "hl:e:d:i:o:DE"
 action="none-set"
 to_enable = []
 to_disable = []
+basestate = "Unchanged"
 input_path = False
 output_path = False
 
@@ -56,15 +89,19 @@ try:
     for arg, val in arguments:
         if arg in ("-h"):
             usage()
+        if arg in ("-D"):
+            basestate = "Off"
+        if arg in ("-E"):
+            basestate = "On"
         elif arg in ("-l"):
             action="list"
             input_path = val
         elif arg in ('-e'):
             action="enable"
-            to_enable = list(map(int, val.split(',')))
+            to_enable = list(val.split(','))
         elif arg in ('-d'):
             action="disable"
-            to_disable = list(map(int, val.split(',')))
+            to_disable = list(val.split(','))
         elif arg in ('-i'):
             input_path = val
         elif arg in ('-o'):
@@ -78,14 +115,15 @@ if(input_path == False):
     print("No -i input set")
     exit()
 
+doc = fitz.open(input_path);
 
 if(action in ("list")):
-  list_layers(input_path)
+  list_layers(doc)
 elif(action in ("enable", "disable")):
     if(output_path == False):
         print("No -o output set")
         exit()
-    process_layers(action, input_path, output_path, to_enable, to_disable)
+    process_layers(action, doc, output_path, to_enable, to_disable, basestate)
 else:
     print("Unknown action:", action)
     exit()
