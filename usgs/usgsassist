@@ -1,0 +1,305 @@
+#!/bin/bash
+
+##
+## Tools to work with the USGS
+##
+
+PER_PAGE=50
+
+if [ -f  $HOME/.config/usgsassist/config ] ; then
+  . $HOME/.config/usgsassist/config
+else
+  echo "Missing: ~/.config/usgassist/config file"
+  exit
+fi
+
+usage() {
+  cmd=$(basename $0)
+  echo "Usage: $cmd -a topos -l location "
+  echo "Usage: $cmd -a historic -l location "
+  echo "Usage: $cmd -a geobox -l location"
+  echo "Usage: $cmd -a preview -l location"
+  echo "Usage: $cmd -a contains -f area.maps -l lat,lng"
+  echo "Usage: $cmd -a neighbors -f area.maps -l map"
+  exit 1
+}
+
+summarize_json() {
+  if [ "$verbose" = "yes" ] ; then
+    jq '.items[]' | sed 's/^{/,{/' | sed '1s/^,//'
+  else
+    jq -r '.items[] | .title + "|" + .publicationDate + "|" + .downloadURL + "|" +
+           (.boundingBox |
+             ((.minX | tostring)  + "|" +
+              (.minY | tostring) + "|" +
+              (.maxX | tostring) + "|" +
+              (.maxY | tostring)))' | sed -E  's/^(USGS )?US Topo 7.5-minute map for //'
+  fi
+}
+
+get() {
+  dataset="$1" ; shift
+  bb="$1" ; shift
+  offset="$1" ; shift
+
+  curl -s -G \
+       --data-urlencode datasets="$dataset" \
+       --data-urlencode bbox="$bb" \
+       --data-urlencode offset="$offset" \
+       --data-urlencode max="$PER_PAGE" \
+         https://tnmaccess.nationalmap.gov/api/v1/products | tee $HOME/.usgs.last | summarize_json
+}
+
+
+all() {
+  dataset="$1" ; shift
+  bb="$1" ; shift
+
+  if [ "$verbose" = "yes" ] ; then
+    echo '{ "items" : [ '
+  fi
+
+  get "$dataset" "$bb" 0
+
+  total=$(cat $HOME/.usgs.last | jq .total)
+  remaining=$((total - PER_PAGE))
+
+  if [ $remaining -gt 0 ] ; then
+    pages=$(((remaining / PER_PAGE) + 1))
+    for page in $(seq 1 $pages) ; do
+      offset=$((page * PER_PAGE))
+
+      if [ "$verbose" = "yes" ] ; then
+        echo ","
+      fi
+
+      get "$dataset" "$bb" "$offset"
+    done
+  fi
+
+  if [ "$verbose" = "yes" ] ; then
+    echo '] }'
+  fi
+}
+
+max() {
+  cmp=$(echo "$1 > $2" | bc -l)
+  if [ $cmp -eq 1 ] ; then
+    echo $1
+  else
+    echo $2
+  fi
+}
+
+min() {
+  cmp=$(echo "$1 < $2" | bc -l)
+  if [ $cmp -eq 1 ] ; then
+    echo $1
+  else
+    echo $2
+  fi
+}
+
+is_lat_lng() {
+  loc=$1 ; shift
+  lat=$(echo $loc | grep '^[0-9.,-]*$' | cut -f1 -d,)
+  lng=$(echo $loc | grep '^[0-9.,-]*$' | cut -f2 -d,)
+
+  if [ -z "$lat" -o -z "$lng" ] ; then
+    echo "no"
+  else
+    echo "yes"
+  fi
+}
+
+while getopts ":a:l:hf:v" o; do
+  case "$o" in
+    a) action=$OPTARG ;;
+    l) loc=$OPTARG ;;
+    f) file=$OPTARG ;;
+    v) verbose=yes ;;
+    *|h) usage ;;
+  esac
+done
+
+
+case "$action" in
+
+  topos)
+    if [ -z "$loc" ] ; then
+      echo "Missing -l location"
+      exit
+    fi
+    bb=$(usgsassist -a geobox -l "$loc")
+
+    all "US Topo Current" "$bb"
+    ;;
+  historic)
+    if [ -z "$loc" ] ; then
+      echo "Missing -l location"
+      exit
+    fi
+    bb=$(usgsassist -a geobox -l "$loc")
+
+    all "Historical Topographic Maps" "$bb"
+    ;;
+
+
+  geobox)
+    if [ -z "$loc" ] ; then
+      echo "Missing -l 'address; ...'"
+      exit
+    fi
+
+    ne_lat=""
+    ne_lng=""
+    sw_lat=""
+    sw_lng=""
+
+    while read place ; do
+      bounds=$HOME/.usgs.bounds
+      curl -s -G "https://maps.googleapis.com/maps/api/geocode/json" \
+           --data-urlencode address="$place" \
+           -d key=$GOOGLE_MAPS_API_KEY  > $bounds
+      if [ "$verbose" = "yes" ] ; then
+        cat $bounds
+      else
+        p_ne_lat=$(cat $bounds | jq '.results[0].geometry.viewport.northeast.lat')
+        p_ne_lng=$(cat $bounds | jq '.results[0].geometry.viewport.northeast.lng')
+        p_sw_lat=$(cat $bounds | jq '.results[0].geometry.viewport.southwest.lat')
+        p_sw_lng=$(cat $bounds | jq '.results[0].geometry.viewport.southwest.lng')
+      fi
+
+      if [ -z "$ne_lat" ] ; then
+        ne_lat=$p_ne_lat
+        ne_lng=$p_ne_lng
+        sw_lat=$p_sw_lat
+        sw_lng=$p_sw_lng
+      else
+        ne_lat=$(max $p_ne_lat $ne_lat)
+        ne_lng=$(max $p_ne_lng $ne_lng)
+        sw_lat=$(min $p_sw_lat $sw_lat)
+        sw_lng=$(min $p_sw_lng $sw_lng)
+      fi
+    done <<EOF
+      $(echo $loc | tr ';' '\n')
+EOF
+
+    echo "$ne_lng,$ne_lat,$sw_lng,$sw_lat"
+    ;;
+
+  preview)
+    if [ -z "$loc" ] ; then
+      echo "Missing -l 'address;...'"
+      exit
+    fi
+
+    geobox=$(usgsassist -a geobox -l "$loc")
+    ne_lng=$(echo $geobox | cut -d, -f1)
+    ne_lat=$(echo $geobox | cut -d, -f2)
+    sw_lng=$(echo $geobox | cut -d, -f3)
+    sw_lat=$(echo $geobox | cut -d, -f4)
+
+    url="https://maps.googleapis.com/maps/api/staticmap"
+    url="$url?size=500x500"
+    url="$url&key=$GOOGLE_MAPS_API_KEY"
+    url="$url&path=color:purple|$ne_lat,$ne_lng|$ne_lat,$sw_lng|$sw_lat,$sw_lng|$sw_lat,$ne_lng|$ne_lat,$ne_lng"
+
+    echo $url
+    ;;
+
+  contains)
+    if [ -z "$file" ] ; then
+      echo "Missing -f file"
+      exit
+    fi
+
+    if [ -z "$loc" ] ; then
+      echo "Missing -l lat,lng"
+      exit
+    fi
+
+    if [ $(is_lat_lng "$loc") != "yes" ] ; then
+      echo "Can't parse -l lat,lng as a lat and lng"
+      exit
+    fi
+
+    lat=$(echo $loc | cut -d, -f1)
+    lng=$(echo $loc | cut -d, -f2)
+
+    cat $file | awk -F'|' "{
+      min_x=\$4
+      min_y=\$5
+      max_x=\$6
+      max_y=\$7
+
+      if($lat >= min_y && $lat <= max_y &&
+         $lng >= min_x && $lng <= max_x) {
+        print \$0;
+      }
+    }"
+    ;;
+
+  neighbors)
+    if [ -z "$file" ] ; then
+      echo "Missing -f file"
+      exit
+    fi
+
+    if [ -z "$loc" ] ; then
+      echo "Missing -l map"
+      exit
+    fi
+
+    if [ $(is_lat_lng "$loc") = "yes" ] ; then
+      row=$(usgsassist -a contains -l "$loc" -f "$file")
+    else
+      row=$(grep "$loc" $file)
+    fi
+
+    if [ -z "$row" ] ; then
+      echo "No row found in '$loc' in $file"
+      exit
+    fi
+
+    min_x=$(echo $row | cut -d'|' -f 4)
+    min_y=$(echo $row | cut -d'|' -f 5)
+    max_x=$(echo $row | cut -d'|' -f 6)
+    max_y=$(echo $row | cut -d'|' -f 7)
+    offset=$(echo "$max_x - $min_x" | bc -l | sed 's/0*$//')
+
+    center_x=$(echo "$min_x + (($max_x - $min_x) / 2)" | bc -l | sed 's/0*$//')
+    center_y=$(echo  "$min_y + (($max_y - $min_y) / 2)" | bc -l | sed 's/0*$//')
+
+    offset() {
+      x=$1 ; shift
+      xo=$1 ; shift
+      y=$1 ; shift
+      yo=$1 ; shift
+
+      new_x=$(echo $x + $xo | bc -l)
+      new_y=$(echo $y + $yo | bc -l)
+      echo "$new_y,$new_x"
+    }
+
+    #  1 2 3
+    #  4   5
+    #  6 7 8
+
+    points="$(offset $center_x -$offset $center_y  $offset)
+          $(offset $center_x   0       $center_y  $offset)
+          $(offset $center_x   $offset $center_y  $offset)
+          $(offset $center_x   -$offset $center_y  0)
+          $(offset $center_x   $offset $center_y  0)
+          $(offset $center_x   -$offset $center_y  -$offset)
+          $(offset $center_x   0        $center_y  -$offset)
+          $(offset $center_x   $offset $center_y  -$offset)"
+
+    for p in $points; do
+      usgsassist -a contains -f "$file" -l "$p"
+    done
+
+
+    ;;
+  *) usage ;;
+esac
