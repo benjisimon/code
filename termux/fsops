@@ -1,0 +1,59 @@
+#!/bin/bash
+
+##
+## Call tasker to do file system operations. Requires Tasker profile and tasks.
+## See:
+## https://taskernet.com/shares/?user=AS35m8l5RQjTRe3TULACE9yEJktuWU6aAnSRKY16uyMSAb3bzu7qeuaheX4adap2hJHO4tg%3D&id=Profile%3AFileSystemOperation+Intent+Handler
+##
+##
+## See:
+## https://glow.li/posts/pass-variables-from-termux-to-tasker/
+##
+
+task=FileSystemOperation
+fs_out=/sdcard/Tasker/fsops.txt
+
+outcome=/sdcard/Tasker/fs.outcome.$$
+output=/sdcard/Tasker/fs.output.$$
+op=$1 
+src=$2 
+dest=$3
+
+case "$op" in
+  -h|'')
+    cmd=$(basename $0)
+    echo "Usage: $cmd {copy|cat|ls} src dest"
+    exit
+    ;;
+  copy) ;;
+  ls) dest=$output ;;
+  cat) dest=$output ; op=copy ;;
+  *) echo "Unknown operation: [$op]" ; exit ;;
+esac
+
+if [ -z "$src" ] ; then
+  echo "Missing src"
+  exit
+fi
+
+if [ -z "$dest" ] ; then
+  echo "Missing dest"
+  exit
+fi
+
+
+am broadcast --user 0 -a net.dinglish.tasker.$task \
+	-e operation "$op" \
+	-e outcome "$outcome" \
+	-e src "$src" \
+	-e dest "$dest" > /dev/null
+
+while [ ! -f $outcome ] ; do
+  sleep .25
+done
+
+if [ "$dest" = "$output" ] ; then
+  cat $output
+fi
+
+rm -f $outcome $output
