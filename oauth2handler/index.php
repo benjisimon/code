@@ -23,6 +23,7 @@ $client = new Google\Client();
 $client->setAuthConfig(PRIVATE_DIR . "/$app_name.json");
 $client->setRedirectUri($redirect_uri);
 $client->setAccessType('offline');
+$client->setApprovalPrompt("force");
 
 foreach(explode(" ", $_GET['scope']) as $scope) {
   $client->addScope(trim($scope));
