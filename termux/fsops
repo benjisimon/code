@@ -15,6 +15,8 @@ fs_out=/sdcard/Tasker/fsops.txt
 
 outcome=/sdcard/Tasker/fs.outcome.$$
 output=/sdcard/Tasker/fs.output.$$
+error=/sdcard/Tasker/fs.error.$$
+
 op=$1 
 src=$2 
 dest=$3
@@ -22,12 +24,16 @@ dest=$3
 case "$op" in
   -h|'')
     cmd=$(basename $0)
-    echo "Usage: $cmd {copy|cat|ls} src dest"
+    echo "Usage: $cmd cp src dest"
+    echo "Usage: $cmd cat src"
+    echo "Usage: $cmd ls src"
+    echo "Usage: $cmd rm src"
     exit
     ;;
-  copy) ;;
+  cp) ;;
   ls) dest=$output ;;
   cat) dest=$output ; op=copy ;;
+  rm) dest=none ;;
   *) echo "Unknown operation: [$op]" ; exit ;;
 esac
 
@@ -45,6 +51,7 @@ fi
 am broadcast --user 0 -a net.dinglish.tasker.$task \
 	-e operation "$op" \
 	-e outcome "$outcome" \
+        -e error "$error" \
 	-e src "$src" \
 	-e dest "$dest" > /dev/null
 
@@ -52,8 +59,15 @@ while [ ! -f $outcome ] ; do
   sleep .25
 done
 
+error_msg=$(cat $error)
+if [ "$error_msg" != "ok" ] ; then
+  cat $error > /dev/stderr
+  rm -f $outcome $output $error
+  exit 1
+fi
+
 if [ "$dest" = "$output" ] ; then
   cat $output
 fi
 
-rm -f $outcome $output
+rm -f $outcome $output $error
