@@ -2,11 +2,9 @@
 
 ##
 ## Call tasker to do file system operations. Requires Tasker profile and tasks.
-## See:
-## https://taskernet.com/shares/?user=AS35m8l5RQjTRe3TULACE9yEJktuWU6aAnSRKY16uyMSAb3bzu7qeuaheX4adap2hJHO4tg%3D&id=Profile%3AFileSystemOperation+Intent+Handler
-##
 ##
 ## See:
+## https://taskernet.com/shares/?user=AS35m8l5RQjTRe3TULACE9yEJktuWU6aAnSRKY16uyMSAb3bzu7qeuaheX4adap2hJHO4tg%3D&id=Project%3AFsOps
 ## https://glow.li/posts/pass-variables-from-termux-to-tasker/
 ##
 
