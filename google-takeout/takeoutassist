@@ -1,0 +1,93 @@
+#!/bin/bash
+
+##
+## Smoothe out working with Google Takeout.
+##
+## Uses 'gdrive' for working with Google Drive and
+## 'aws' for working with S3.
+##
+##
+
+usage() {
+  cmd=$(basename $0)
+  echo "Usage: $cmd -a archive -p drive-profile-name [-t today]"
+  exit 1
+}
+
+today=$(date +%Y-%m-%d)
+
+while getopts "a:p:ht:" o; do
+  case "$o" in
+    a) action=$OPTARG ;;
+    p) profile=$OPTARG ;;
+    t) today=$OPTARG ;;
+    *) usage ;;
+  esac
+done
+
+if [ -f "$HOME/.config/takeoutassist/config" ] ; then
+  . $HOME/.config/takeoutassist/config
+else
+  echo "Missing config: ~/.config/takeoutassist/config"
+  exit
+fi
+
+if [ -z "S3_PROFILE" ] ; then
+   echo "No S3_PROFILE defined in config"
+   exit 1
+fi
+
+if [ -z "S3_BASE" ] ; then
+   echo "No S3_BASE defined in config"
+   exit 1
+fi
+
+case "$action" in
+  archive)
+    if [ -z "$profile" ] ; then
+      echo "Missing -p profile"
+      exit
+    fi
+
+    holding=$HOME/.takeoutassist/holding
+    mkdir -p $HOME/.takeoutassist/holding
+
+    message=$(gdrive account switch $profile)
+    if [ $? -ne 0 ] ; then
+      echo $message
+      exit
+    fi
+
+    profile_filename=$(echo $profile | sed 's/[^A-Za-z0-9._-]/_/g')
+
+    gdrive files list --field-separator='|' | awk -F'|' '{
+      if($2 == "Takeout" && $3 == "folder") {
+        print $1
+      }
+    }' | while read parent ; do
+      gdrive files list --field-separator='|' --parent=$parent |
+        sed 1d | while read row ; do
+        name=$(echo $row | cut -d'|' -f 2)
+        id=$(echo $row | cut -d'|' -f 1)
+
+        gdrive files download --destination $holding $id
+        local_size=$(stat -c '%s' $holding/$name)
+        if [ -z "$local_size" -o  "$local_size" -eq 0 ] ; then
+          echo "Failed to download from drive: $row"
+          exit
+        fi
+
+        aws --profile=$S3_PROFILE s3 mv $holding/$name $S3_BASE/$profile_filename/$today/$name
+
+        remote_size=$(aws --profile=$S3_PROFILE s3 ls $S3_BASE/$profile_filename/$today/$name |
+                        awk '{print $3}')
+        if [ $local_size -eq $remote_size ] ; then
+          gdrive files delete $id
+        fi
+      done
+    done
+
+    ;;
+
+  *)  usage ;;
+esac
