@@ -12,6 +12,10 @@ cd $dest
 
 cat ../sources.txt | while read line ; do
   url=$(echo $line | cut -d'|' -f 1)
+  if [ -z "$url" ] ; then
+    continue
+  fi
+
   label=$(echo $line | cut -d'|' -s -f 2)
   if [ -n "$label" ] ; then
     file=$(echo  $label | sed 's/ /_/g').pdf
@@ -19,6 +23,8 @@ cat ../sources.txt | while read line ; do
     file=$(basename $url)
   fi
 
-  echo "$file ($url)"
-  curl -s $url > $file
+  if [ ! -f "$file" ] ; then
+    echo "$file ($url)"
+    curl -s $url > $file
+  fi
 done
