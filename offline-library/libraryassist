@@ -1,0 +1,62 @@
+#!/bin/bash
+
+##
+## Work with an offline library
+##
+
+config_file=$HOME/.config/libraryassist/config
+if [ -f $config_file ] ; then
+  . $config_file
+else
+  echo "No config file found: $config_file"
+  exit
+fi
+
+usage() {
+  cmd=$(basename $0)
+  echo "Usage: $cmd -a get-all"
+  echo "Usage: $cmd -a push-all"
+}
+
+while getopts "ha:" o; do
+  case "$o" in
+    a) action=$OPTARG ;;
+    h) usage ;;
+    *) usage ;;
+  esac
+done
+
+
+root=$(dirname $0)
+dest=$root/pdf
+
+case $action in
+  get-all)
+    mkdir -p $dest
+    cd $dest
+
+    cat ../sources.txt | while read line ; do
+      url=$(echo $line | cut -d'|' -f 1)
+      if [ -z "$url" ] ; then
+        continue
+      fi
+
+      label=$(echo $line | cut -d'|' -s -f 2)
+      if [ -n "$label" ] ; then
+        file=$(echo  $label | sed 's/ /_/g').pdf
+      else
+        file=$(basename $url)
+      fi
+
+      if [ ! -f "$file" ] ; then
+        echo "$file ($url)"
+        curl -s $url > $file
+      fi
+    done
+    ;;
+
+  push-all)
+    cd $dest
+    aws --profile=$S3_PROFILE s3 sync . $S3_DEST
+    ;;
+esac
