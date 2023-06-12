@@ -29,29 +29,35 @@ done
 
 root=$(dirname $0)
 dest=$root/pdf
+sources=$root/sources
 
 case $action in
   get-all)
     mkdir -p $dest
-    cd $dest
 
-    cat ../sources.txt | while read line ; do
-      url=$(echo $line | cut -d'|' -f 1)
-      if [ -z "$url" ] ; then
-        continue
-      fi
+    for file in $sources/*.txt ; do
+      category=$(basename $file .txt)
+      mkdir -p $dest/$category
 
-      label=$(echo $line | cut -d'|' -s -f 2)
-      if [ -n "$label" ] ; then
-        file=$(echo  $label | sed 's/ /_/g').pdf
-      else
-        file=$(basename $url)
-      fi
+      cat $file | while read line ; do
+        url=$(echo $line | cut -d'|' -f 1)
+        if [ -z "$url" ] ; then
+          continue
+        fi
 
-      if [ ! -f "$file" ] ; then
-        echo "$file ($url)"
-        curl -s $url > $file
-      fi
+        label=$(echo $line | cut -d'|' -s -f 2)
+        if [ -n "$label" ] ; then
+          path=$(echo  $label | sed 's/ /_/g').pdf
+        else
+          path=$(basename $url)
+        fi
+
+        output=$dest/$category/$path
+        if [ ! -f $output ] ; then
+          echo "$category: $path ($url)"
+          curl -s $url > $output
+        fi
+      done
     done
     ;;
 
@@ -59,4 +65,6 @@ case $action in
     cd $dest
     aws --profile=$S3_PROFILE s3 sync . $S3_DEST
     ;;
+
+  *) usage ;;
 esac

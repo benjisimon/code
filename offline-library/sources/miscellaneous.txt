@@ -1,11 +1,8 @@
-https://static.e-publishing.af.mil/production/1/af_a3/publication/afh10-644/afh10-644.pdf|SERE Handbook
 https://www.survivorlibrary.com/library/a_manual_of_field_astronomy_1917.pdf
 https://www.survivorlibrary.com/library/astronomy_for_young_folks_1922.pdf
 https://www.survivorlibrary.com/library/astronomy_for_surveyors_1929.pdf
 https://www.survivorlibrary.com/library/the_american_boys_book_of_signs_signals_and_symbols_1918.pdf
 https://www.survivorlibrary.com/library/the_boy_mechanic-things_for_boys_to_do_1913.pdf
-https://ia800203.us.archive.org/18/items/cu31924003580952/cu31924003580952.pdf|International Jewish Cookbook
-http://www.projectarts.org/pdfs_texts/The%20American%20Drawing%20Book.pdf|The American Drawing Book
 https://www.survivorlibrary.com/library/military_sketching_1915.pdf
 https://www.survivorlibrary.com/library/military_sketching_and_reconnaissance_1903.pdf
 https://www.survivorlibrary.com/library/pencil_sketching_1913.pdf
@@ -26,8 +23,6 @@ https://www.survivorlibrary.com/library/fm_21-76-1_survival-evasion-recovery.pdf
 https://www.survivorlibrary.com/library/fm_21-76-us-army-survival-manual.pdf
 https://www.survivorlibrary.com/library/fm4-2511.pdf
 https://www.survivorlibrary.com/library/get-tough.pdf
-https://www.survivorlibrary.com/library/how-to-find-your-way.pdf
-https://www.survivorlibrary.com/library/knots.pdf
 https://www.survivorlibrary.com/library/marines-individual-terrorism-survival.pdf
 https://www.survivorlibrary.com/library/practical-unarmed-combat-by-moshe-feldenkrais.pdf
 https://www.survivorlibrary.com/library/ranger-handbook.pdf
@@ -41,14 +36,8 @@ https://www.survivorlibrary.com/library/slide_rule_image-savard_a.pdf
 https://www.survivorlibrary.com/library/slide_rule_image-savard_b.pdf
 https://www.survivorlibrary.com/library/slide_rule_image-slide_rule.pdf
 https://www.survivorlibrary.com/library/a_course_in_slide_rules_1950.pdf
-https://www.survivorlibrary.com/library/an_easy_introduction_to_the_slide_rule_1965.pdf
 https://www.survivorlibrary.com/library/abacus.pdf
 https://www.survivorlibrary.com/library/simplified_mathematics_for_daily_use_and_how_to_use_the_slide_rule_1943.pdf
-https://ia800207.us.archive.org/33/items/WhereThereIsNoDoctor-English-DavidWerner/14.DavidWerner-WhereThereIsNoDoctor.pdf
 https://ironwolf008.files.wordpress.com/2010/07/the-wwii-soe-training-manual-rigden.pdf
-https://www.ready.gov/sites/default/files/2019.CERT_.Basic_.PM_FINAL_508c.pdf|CERT Basic Training
 https://files.eric.ed.gov/fulltext/ED379118.pdf|Outdoor Surival Training for Kids
-https://www.tvusd.k12.ca.us/site/handlers/filedownload.ashx?moduleinstanceid=24457&dataid=8531&FileName=Zumdahl%20Text.pdf|Zumdahl Chemistry
-https://ia802205.us.archive.org/0/items/pdfy-5dQt81v7NYVZl2La/The%20New%20Drawing%20on%20the%20Right%20Side%20of%20the%20Brain.pdf|Drawing on the Right Side of the Brain
-https://rauterberg.employee.id.tue.nl/lecturenotes/DDM110%20CAS/Darwin-1859%20Origin%20of%20Species.pdf|Drawin Origin of Species
-https://web.mit.edu/6.001/6.037/sicp.pdf|Structure and Interpretation of Computer Programs
+https://ia800203.us.archive.org/18/items/cu31924003580952/cu31924003580952.pdf|International Jewish Cookbook
