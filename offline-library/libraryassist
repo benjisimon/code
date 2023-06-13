@@ -15,12 +15,13 @@ fi
 usage() {
   cmd=$(basename $0)
   echo "Usage: $cmd -a get-all"
-  echo "Usage: $cmd -a push-all"
+  echo "Usage: $cmd -a [-d] push-all"
 }
 
-while getopts "ha:" o; do
+while getopts "hda:" o; do
   case "$o" in
     a) action=$OPTARG ;;
+    d) delete=yes ;;
     h) usage ;;
     *) usage ;;
   esac
@@ -63,7 +64,11 @@ case $action in
 
   push-all)
     cd $dest
-    aws --profile=$S3_PROFILE s3 sync . $S3_DEST
+    options=""
+    if [ "$delete" = "yes" ] ; then
+      options="$flags --delete"
+    fi
+    aws --profile=$S3_PROFILE s3 sync $options . $S3_DEST
     ;;
 
   *) usage ;;
