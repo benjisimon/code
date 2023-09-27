@@ -4,19 +4,42 @@
 ## command line tools for working with YouTube.
 ## See: https://developers.google.com/youtube/v3/docs/
 ##
-API_BASE=https://www.googleapis.com/youtube/v3
-AUTH_TOKEN=`youtube_auth token`
 
-if [ -z "$AUTH_TOKEN" ] ; then
-  echo "`basename $0`: authentication not setup. Run: 'youtube_auth init'"
-  exit 1
+config=$HOME/.config/youtubeassist/config
+
+if [ -f "$config" ] ; then
+  . $config
+else
+  echo "Missing config file: $config"
+  exit
 fi
 
-function usage {
-  echo -n "Usage: `basename $0` "
-  echo -n "-a {subscriptions|subscription-delete|playlists|playlist|playlist-delete|playlist-rename|video} "
-  echo "[-i ID] [-n name] -v"
+API_BASE=https://www.googleapis.com/youtube/v3
+
+function usage() {
+  cmd="Usage: $(basename $0)"
+  echo "$cmd: -a init"
+  echo "$cmd: -a subscriptions"
+  echo "$cmd: -a subscription-delete -i id"
+  echo "$cmd: -a playlists"
+  echo "$cmd: -a playlist-items -i id"
+  echo "$cmd: -a playlist-delete -i id"
+  echo "$cmd: -a playlist-rename -i id -n new-name"
+  echo "$cmd: -a playlist-create -n"
+  echo "$cmd: -a video -i id"
+  echo "$cmd: -a my-channel -i id"
   exit
+}
+
+age() {
+  case $(uname) in
+    Darwin) date=gdate ;;
+    *) date=date ;;
+  esac
+
+  before=$($date +%s -d "$1")
+  now=$($date +%s)
+  echo $(((now - before) / (60 * 60 * 24)))
 }
 
 function filter {
@@ -61,6 +84,19 @@ function invoke {
 }
 
 case $ACTION in
+  init)
+    gapi_auth -i $CLIENT_ID -p $CLIENT_SECRET  -r $AUTH_REDIRECT_URI -s "$API_SCOPE" init
+    exit
+    ;;
+
+  my-channel)
+    invoke -G $API_BASE/channels \
+           -d mine=true \
+           -d part=snippet,contentDetails,statistics \
+           -d maxResults=50 |
+      filter -r '.'
+    ;;
+  
   subscriptions)
     invoke -G $API_BASE/subscriptions \
            -d mine=true \
@@ -85,6 +121,30 @@ case $ACTION in
       filter -r ' .items[] |  .id + ":" + .snippet.title'
     ;;
 
+  playlist-items)
+    if [ -z "$ID" ] ; then
+      echo "Missing -i id"
+    fi
+
+    invoke -G $API_BASE/playlistItems \
+           -d part=id,snippet,contentDetails,status \
+           -d playlistId=$ID \
+           -d maxResults=50 |
+      filter -r '.items[] | .contentDetails.videoId + "|" + .snippet.publishedAt + "|" + .snippet.title' > $HOME/.yt.buffer
+    if [ -n "$VERBOSE" ] ; then
+       cat $HOME/.yt.buffer
+    else
+      cat $HOME/.yt.buffer | while read line ; do
+        id=$(echo $line | cut -d'|' -f1)
+        added=$(echo $line | cut -d'|' -f2)
+        age=$(age $added)
+        title=$(echo $line | cut -d'|' -f2)
+        echo "$id|$age|$title"
+      done
+    fi
+    ;;
+
+  
   playlist)
     if [ -z "$ID" ] ; then
       echo "Listing a playlist requires a playlist ID"
@@ -92,7 +152,7 @@ case $ACTION in
     fi
     invoke -G $API_BASE/playlistItems \
            -d playlistId=$ID \
-           -d part=snippet \
+           -d part=snippet,status \
            -d maxResults=50 |
       filter -r ' .items[] | .id + ":" + .snippet.resourceId.videoId + ":" + .snippet.title'
     ;;
@@ -113,6 +173,17 @@ case $ACTION in
     invoke -X PUT "$API_BASE/playlists?part=snippet" \
            -H 'Content-Type: application/json' \
            -d "{'id': '$ID', 'snippet': {'title' : '$NAME'} }" |
+      filter -r '.id + ":" + .snippet.title'
+    ;;
+
+  playlist-create)
+    if [ -z "$NAME" ] ; then
+      echo "Creating a playlist requires you set the NAME (-n)"
+      usage
+    fi
+    invoke -X POST "$API_BASE/playlists?part=snippet,status" \
+           -H 'Content-Type: application/json' \
+           -d "{'snippet': {'title' : '$NAME'}, 'status' : {'privacyStatus' : 'public'} }" |
       filter -r '.id + ":" + .snippet.title'
     ;;
 
