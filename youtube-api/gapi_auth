@@ -1,0 +1,92 @@
+#!/bin/bash
+
+##
+## Authenticate with Google Api
+##
+USAGE="`basename $0` {auth|refresh|token} ctx"
+CTX_DIR=$HOME/.gapi_auth
+
+ctx=default
+
+function usage {
+  echo "Usage: `basename $0` -i CLIENT_ID -p CLIENT_SECRET -r REDIRECT_URI -s scope [-h] [-c context] {init|token}"
+  exit
+}
+
+function age {
+  case $(uname) in
+    Darwin)
+      modified=`stat -f %m $1`
+      ;;
+    *)
+      modified=`stat -c %X $1`
+      ;;
+  esac
+  now=`date +%s`
+  expr $now - $modified
+}
+
+function refresh {
+  refresh_token=`cat $CTX_DIR/$ctx.refresh_token`
+  curl -si \
+       -d client_id=$CLIENT_ID \
+       -d client_secret=$CLIENT_SECRET \
+       -d refresh_token=$refresh_token \
+       -d grant_type=refresh_token \
+       https://www.googleapis.com/oauth2/v3/token > $CTX_DIR/$ctx.refresh
+  grep access_token $CTX_DIR/$ctx.refresh | sed -e 's/.*: "//' -e 's/",//' > $CTX_DIR/$ctx.access_token
+}
+
+while getopts :hc:p:s:i:r: opt ; do
+  case $opt in
+    i) CLIENT_ID=$OPTARG ;;
+    p) CLIENT_SECRET=$OPTARG ;;
+    r) REDIRECT_URI=$OPTARG ;;
+    s) SCOPE=$OPTARG ;;
+    c) ctx=$OPTARG ;;
+    h) usage ;;
+  esac
+done
+shift $(($OPTIND - 1))
+
+if [ -z "$CLIENT_ID" -o -z "$CLIENT_SECRET" -o -z "$SCOPE" ] ; then
+  usage
+fi
+
+cmd=$1 ; shift
+
+mkdir -p $CTX_DIR
+case $cmd in
+  init)
+    if [ -z "$REDIRECT_URI" ] ; then
+      echo "Missing -r redirect_uri"
+      exit
+    fi
+
+    scope=$(echo "$SCOPE" | sed 's/ /%20/g')
+    url="https://accounts.google.com/o/oauth2/auth?client_id=$CLIENT_ID&redirect_uri=$REDIRECT_URI&scope=$scope&response_type=code&access_type=offline&approval_prompt=force"
+    echo $url | clipit
+    echo "Visit:"
+    echo $url
+    echo  "JSON doc? "
+    cat > $CTX_DIR/$ctx.init
+    cat $CTX_DIR/$ctx.init | jq -r .access_token > $CTX_DIR/$ctx.access_token
+    cat $CTX_DIR/$ctx.init | jq -r .refresh_token > $CTX_DIR/$ctx.refresh_token
+    echo "Done"
+    ;;
+  token)
+    if [ ! -f $CTX_DIR/$ctx.access_token ] ; then
+      echo "Unknown context: $ctx. Try initing first."
+      exit
+    fi
+    age=`age $CTX_DIR/$ctx.access_token`
+    if [ $age -gt 3600 ] ; then
+      refresh
+    fi
+    cat $CTX_DIR/$ctx.access_token
+    ;;
+  *)
+    usage
+esac
+
+
