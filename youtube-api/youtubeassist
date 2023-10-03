@@ -28,15 +28,20 @@ function usage() {
   echo "$cmd: -a playlist-create -n"
   echo "$cmd: -a video -i id"
   echo "$cmd: -a my-channel -i id"
+  echo "$cmd: -a playlists-snapshot -d directory"
   exit
 }
 
-age() {
+
+date_cmd() {
   case $(uname) in
-    Darwin) date=gdate ;;
-    *) date=date ;;
+    Darwin) echo gdate ;;
+    *) echo date ;;
   esac
 
+}
+age() {
+  date=$(date_cmd)
   before=$($date +%s -d "$1")
   now=$($date +%s)
   echo $(((now - before) / (60 * 60 * 24)))
@@ -50,12 +55,13 @@ function filter {
   fi
 }
 
-while getopts ":a:i:n:v" opt ; do
+while getopts ":a:i:n:vd:" opt ; do
   case $opt in
     a) ACTION=$OPTARG ;;
     v) VERBOSE=yes    ;;
     i) ID=$OPTARG     ;;
     n) NAME=$OPTARG     ;;
+    d) DIR=$OPTARG ;;
     \?) usage         ;;
   esac
 done
@@ -152,7 +158,7 @@ case $ACTION in
     fi
     invoke -G $API_BASE/playlistItems \
            -d playlistId=$ID \
-           -d part=snippet,status \
+           -d part=snippet,status,contentDetails \
            -d maxResults=50 |
       filter -r ' .items[] | .id + ":" + .snippet.resourceId.videoId + ":" + .snippet.title'
     ;;
@@ -197,6 +203,35 @@ case $ACTION in
            -d part=snippet \
            -d maxResults=50 |
       filter -r '.items[] | .id + ":" + .snippet.title'
+    ;;
+
+  playlists-snapshot)
+    if [ -z "$DIR" ] ; then
+      echo "-d directory is missing"
+      exit
+    fi
+
+    path=$(realpath -s $DIR/$($(date_cmd) +%Y%m%d.%H%M))
+    if [ -d "$path" ] ; then
+      echo "Archive directory exists: $path"
+      exit
+    fi
+
+    mkdir -p "$path"
+    if [ ! -d "$path" ] ; then
+      echo "Failed to make directory: $path"
+      exit
+    fi
+
+    youtubeassist -a playlists | while read line ; do
+      id=$(echo $line | cut -d':' -f1)
+      name=$(echo $line | cut -d':' -f2)
+      file=$(echo $name | sed -e 's/[^A-Za-z0-9]/_/g' \
+                              -e 's/^_*//' \
+                              -e 's/_*$//' \
+                              -e 's/__*/_/g').json
+      youtubeassist -a playlist -v -i $id > $path/$file
+    done
     ;;
 
   *)
