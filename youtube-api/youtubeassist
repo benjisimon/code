@@ -22,10 +22,15 @@ function usage() {
   echo "$cmd: -a subscriptions"
   echo "$cmd: -a subscription-delete -i id"
   echo "$cmd: -a playlists"
-  echo "$cmd: -a playlist-items -i id"
-  echo "$cmd: -a playlist-delete -i id"
+  echo "$cmd: -a playlist {-i id} {-n name}"
+  echo "$cmd: -a playlist-delete {-i id} {-n name}"
   echo "$cmd: -a playlist-rename -i id -n new-name"
-  echo "$cmd: -a playlist-create -n"
+  echo "$cmd: -a playlist-create -n name"
+  echo "$cmd: -a playlist-update {-n name} {-i id} [-p public|private|unlisted] [-t title]"
+  echo "$cmd: -a playlist-age -n playlist-name -t ttl-in-days  -p preview|process [ -d directory-to-save-to ] [ -o playlist-to-output-to ] "
+  echo "$cmd: -a playlist-item-add -n playlist-name -i video-id"
+  echo "$cmd: -a playlist-item-delete -n playlist-name -i video-id"
+  echo "$cmd: -a playlists-rotate"
   echo "$cmd: -a video -i id"
   echo "$cmd: -a my-channel -i id"
   echo "$cmd: -a playlists-snapshot -d directory"
@@ -40,11 +45,36 @@ date_cmd() {
   esac
 
 }
+
 age() {
   date=$(date_cmd)
   before=$($date +%s -d "$1")
   now=$($date +%s)
   echo $(((now - before) / (60 * 60 * 24)))
+}
+
+playlist_id_by_name() {
+  n=$1
+  if [ -n "$n" ] ; then
+    found=$(youtubeassist -a playlists | grep "[|]${n}$" | cut -d'|' -f1 | head -1)
+    if [ -n "$found" ] ; then
+      echo $found
+    else
+      echo ""
+    fi
+  else
+    echo ""
+  fi
+}
+
+
+function resolve_dir() {
+  d="$1"
+  if [ -d "$d" -a -w "$d" ];then
+    echo $d
+  else
+    echo ""
+  fi
 }
 
 function filter {
@@ -55,13 +85,16 @@ function filter {
   fi
 }
 
-while getopts ":a:i:n:vd:" opt ; do
+while getopts ":a:i:n:vd:l:o:t:p:" opt ; do
   case $opt in
     a) ACTION=$OPTARG ;;
     v) VERBOSE=yes    ;;
-    i) ID=$OPTARG     ;;
-    n) NAME=$OPTARG     ;;
-    d) DIR=$OPTARG ;;
+    i) id=$OPTARG     ;;
+    n) name=$OPTARG     ;;
+    d) dir=$OPTARG ;;
+    t) ttl=$OPTARG ;;
+    o) output=$OPTARG ;;
+    p) privacy=$OPTARG ;;
     \?) usage         ;;
   esac
 done
@@ -108,111 +141,209 @@ case $ACTION in
            -d mine=true \
            -d part=snippet \
            -d maxResults=50 | 
-      filter -r ' .items[] |  .id + ":" + .snippet.title'
+      filter -r ' .items[] |  .id + "|" + .snippet.title'
     ;;
 
   subscription-delete)
-    if [ -z "$ID" ] ; then
-      echo "Deleting a subscription requires an ID (-i) value"
+    if [ -z "$id" ] ; then
+      echo "Deleting a subscription requires an id (-i) value"
       usage
     fi
-    invoke -X DELETE "$API_BASE/subscriptions?id=$ID"
+    invoke -X DELETE "$API_BASE/subscriptions?id=$id"
     ;;
 
   playlists)
     invoke -G $API_BASE/playlists \
            -d mine=true \
-           -d part=snippet \
+           -d part=snippet,status \
            -d maxResults=50 | 
-      filter -r ' .items[] |  .id + ":" + .snippet.title'
+      filter -r ' .items[] |  .id + "|" + .status.privacyStatus + "|" + .snippet.title'
     ;;
 
-  playlist-items)
-    if [ -z "$ID" ] ; then
-      echo "Missing -i id"
+  playlist)
+    if [ -n "$name" ] ; then
+      found=$(playlist_id_by_name "$name")
+      if [ -n "$found" ] ; then
+        id=$found
+      fi
     fi
 
+    if [ -z "$id" ] ; then
+      echo "Listing a playlist requires a playlist id"
+      usage
+    fi
     invoke -G $API_BASE/playlistItems \
-           -d part=id,snippet,contentDetails,status \
-           -d playlistId=$ID \
+           -d playlistId=$id \
+           -d part=snippet,status,contentDetails \
            -d maxResults=50 |
-      filter -r '.items[] | .contentDetails.videoId + "|" + .snippet.publishedAt + "|" + .snippet.title' > $HOME/.yt.buffer
+      filter -r '.items[] | .id + "|" + .contentDetails.videoId + "|" + .snippet.publishedAt + "|" + .snippet.title' > $HOME/.yt.buffer
     if [ -n "$VERBOSE" ] ; then
        cat $HOME/.yt.buffer
     else
       cat $HOME/.yt.buffer | while read line ; do
         id=$(echo $line | cut -d'|' -f1)
-        added=$(echo $line | cut -d'|' -f2)
+        video_id=$(echo $line | cut -d'|' -f2)
+        added=$(echo $line | cut -d'|' -f3)
         age=$(age $added)
-        title=$(echo $line | cut -d'|' -f2)
-        echo "$id|$age|$title"
+        title=$(echo $line | cut -d'|' -f4)
+        echo "$id|$video_id|$age|$title"
       done
     fi
+
     ;;
 
-  
-  playlist)
-    if [ -z "$ID" ] ; then
-      echo "Listing a playlist requires a playlist ID"
+  playlist-update)
+    if [ -n "$name" ] ; then
+      id=$(playlist_id_by_name "$name")
+      if [ -z "$id" ] ;  then
+        echo "$name is not a valid playlist."
+        exit
+      fi
+    fi
+
+    if [ -z "$id" ] ; then
+      echo "Updating a playlist requires an ID (-i) value"
       usage
     fi
-    invoke -G $API_BASE/playlistItems \
-           -d playlistId=$ID \
-           -d part=snippet,status,contentDetails \
-           -d maxResults=50 |
-      filter -r ' .items[] | .id + ":" + .snippet.resourceId.videoId + ":" + .snippet.title'
+
+    if [ -n "$privacy" ] ; then
+      case "$privacy" in
+        private|public|unlisted) ;;
+        *) echo "Invalid -p privacy. Must be: public, private or unlisted" ; exit ;;
+      esac
+    else
+      privacy=$(youtubeassist -a playlists | grep "^${id}|" | cut -d '|' -f2)
+    fi
+
+    if [ -n "$ttl" ]  ; then
+      title="$ttl"
+    else
+      title=$(youtubeassist -a playlists | grep "^${id}|" | cut -d'|' -f3)
+    fi
+
+    invoke -X PUT "$API_BASE/playlists?part=status,snippet" \
+           -H 'Content-Type: application/json' \
+           -d "{ 'id': '$id', 'snippet': { 'title': '$title' }, 'status': { 'privacyStatus': '$privacy'} } " |
+      filter -r '.id + "|" + .status.privacyStatus + "|" + .snippet.title'
+
+    ;;
+
+  playlist-item-add)
+    if [ -z "$name" ] ; then
+      echo "Missing -n playlist-name"
+      exit
+    fi
+
+    playlist_id=$(playlist_id_by_name "$name")
+
+    if [ -z "$playlist_id" ] ; then
+      echo "No playlist found with the name $name"
+    fi
+
+    if [ -z "$id" ] ; then
+       echo "Missing -i video-id"
+       exit
+    fi
+
+    exists=$(youtubeassist -a playlist -i $playlist_id | grep "|$id|")
+    if [ -n "$exists" ]  ; then
+      echo $exists
+      exit
+    fi
+
+    invoke -X POST "$API_BASE/playlistItems?part=snippet" \
+           -H 'Content-Type: application/json' \
+           -d "{ 'snippet': { 'playlistId': '$playlist_id', 'position': 0, 'resourceId': { 'kind': 'youtube#video', 'videoId': '$id' } } } " |
+      filter -r '.id + "|" + .snippet.title'
+
+    ;;
+
+  playlist-item-delete)
+    if [ -z "$name" ] ; then
+      echo "Missing -n playlist-name"
+      exit
+    fi
+
+    playlist_id=$(playlist_id_by_name "$name")
+
+    if [ -z "$playlist_id" ] ; then
+      echo "No playlist found with the name $name"
+    fi
+
+    if [ -z "$id" ] ; then
+      echo "Missing -i video-id"
+      exit
+    fi
+
+    youtubeassist -a playlist -i $playlist_id | while read line ; do
+      item_id=$(echo $line | cut -d'|' -f1)
+      video_id=$(echo $line | cut -d'|' -f2)
+      if [ "$video_id" = "$id" ] ; then
+        invoke -X DELETE "$API_BASE/playlistItems?id=$item_id"
+      fi
+    done
+
     ;;
 
   playlist-delete)
-    if [ -z "$ID" ] ; then
+    if [ -n "$name" ] ; then
+      id=$(playlist_id_by_name "$name")
+      if [ -z "$id" ] ;  then
+        echo "$name is not a valid playlist."
+        exit
+      fi
+    fi
+
+    if [ -z "$id" ] ; then
       echo "Deleting a playlist requires an ID (-i) value"
       usage
     fi
-    invoke -X DELETE "$API_BASE/playlists?id=$ID"
+    invoke -X DELETE "$API_BASE/playlists?id=$id"
     ;;
 
   playlist-rename)
-    if [ -z "$ID" -o -z "$NAME" ] ; then
-      echo "Renaming a playlist requires you set the ID (-i) and NAME (-n)"
+    if [ -z "$id" -o -z "$name" ] ; then
+      echo "Renaming a playlist requires you set the ID (-i) and name (-n)"
       usage
     fi
     invoke -X PUT "$API_BASE/playlists?part=snippet" \
            -H 'Content-Type: application/json' \
-           -d "{'id': '$ID', 'snippet': {'title' : '$NAME'} }" |
-      filter -r '.id + ":" + .snippet.title'
+           -d "{'id': '$ID', 'snippet': {'title' : '$name'} }" |
+      filter -r '.id + "|" + .snippet.title'
     ;;
 
   playlist-create)
-    if [ -z "$NAME" ] ; then
-      echo "Creating a playlist requires you set the NAME (-n)"
-      usage
+    if [ -z "$name" ] ; then
+      echo "Missing -n name"
+      exit
     fi
+
     invoke -X POST "$API_BASE/playlists?part=snippet,status" \
            -H 'Content-Type: application/json' \
-           -d "{'snippet': {'title' : '$NAME'}, 'status' : {'privacyStatus' : 'public'} }" |
-      filter -r '.id + ":" + .snippet.title'
+           -d "{'snippet': {'title' : '$name'}, 'status' : {'privacyStatus' : 'private'} }" |
+      filter -r '.id + "|" + .status.privacyStatus + "|" + .snippet.title'
     ;;
 
   video)
-    if [ -z "$ID" ] ; then
+    if [ -z "$id" ] ; then
       echo "Video info requires an ID (-i)"
       usage
     fi
     invoke -G $API_BASE/videos \
-           -d id=$ID \
-           -d part=snippet \
+           -d id=$id \
+           -d part=snippet,id,topicDetails,contentDetails,statistics,status,player \
            -d maxResults=50 |
       filter -r '.items[] | .id + ":" + .snippet.title'
     ;;
 
   playlists-snapshot)
-    if [ -z "$DIR" ] ; then
+    if [ -z "$dir" ] ; then
       echo "-d directory is missing"
       exit
     fi
 
-    path=$(realpath -s $DIR/$($(date_cmd) +%Y%m%d.%H%M))
-    if [ -d "$path" ] ; then
+    path=$(realpath -s $dir/$($(date_cmd) +%Y%m%d.%H%M))
+    if [ -d "$path" -a -w "$path" ] ; then
       echo "Archive directory exists: $path"
       exit
     fi
@@ -224,8 +355,8 @@ case $ACTION in
     fi
 
     youtubeassist -a playlists | while read line ; do
-      id=$(echo $line | cut -d':' -f1)
-      name=$(echo $line | cut -d':' -f2)
+      id=$(echo $line | cut -d'|' -f1)
+      name=$(echo $line | cut -d'|' -f3)
       file=$(echo $name | sed -e 's/[^A-Za-z0-9]/_/g' \
                               -e 's/^_*//' \
                               -e 's/_*$//' \
@@ -234,6 +365,105 @@ case $ACTION in
     done
     ;;
 
+  playlists-rotate)
+    archive_dir=$HOME/dt/i2x/youtube-archive/src/main/playlists/archived
+    if [ ! -d "$archive_dir" ] ; then
+      echo "Need to setup archive directory: $archive_dir"
+      exit
+    fi
+
+    rules="Incoming:7:Stale: \
+      Stale:14::Stale \
+      In_Progress:14:Stale: \
+      Nice.:7::Nice \
+      Wow:30::Wow"
+
+    for rule in $rules ; do
+      name=$(echo $rule | cut -d: -f1 | tr '_' ' ')
+      ttl=$(echo $rule | cut -d: -f2)
+      output=$(echo $rule | cut -d: -f3)
+      directory=$(echo $rule | cut -d: -f4)
+
+      if [ -n "$directory" ] ; then
+        mkdir -p "$archive_dir/$directory"
+        echo "name=$name, ttl=$ttl, dir=$archive_dir/$directory"
+        youtubeassist -a playlist-age -n "$name" -t $ttl -d "$archive_dir/$directory" -p process
+      fi
+
+      if [ -n "$output" ] ; then
+        echo "name=$name, ttl=$ttl, output=$output"
+        youtubeassist -a playlist-age -n "$name" -t $ttl -o "$output" -p process
+      fi
+    done
+    ;;
+
+
+
+  playlist-age)
+    id=$(playlist_id_by_name "$name")
+    if [ -z "$id" ]  ;then
+      echo "-n playlist not found"
+      exit
+    fi
+
+    if [ -z "$privacy" ] ; then
+      echo "Missing directive -p preview|process"
+      exit
+    fi
+
+    case "$privacy" in
+      preview|process) goal=$privacy ;;
+      *) echo "Invalid '$privacy', must be preview or process." ; exit ;;
+    esac
+
+    output_dir=$(resolve_dir $dir)
+    output_id=$(playlist_id_by_name $output)
+
+    if [ -z "$dir" -a -z "$output" ] ; then
+      echo "Must set -d dir or -o output"
+      exit
+    fi
+
+    if [ -n "$dir" -a -z "$output_dir" ] ; then
+      echo "-d $dir doesn't exist"
+      exit
+    fi
+
+    if [ -n "$output" -a -z "$output_id" ] ; then
+      echo "-o $output doesn't exist"
+      exit
+    fi
+
+    if [ -z "$ttl" ] ; then
+      echo "-t ttl was not set. Must be a number of days."
+      exit
+    fi
+
+    youtubeassist -a playlist -i $id | while read line ; do
+      id=$(echo $line | cut -d'|' -f1)
+      video_id=$(echo $line | cut -d'|' -f2)
+      age=$(echo $line | cut -d'|' -f3)
+      title=$(echo $line | cut -d'|' -f4)
+      if [ $age -gt $ttl ]  ; then
+        case $goal in
+          preview)
+            echo "Aging '$title', $age > $ttl"
+            ;;
+          process)
+            if [ -n "$output_id" ] ; then
+              youtubeassist -a playlist-item-add -n "$output" -i "$video_id" > /dev/null
+            fi
+
+            if [ -n "$output_dir" ] ; then
+              youtubeassist -a video -i "$video_id" -v  > $output_dir/$video_id.json
+            fi
+
+
+            youtubeassist -a playlist-item-delete -n "$name" -i $video_id > /dev/null
+        esac
+      fi
+    done
+    ;;
   *)
     usage
     ;;
