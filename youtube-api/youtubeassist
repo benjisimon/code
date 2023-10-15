@@ -29,11 +29,13 @@ function usage() {
   echo "$cmd: -a playlist-update {-n name} {-i id} [-p public|private|unlisted] [-t title]"
   echo "$cmd: -a playlist-age -n playlist-name -t ttl-in-days  -p preview|process [ -d directory-to-save-to ] [ -o playlist-to-output-to ] "
   echo "$cmd: -a playlist-item-add -n playlist-name -i video-id"
+  echo "video_id ... | $cmd: -a playlist-items-add -n playlist-name"
   echo "$cmd: -a playlist-item-delete -n playlist-name -i video-id"
   echo "$cmd: -a playlists-rotate"
   echo "$cmd: -a video -i id"
   echo "$cmd: -a my-channel -i id"
   echo "$cmd: -a playlists-snapshot -d directory"
+  echo "$cmd: -a search -q query [-o output] [-F] [-s date|rating|relevance|viewCount]"
   exit
 }
 
@@ -56,11 +58,17 @@ age() {
 playlist_id_by_name() {
   n=$1
   if [ -n "$n" ] ; then
-    found=$(youtubeassist -a playlists | grep "[|]${n}$" | cut -d'|' -f1 | head -1)
-    if [ -n "$found" ] ; then
-      echo $found
+    is_id=$(echo $n | grep ^PL..........................)
+
+    if [ -n "$is_id" ] ; then
+      echo $n
     else
-      echo ""
+      found=$(youtubeassist -a playlists | grep "[|]${n}$" | cut -d'|' -f1 | head -1)
+      if [ -n "$found" ] ; then
+        echo $found
+      else
+        echo ""
+      fi
     fi
   else
     echo ""
@@ -68,7 +76,7 @@ playlist_id_by_name() {
 }
 
 
-function resolve_dir() {
+resolve_dir() {
   d="$1"
   if [ -d "$d" -a -w "$d" ];then
     echo $d
@@ -77,7 +85,108 @@ function resolve_dir() {
   fi
 }
 
-function filter {
+search_history_dir() {
+  q="$1"
+  s="$2"
+  search_name=$(echo "${q}-${s}" | sed 's/[^A-Za-z0-9-]//g')
+  search_id=$(echo -n "${q}-${s}" | cksum | cut -d' '  -f1)
+  echo "$SEARCH_HISTORY_DIR/${search_name}.${search_id}"
+}
+
+last_modified() {
+  file="$1"
+
+  case $(uname) in
+    Darwin) stat -f '%m' $file ;;
+    *) stat --format '%Y' $file ;;
+  esac
+}
+
+search_cache_age() {
+  q="$1"
+  s="$2"
+  dir=$(search_history_dir "$q" "$s")
+  a_year_ago=$((60*60*24*365))
+
+  if [ -d "$dir" ] ; then
+    last_file=$(cd $dir ; ls -t | head -1)
+    if [ -z "$last_file" ] ; then
+      echo $a_year_ago
+    else
+      now=$($(date_cmd) +%s)
+      t=$(echo $last_file | sed 's/[.].*//')
+      echo $((now - t))
+    fi
+  else
+    echo $a_year_ago
+  fi
+}
+
+search_execute() {
+  q="$1"
+  s="$2"
+  history_dir=$(search_history_dir "$q" "$s")
+  mkdir -p $history_dir
+  history_file=$history_dir/$($(date_cmd) +%s.%N).history
+  touch $history_file
+  
+  if [ ! -w "$history_file" ] ; then
+    echo "Can't write to $history_file"
+    exit
+  fi
+  
+  MAX_PAGES=4
+  invoke -G $API_BASE/search \
+         -d part=snippet \
+         -d maxResults=50 \
+         -d order=$sort_by \
+         --data-urlencode q="$query" \
+         -d safeSearch=none \
+         -d videoDefinition=high \
+         -d type=video > $HOME/.yt.serp
+  cat $HOME/.yt.serp | jq -r '.items[] | .id.videoId' > $HOME/.yt.serp.ids
+  cat $HOME/.yt.serp.ids | while read id ; do
+    found=$(grep ^${id}$ $history_dir/*.history)
+    if [ -z "$found" ]; then
+      echo $id >> $history_file
+      cat $HOME/.yt.serp | jq "[.items[] | select(.id.videoId == \"$id\")][0]" > $SEARCH_CACHE_DIR/$id.hit
+    fi
+  done
+
+  if [ ! -s "$history_file" ] ; then
+    rm $history_file
+  fi
+}
+    
+search_data() {
+  q="$1"
+  s="$2"
+  f="$3"
+  history_dir=$(search_history_dir "$q" "$s")
+
+
+  if [ "$f" = "yes" ] ; then
+    limit_cmd="cat"
+  else
+    limit_cmd="head -1"
+  fi
+
+  echo '{ "items": [ '
+  sep=""
+  ls -t $history_dir | $limit_cmd | while read file_name ; do
+    ids_file=$history_dir/$file_name
+    cat $ids_file | while read id ; do
+      echo $sep
+      cat $SEARCH_CACHE_DIR/$id.hit
+      sep=","
+    done
+  done
+
+  echo '] }'
+}
+
+
+filter() {
   if [ -z "$VERBOSE" ] ; then
     jq "$@"
   else
@@ -85,7 +194,7 @@ function filter {
   fi
 }
 
-while getopts ":a:i:n:vd:l:o:t:p:" opt ; do
+while getopts ":a:i:n:vd:l:o:t:p:q:s:F" opt ; do
   case $opt in
     a) ACTION=$OPTARG ;;
     v) VERBOSE=yes    ;;
@@ -95,24 +204,31 @@ while getopts ":a:i:n:vd:l:o:t:p:" opt ; do
     t) ttl=$OPTARG ;;
     o) output=$OPTARG ;;
     p) privacy=$OPTARG ;;
+    s) sort_by=$OPTARG ;;
+    q) query=$OPTARG ;;
+    F) full_results=yes ;;
     \?) usage         ;;
   esac
 done
 
+MAX_PAGES=10000
+
 function invoke {
   curl -s -H "Authorization: Bearer $AUTH_TOKEN" "$@" > /tmp/yt.buffer.$$
   next_page=`jq -r '.nextPageToken' < /tmp/yt.buffer.$$`
+  num_pages=1
 
   if [ "$next_page" = "null" -o -z "$next_page" ] ; then
     cat /tmp/yt.buffer.$$
     rm -f /tmp/yt.buffer.$$
   else
     jq '.items'  < /tmp/yt.buffer.$$ | sed 's/^.//'> /tmp/yt.master.$$
-    while [ "$next_page" != "null" ] ; do
+    while [ "$next_page" != "null" -a $num_pages -lt $MAX_PAGES ] ; do
       curl -s -H "Authorization: Bearer $AUTH_TOKEN" "$@" -d pageToken=$next_page |
         tee /tmp/yt.buffer.$$ |
         ( echo "," ; jq '.items' | sed 's/^.//' ) >> /tmp/yt.master.$$
       next_page=`jq -r '.nextPageToken' < /tmp/yt.buffer.$$`
+      num_pages=$((num_pages + 1))
     done
     rm -f /tmp/yt.buffer.$$
     echo '{ "items" : [ '
@@ -258,6 +374,30 @@ case $ACTION in
 
     ;;
 
+  playlist-items-add)
+    if [ -z "$name" ] ; then
+      echo "Missing -n playlist-name"
+      exit
+    fi
+
+    playlist_id=$(playlist_id_by_name "$name")
+
+    if [ -z "$playlist_id" ] ; then
+      echo "No playlist found with the name $name"
+    fi
+
+    youtubeassist -a playlist -i $playlist_id > $HOME/.yt.pl
+    while read id ; do
+         exists=$(grep "|$id|" $HOME/yt.pl)
+         if [ -z "$exists" ]  ; then
+           invoke -X POST "$API_BASE/playlistItems?part=snippet" \
+                  -H 'Content-Type: application/json' \
+                  -d "{ 'snippet': { 'playlistId': '$playlist_id', 'position': 0, 'resourceId': { 'kind': 'youtube#video', 'videoId': '$id' } } } " |
+             filter -r '.id + "|" + .snippet.title'
+         fi
+    done
+    ;;
+
   playlist-item-delete)
     if [ -z "$name" ] ; then
       echo "Missing -n playlist-name"
@@ -366,19 +506,13 @@ case $ACTION in
     ;;
 
   playlists-rotate)
-    archive_dir=$HOME/dt/i2x/youtube-archive/src/main/playlists/archived
+    archive_dir=$ROTATE_DIR
     if [ ! -d "$archive_dir" ] ; then
       echo "Need to setup archive directory: $archive_dir"
       exit
     fi
 
-    rules="Incoming:7:Stale: \
-      Stale:14::Stale \
-      In_Progress:14:Stale: \
-      Nice.:7::Nice \
-      Wow:30::Wow"
-
-    for rule in $rules ; do
+    for rule in $ROTATE_RULES ; do
       name=$(echo $rule | cut -d: -f1 | tr '_' ' ')
       ttl=$(echo $rule | cut -d: -f2)
       output=$(echo $rule | cut -d: -f3)
@@ -387,11 +521,17 @@ case $ACTION in
       if [ -n "$directory" ] ; then
         mkdir -p "$archive_dir/$directory"
         echo "name=$name, ttl=$ttl, dir=$archive_dir/$directory"
+        if [ -n "$VERBOSE" ] ; then
+          echo "name=$name, ttl=$ttl, dir=$archive_dir/$directory"
+        fi
         youtubeassist -a playlist-age -n "$name" -t $ttl -d "$archive_dir/$directory" -p process
       fi
 
       if [ -n "$output" ] ; then
         echo "name=$name, ttl=$ttl, output=$output"
+        if [ -n "$VERBOSE" ] ; then
+          echo "name=$name, ttl=$ttl, output=$output"
+        fi
         youtubeassist -a playlist-age -n "$name" -t $ttl -o "$output" -p process
       fi
     done
@@ -464,6 +604,71 @@ case $ACTION in
       fi
     done
     ;;
+
+  search)
+    if [ -z "$query" ]; then
+      echo "Missing -q query"
+      exit
+    fi
+
+    if [ -z "$SEARCH_HISTORY_DIR" ] ; then
+      echo "You must set a SEARCH_HISTORY_DIR"
+      exit
+    fi
+
+    if [ -z "$SEARCH_CACHE_DIR" ] ; then
+      echo "You must set SEARCH_CACHE_DIR"
+      exit
+    fi
+
+    if [ ! -d "$SEARCH_HISTORY_DIR" ] ; then
+      echo "Search $SEARCH_HISTORY_DIR doesn't exist."
+      exit
+    fi
+
+    if [ ! -d "$SEARCH_CACHE_DIR" ] ; then
+      echo "Search $SEARCH_CACHE_DIR doesn't exist."
+      exit
+    fi
+
+    if [ -z "$sort_by" ]; then
+      sort_by=date
+    fi
+
+    if [ -n "$sort_by" ] ; then
+      case $sort_by in
+        date|rating|relevance|title|viewCount) ;;
+        *) echo "Invalid -s $sort_by" ;  exit ;;
+      esac
+    fi
+
+    if [ -n "$output" ] ; then
+      output_id=$(playlist_id_by_name "$output")
+      if [ -z "$output_id" ] ; then
+        echo "-o $output does not exist"
+        exit
+      fi
+    fi
+
+    age=$(search_cache_age "$query" "$sort_by")
+    one_hour_ago=$((60 * 60))
+    if [ $age -gt $one_hour_ago ] ; then
+      search_execute "$query" "$sort_by"
+    fi
+
+    search_data "$query" "$sort_by" "$full_results" > $HOME/.yt.data
+    if [ -n "$output_id" ] ; then
+      cat $HOME/.yt.data | jq -r '.items[] | .id.videoId' | while read video_id ; do
+        youtubeassist -a playlist-item-add -n "$output_id" -i "$video_id" > /dev/null
+      done
+    fi
+
+    cat $HOME/.yt.data |
+      filter -r '.items[] | .id.videoId + "|" + .snippet.publishTime + "|" + .snippet.channelTitle + "|" + .snippet.title'
+
+    ;;
+
+
   *)
     usage
     ;;
