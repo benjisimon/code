@@ -129,12 +129,12 @@ search_execute() {
   mkdir -p $history_dir
   history_file=$history_dir/$($(date_cmd) +%s.%N).history
   touch $history_file
-
+  
   if [ ! -w "$history_file" ] ; then
     echo "Can't write to $history_file"
     exit
   fi
-
+  
   MAX_PAGES=4
   invoke -G $API_BASE/search \
          -d part=snippet \
@@ -157,7 +157,7 @@ search_execute() {
     rm $history_file
   fi
 }
-
+    
 search_data() {
   q="$1"
   s="$2"
@@ -180,6 +180,7 @@ search_data() {
       cat $SEARCH_CACHE_DIR/$id.hit
       sep=","
     done
+    sep=","
   done
 
   echo '] }'
@@ -251,12 +252,12 @@ case $ACTION in
            -d maxResults=50 |
       filter -r '.'
     ;;
-
+  
   subscriptions)
     invoke -G $API_BASE/subscriptions \
            -d mine=true \
            -d part=snippet \
-           -d maxResults=50 |
+           -d maxResults=50 | 
       filter -r ' .items[] |  .id + "|" + .snippet.title'
     ;;
 
@@ -272,7 +273,7 @@ case $ACTION in
     invoke -G $API_BASE/playlists \
            -d mine=true \
            -d part=snippet,status \
-           -d maxResults=50 |
+           -d maxResults=50 | 
       filter -r ' .items[] |  .id + "|" + .status.privacyStatus + "|" + .snippet.title'
     ;;
 
@@ -670,3 +671,4 @@ case $ACTION in
     usage
     ;;
 esac
+
