@@ -129,12 +129,12 @@ search_execute() {
   mkdir -p $history_dir
   history_file=$history_dir/$($(date_cmd) +%s.%N).history
   touch $history_file
-  
+
   if [ ! -w "$history_file" ] ; then
     echo "Can't write to $history_file"
     exit
   fi
-  
+
   MAX_PAGES=4
   invoke -G $API_BASE/search \
          -d part=snippet \
@@ -157,7 +157,7 @@ search_execute() {
     rm $history_file
   fi
 }
-    
+
 search_data() {
   q="$1"
   s="$2"
@@ -251,12 +251,12 @@ case $ACTION in
            -d maxResults=50 |
       filter -r '.'
     ;;
-  
+
   subscriptions)
     invoke -G $API_BASE/subscriptions \
            -d mine=true \
            -d part=snippet \
-           -d maxResults=50 | 
+           -d maxResults=50 |
       filter -r ' .items[] |  .id + "|" + .snippet.title'
     ;;
 
@@ -272,7 +272,7 @@ case $ACTION in
     invoke -G $API_BASE/playlists \
            -d mine=true \
            -d part=snippet,status \
-           -d maxResults=50 | 
+           -d maxResults=50 |
       filter -r ' .items[] |  .id + "|" + .status.privacyStatus + "|" + .snippet.title'
     ;;
 
@@ -388,7 +388,7 @@ case $ACTION in
 
     youtubeassist -a playlist -i $playlist_id > $HOME/.yt.pl
     while read id ; do
-         exists=$(grep "|$id|" $HOME/yt.pl)
+         exists=$(grep "|$id|" $HOME/.yt.pl)
          if [ -z "$exists" ]  ; then
            invoke -X POST "$API_BASE/playlistItems?part=snippet" \
                   -H 'Content-Type: application/json' \
@@ -520,7 +520,6 @@ case $ACTION in
 
       if [ -n "$directory" ] ; then
         mkdir -p "$archive_dir/$directory"
-        echo "name=$name, ttl=$ttl, dir=$archive_dir/$directory"
         if [ -n "$VERBOSE" ] ; then
           echo "name=$name, ttl=$ttl, dir=$archive_dir/$directory"
         fi
@@ -528,7 +527,6 @@ case $ACTION in
       fi
 
       if [ -n "$output" ] ; then
-        echo "name=$name, ttl=$ttl, output=$output"
         if [ -n "$VERBOSE" ] ; then
           echo "name=$name, ttl=$ttl, output=$output"
         fi
@@ -668,9 +666,7 @@ case $ACTION in
 
     ;;
 
-
   *)
     usage
     ;;
 esac
-
