@@ -1,0 +1,146 @@
+#!/bin/bash
+
+##
+## command line tools to help with photos
+##
+
+CONFIG_ROOT=$HOME/.config/$(basename $0)/
+config=$CONFIG_ROOT/config
+if [ ! -f "$config" ] ; then
+  echo "$config doesn't exist. But should"
+  exit
+fi
+. $config
+
+usage() {
+  cmd="Usage: $(basename $0)"
+
+  echo "$cmd -a device -i input-photo [-v] "
+  echo "$cmd -a timestamp -i input-photo [-v]"
+  echo "$cmd -a add-device-border -i input-directory -o output-directory"
+  exit
+}
+
+case $(uname) in
+  Darwin)
+    date_cmd=gdate
+    ;;
+  *)
+    date_cmd=date
+    ;;
+esac
+
+while getopts ":a:i:o:vz:" opt ; do
+  case $opt in
+    a) action=$OPTARG ;;
+    i) input=$OPTARG ;;
+    o) output=$OPTARG ;;
+    v) verbose=yes ;;
+    \?) usage         ;;
+  esac
+done
+
+case $action in
+
+  device)
+    if [ -z "$input" ] ; then
+      echo "Missing -i input-file"
+      exit
+    fi
+
+    if [ ! -f "$input" ] ; then
+      echo "$input does not exist"
+      exit
+    fi
+
+    model=$(identify -format "%[exif:Model]" $input)
+
+    case "$model" in
+      *T6s) device=t6s ;;
+      SM-S908U1) device=s22 ;;
+      *) device=unknown ;;
+    esac
+
+    if [ "$verbose" = "yes" ] ; then
+      echo "$device:$model"
+    else
+      echo $device
+    fi
+    ;;
+
+  timestamp)
+    if [ -z "$input" ] ; then
+      echo "Missing -i input-file"
+      exit
+    fi
+
+    if [ ! -f "$input" ] ; then
+      echo "$input does not exist"
+      exit
+    fi
+
+    time_corrections=$CONFIG_ROOT/time.corrections
+    if [ ! -f "$time_corrections" ] ; then
+      echo "$time_corrections should exist, but doesn't"
+      exit
+    fi
+
+    device=$(photoassist -a device -i "$input")
+
+    output_format='+%Y-%m-%d %H:%M:%S'
+    ts=$(identify -format "%[exif:DateTime]" $input)
+    date=$(echo $ts | cut -d' ' -f1 | sed 's/:/-/g')
+    time=$(echo $ts | cut -d' ' -f2)
+    correction=$(grep "^$device[|]$date[|]" $time_corrections)
+
+    if [ -n "$correction" ] ; then
+      c_exif_time=$(echo $correction | cut -d'|' -f3)
+      c_gphoto_time=$(echo $correction | cut -d'|' -f4)
+      c_exif_unix=$($date_cmd -d "$date $c_exif_time" +%s)
+      c_gphoto_unix=$($date_cmd -d "$date $c_gphoto_time" +%s)
+      c_diff=$((c_exif_unix - c_gphoto_unix))
+      orig_unix=$($date_cmd -d "$date $time" +%s)
+      fixed_unix=$((orig_unix - c_diff))
+      $date_cmd -d "@$fixed_unix" "$output_format"
+    else
+      $date_cmd -d "$date $time" "$output_format"
+    fi
+
+    ;;
+  add-device-border)
+    if [ -z "$input" ] ; then
+      echo "Must provide -i input-dir"
+      exit
+    fi
+
+    if [ -z "$output" ] ; then
+      echo "Must provide -o output-dir"
+      exit
+    fi
+
+
+    if [ ! -d "$input" ] ; then
+      echo "-d $input does not exist"
+      exit
+    fi
+
+    if [ -d "$output" ] ; then
+      echo "-d $output already exists, but shouldn't"
+      exit
+    fi
+
+    mkdir -p $output
+    if [ ! -d "$output" ] ; then
+      echo "Can't make output dir: $output"
+      exit
+    fi
+
+    ls $input | grep -i .jpg | while read file ; do
+      echo $file
+    done
+
+    ;;
+
+
+  *) usage ;;
+esac
