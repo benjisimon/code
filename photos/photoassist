@@ -17,7 +17,7 @@ usage() {
 
   echo "$cmd -a device -i input-photo [-v] "
   echo "$cmd -a timestamp -i input-photo [-v]"
-  echo "$cmd -a add-device-border -i input-directory -o output-directory"
+  echo "$cmd -a analyze -i input-directory -o output-directory [-v]"
   exit
 }
 
@@ -107,7 +107,7 @@ case $action in
     fi
 
     ;;
-  add-device-border)
+  analyze)
     if [ -z "$input" ] ; then
       echo "Must provide -i input-dir"
       exit
@@ -136,9 +136,27 @@ case $action in
     fi
 
     ls $input | grep -i .jpg | while read file ; do
-      echo $file
-    done
+      device=$(photoassist -a device -i $file)
+      timestamp=$(photoassist -a timestamp -i $file)
+      outfile=$(echo $timestamp | sed -e 's/[:-]//g' -e s'/ /_/')_$device.jpg
 
+      case $device in
+        s22) color='#358cf0' ;;
+        t6s) color='#c21319' ;;
+        *) echo "Unkown device: $device" ; exit ;;
+      esac
+
+      if [ -n "$verbose" ] ; then
+        echo "$file -> $outfile"
+      fi
+
+      convert $file -scale 800x \
+              -bordercolor "$color" -border 20 \
+              -pointsize 10 -fill white \
+              -draw "text 800,15 '$device'" \
+              -draw "text 15,15 '$timestamp'" $output/$outfile
+
+    done
     ;;
 
 
