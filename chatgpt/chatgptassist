@@ -1,0 +1,57 @@
+#!/bin/bash
+
+##
+## Get stuff done with chatgpt!
+##
+
+usage() {
+  me=$(basename $0)
+  echo "Usage: $me -a generate-image -p prompt [-v]"
+  exit 1
+}
+
+while getopts "a:p:hv" o; do
+  case "$o" in
+    p) prompt=$OPTARG  ;;
+    a) action=$OPTARG ;;
+    v) VERBOSE=yes ;;
+    * | h) usage  ;;
+  esac
+done
+
+if [ -z "$OPENAI_API_KEY" ] ; then
+  echo "No OPENAI_API_KEY env variable set."
+  exit
+fi
+
+chatgpt_req() {
+  path="$1"
+  body=$(echo "$2" | tr '^' '"')
+
+  curl -s https://api.openai.com/$path \
+       -H "Content-Type: application/json" \
+       -H "Authorization: Bearer $OPENAI_API_KEY" \
+       -d "$body"
+}
+
+
+result() {
+  if [ "$VERBOSE" = "yes" ] ; then
+    jq .
+  else
+    jq "$@"
+  fi
+}
+case "$action" in
+  generate-image)
+    if [ -z "$prompt" ]; then
+      echo "Missing -p prompt"
+      exit
+    fi
+
+    body="{ ^model^: ^dall-e-3^, ^prompt^: ^$prompt^, ^n^: 1, ^size^: ^1024x1024^ } "
+    chatgpt_req "v1/images/generations" "$body" | result -r .data[0].url
+    ;;
+
+  *) usage ;;
+esac
