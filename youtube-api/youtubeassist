@@ -5,37 +5,31 @@
 ## See: https://developers.google.com/youtube/v3/docs/
 ##
 
-config=$HOME/.config/youtubeassist/config
-
-if [ -f "$config" ] ; then
-  . $config
-else
-  echo "Missing config file: $config"
-  exit
-fi
-
 API_BASE=https://www.googleapis.com/youtube/v3
 
 function usage() {
-  cmd="Usage: $(basename $0)"
-  echo "$cmd: -a init"
-  echo "$cmd: -a subscriptions"
-  echo "$cmd: -a subscription-delete -i id"
-  echo "$cmd: -a playlists"
-  echo "$cmd: -a playlist {-i id} {-n name}"
-  echo "$cmd: -a playlist-delete {-i id} {-n name}"
-  echo "$cmd: -a playlist-rename -i id -n new-name"
-  echo "$cmd: -a playlist-create -n name"
-  echo "$cmd: -a playlist-update {-n name} {-i id} [-p public|private|unlisted] [-t title]"
-  echo "$cmd: -a playlist-age -n playlist-name -t ttl-in-days  -p preview|process [ -d directory-to-save-to ] [ -o playlist-to-output-to ] "
-  echo "$cmd: -a playlist-item-add -n playlist-name -i video-id"
-  echo "video_id ... | $cmd: -a playlist-items-add -n playlist-name"
-  echo "$cmd: -a playlist-item-delete -n playlist-name -i video-id"
-  echo "$cmd: -a playlists-rotate"
-  echo "$cmd: -a video -i id"
-  echo "$cmd: -a my-channel -i id"
-  echo "$cmd: -a playlists-snapshot -d directory"
-  echo "$cmd: -a search -q query [-o output] [-F] [-s date|rating|relevance|viewCount]"
+  cmd="Usage: $(basename $0) [-c config]"
+  echo "$cmd -a init"
+  echo "$cmd -a subscriptions"
+  echo "$cmd -a subscription-delete -i id"
+  echo "$cmd -a playlists"
+  echo "$cmd -a playlist {-i id} {-n name}  [-l limit]"
+  echo "$cmd -a playlist-delete {-i id} {-n name}"
+  echo "$cmd -a playlist-rename -i id -n new-name"
+  echo "$cmd -a playlist-create -n name"
+  echo "$cmd -a playlist-update {-n name} {-i id} [-p public|private|unlisted] [-t title]"
+  echo "$cmd -a playlist-age -n playlist-name -t ttl-in-days  -p preview|process [ -d directory-to-save-to ] [ -o playlist-to-output-to ] "
+  echo "$cmd -a playlist-item-add -n playlist-name -i video-id [-p index]"
+  echo "$cmd -a playlist-populate -s source-playlist-id -d dest-dest-playlist-id"
+  echo "video_id ... | $cmd -a playlist-items-add -n playlist-name"
+  echo "$cmd -a playlist-item-delete -n playlist-name -i video-id"
+  echo "$cmd -a playlists-rotate"
+  echo "$cmd -a video -i id"
+  echo "$cmd -a my-channel -i id"
+  echo "$cmd -a channel -n youtube-handle"
+  echo "$cmd -a playlists-snapshot -d directory"
+  echo "$cmd -a search -q query [-o output] [-F] [-s date|rating|relevance|viewCount] [-d any|long|medium|short]"
+  echo "$cmd -a sync"
   exit
 }
 
@@ -87,7 +81,7 @@ resolve_dir() {
 
 search_history_dir() {
   q="$1"
-  s="$2"
+  s="$2$3"
   search_name=$(echo "${q}-${s}" | sed 's/[^A-Za-z0-9-]//g')
   search_id=$(echo -n "${q}-${s}" | cksum | cut -d' '  -f1)
   echo "$SEARCH_HISTORY_DIR/${search_name}.${search_id}"
@@ -104,7 +98,7 @@ last_modified() {
 
 search_cache_age() {
   q="$1"
-  s="$2"
+  s="$2$3"
   dir=$(search_history_dir "$q" "$s")
   a_year_ago=$((60*60*24*365))
 
@@ -124,17 +118,21 @@ search_cache_age() {
 
 search_execute() {
   q="$1"
-  s="$2"
+  s="$2$3"
+  d=any
+  if [ -n "$3" ] ; then
+    d=$3
+  fi
   history_dir=$(search_history_dir "$q" "$s")
   mkdir -p $history_dir
   history_file=$history_dir/$($(date_cmd) +%s.%N).history
   touch $history_file
-  
+
   if [ ! -w "$history_file" ] ; then
     echo "Can't write to $history_file"
     exit
   fi
-  
+
   MAX_PAGES=4
   invoke -G $API_BASE/search \
          -d part=snippet \
@@ -143,10 +141,11 @@ search_execute() {
          --data-urlencode q="$query" \
          -d safeSearch=none \
          -d videoDefinition=high \
+         -d videoDuration=$d \
          -d type=video > $HOME/.yt.serp
   cat $HOME/.yt.serp | jq -r '.items[] | .id.videoId' > $HOME/.yt.serp.ids
   cat $HOME/.yt.serp.ids | while read id ; do
-    found=$(grep ^${id}$ $history_dir/*.history)
+    found=$(grep -r ^${id}$ $history_dir/)
     if [ -z "$found" ]; then
       echo $id >> $history_file
       cat $HOME/.yt.serp | jq "[.items[] | select(.id.videoId == \"$id\")][0]" > $SEARCH_CACHE_DIR/$id.hit
@@ -157,11 +156,11 @@ search_execute() {
     rm $history_file
   fi
 }
-    
+
 search_data() {
   q="$1"
-  s="$2"
-  f="$3"
+  s="$2$3"
+  f="$4"
   history_dir=$(search_history_dir "$q" "$s")
 
 
@@ -195,7 +194,10 @@ filter() {
   fi
 }
 
-while getopts ":a:i:n:vd:l:o:t:p:q:s:F" opt ; do
+config=$HOME/.config/youtubeassist/config
+
+unset LIMIT
+while getopts ":a:i:n:vd:l:o:t:p:q:s:Fc:l:" opt ; do
   case $opt in
     a) ACTION=$OPTARG ;;
     v) VERBOSE=yes    ;;
@@ -208,11 +210,26 @@ while getopts ":a:i:n:vd:l:o:t:p:q:s:F" opt ; do
     s) sort_by=$OPTARG ;;
     q) query=$OPTARG ;;
     F) full_results=yes ;;
+    c) config=$OPTARG ;;
+    l) LIMIT=$OPTARG ;;
     \?) usage         ;;
   esac
 done
 
+
+if [ -f "$config" ] ; then
+  . $config
+else
+  echo "Missing config file: $config"
+  exit
+fi
+
+
 MAX_PAGES=10000
+
+function invoke_once {
+  curl -s -H "Authorization: Bearer $AUTH_TOKEN" "$@"
+}
 
 function invoke {
   curl -s -H "Authorization: Bearer $AUTH_TOKEN" "$@" > /tmp/yt.buffer.$$
@@ -245,6 +262,18 @@ case $ACTION in
     exit
     ;;
 
+  channel)
+    if [ -z "$name" ] ; then
+      echo "Missing -n youtube-handle"
+      exit
+    fi
+
+    invoke -G $API_BASE/channels \
+           -d forHandle="$name" \
+           -d part=snippet,contentDetails,statistics \
+           -d maxResults=50 | filter -r '.items[] | .id + "|" + .snippet.title + "|" + .contentDetails.relatedPlaylists.uploads'
+    ;;
+
   my-channel)
     invoke -G $API_BASE/channels \
            -d mine=true \
@@ -252,12 +281,12 @@ case $ACTION in
            -d maxResults=50 |
       filter -r '.'
     ;;
-  
+
   subscriptions)
     invoke -G $API_BASE/subscriptions \
            -d mine=true \
            -d part=snippet \
-           -d maxResults=50 | 
+           -d maxResults=50 |
       filter -r ' .items[] |  .id + "|" + .snippet.title'
     ;;
 
@@ -273,7 +302,7 @@ case $ACTION in
     invoke -G $API_BASE/playlists \
            -d mine=true \
            -d part=snippet,status \
-           -d maxResults=50 | 
+           -d maxResults=50 |
       filter -r ' .items[] |  .id + "|" + .status.privacyStatus + "|" + .snippet.title'
     ;;
 
@@ -289,11 +318,18 @@ case $ACTION in
       echo "Listing a playlist requires a playlist id"
       usage
     fi
-    invoke -G $API_BASE/playlistItems \
-           -d playlistId=$id \
-           -d part=snippet,status,contentDetails \
-           -d maxResults=50 |
-      filter -r '.items[] | .id + "|" + .contentDetails.videoId + "|" + .snippet.publishedAt + "|" + .snippet.title' > $HOME/.yt.buffer
+
+    if [ -n "$LIMIT" ] ; then
+      invoke_once -G $API_BASE/playlistItems \
+             -d playlistId=$id \
+             -d part=snippet,status,contentDetails \
+             -d maxResults=$LIMIT
+    else
+      invoke -G $API_BASE/playlistItems \
+             -d playlistId=$id \
+             -d part=snippet,status,contentDetails \
+             -d maxResults=50
+    fi | filter -r '.items[] | .id + "|" + .contentDetails.videoId + "|" + .snippet.publishedAt + "|" + .snippet.title' > $HOME/.yt.buffer
     if [ -n "$VERBOSE" ] ; then
        cat $HOME/.yt.buffer
     else
@@ -351,6 +387,17 @@ case $ACTION in
       exit
     fi
 
+    position=$privacy
+    if [ -z "$position" ] ; then
+      position=0
+    fi
+
+    if [ "$position" = "auto" ] ; then
+      position_expr=""
+    else
+      position_expr="'position': $position, "
+    fi
+
     playlist_id=$(playlist_id_by_name "$name")
 
     if [ -z "$playlist_id" ] ; then
@@ -370,7 +417,7 @@ case $ACTION in
 
     invoke -X POST "$API_BASE/playlistItems?part=snippet" \
            -H 'Content-Type: application/json' \
-           -d "{ 'snippet': { 'playlistId': '$playlist_id', 'position': 0, 'resourceId': { 'kind': 'youtube#video', 'videoId': '$id' } } } " |
+           -d "{ 'snippet': { 'playlistId': '$playlist_id', $position_expr 'resourceId': { 'kind': 'youtube#video', 'videoId': '$id' } } } " |
       filter -r '.id + "|" + .snippet.title'
 
     ;;
@@ -393,7 +440,7 @@ case $ACTION in
          if [ -z "$exists" ]  ; then
            invoke -X POST "$API_BASE/playlistItems?part=snippet" \
                   -H 'Content-Type: application/json' \
-                  -d "{ 'snippet': { 'playlistId': '$playlist_id', 'position': 0, 'resourceId': { 'kind': 'youtube#video', 'videoId': '$id' } } } " |
+                  -d "{ 'snippet': { 'playlistId': '$playlist_id',  'resourceId': { 'kind': 'youtube#video', 'videoId': '$id' } } } " |
              filter -r '.id + "|" + .snippet.title'
          fi
     done
@@ -578,6 +625,7 @@ case $ACTION in
       exit
     fi
 
+    cp /dev/null $HOME/.yt.aged
     youtubeassist -a playlist -i $id | while read line ; do
       id=$(echo $line | cut -d'|' -f1)
       video_id=$(echo $line | cut -d'|' -f2)
@@ -590,7 +638,7 @@ case $ACTION in
             ;;
           process)
             if [ -n "$output_id" ] ; then
-              youtubeassist -a playlist-item-add -n "$output" -i "$video_id" > /dev/null
+              echo "$video_id" >> $HOME/.yt.aged
             fi
 
             if [ -n "$output_dir" ] ; then
@@ -602,6 +650,10 @@ case $ACTION in
         esac
       fi
     done
+
+    if [ -s $HOME/.yt.aged ] ; then
+      cat $HOME/.yt.aged | youtubeassist -a playlist-items-add -n "$output"
+    fi
     ;;
 
   search)
@@ -649,13 +701,22 @@ case $ACTION in
       fi
     fi
 
-    age=$(search_cache_age "$query" "$sort_by")
-    one_hour_ago=$((60 * 60))
-    if [ $age -gt $one_hour_ago ] ; then
-      search_execute "$query" "$sort_by"
+    duration=
+    if [ -n "$dir" ] ; then
+      case $dir in
+        any) ;;
+        long|medium|short)   duration=$dir ;;
+        *) echo "Unknown -d duration. Must be: any, long, medium or short"; exit ;;
+      esac
     fi
 
-    search_data "$query" "$sort_by" "$full_results" > $HOME/.yt.data
+    age=$(search_cache_age "$query" "$sort_by" "$duration")
+    one_hour_ago=$((60 * 60))
+    if [ $age -gt $one_hour_ago ] ; then
+      search_execute "$query" "$sort_by" "$duration"
+    fi
+
+    search_data "$query" "$sort_by" "$duration" "$full_results" > $HOME/.yt.data
     if [ -n "$output_id" ] ; then
       cat $HOME/.yt.data | jq -r '.items[] | .id.videoId' | while read video_id ; do
         youtubeassist -a playlist-item-add -n "$output_id" -i "$video_id" > /dev/null
@@ -667,8 +728,54 @@ case $ACTION in
 
     ;;
 
+  sync)
+    cd $HOME/dt/i2x/youtube-archive/src/main
+    gitassist -a sync-files
+    ;;
+
+  playlist-populate)
+    source_id="$sort_by"
+    dest_id="$dir"
+
+    if [ -z "$source_id" ] ;then
+      echo "Missing -s source-playlist-id"
+      exit 1
+    fi
+
+    if [ -z "$dest_id" ] ;then
+      echo "Missing -d destination-playlist-id"
+      exit 1
+    fi
+
+    last_dest_entry=$($0 -a playlist -i $dest_id -v | jq -r '.items[] | .id + "|" + .contentDetails.videoPublishedAt + "|" + (.snippet.position | tostring)' | tail -1)
+    last_dest_timestamp=$(echo $last_dest_entry | cut -d '|' -f2)
+    last_dest_position=$(echo $last_dest_entry | cut -d '|' -f3)
+
+    playlist_buffer=$HOME/.yta.playlist.$source_id
+
+    age=10000000
+    if [ -f "$playlist_buffer" ] ; then
+      now=$(date +%s)
+      mod=$(last_modified $playlist_buffer)
+      age=$((now - mod))
+    fi
+
+    if [ ! -f $playlist_buffer -o $age -gt 3600 ]  ; then
+      $0 -a playlist -i $source_id -v > $playlist_buffer
+    fi
+
+    cat $playlist_buffer | jq -r '.items[] | .contentDetails.videoId + "|" + .contentDetails.videoPublishedAt' |
+      awk -F'|' -v last_dest_timestamp="$last_dest_timestamp" '{
+        if($2 > last_dest_timestamp) {
+          print $1;
+        }
+      }' | while read video_id ; do
+      $0 -a playlist-item-add -n $dest_id -i $video_id -p auto
+    done
+
+    ;;
+
   *)
     usage
     ;;
 esac
-
