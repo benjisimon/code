@@ -3,9 +3,6 @@
  * easier to work with.
  */
 
-
-var $ = window.$ ? window.$ : window.jQuery;
-
 function rand(min, max) {
   min = Math.ceil(min);
   max = Math.floor(max);
@@ -36,6 +33,7 @@ function randPhone() {
 }
 
 function randomOption(selector) {
+  const $ = window.$ ? window.$ : window.jQuery;
   var all = $(selector).find('option').toArray().filter(function(o) {
     return $(o).attr('value') != '';
   });
@@ -44,6 +42,7 @@ function randomOption(selector) {
 }
 
 function S(name, val) {
+  const $ = window.$ ? window.$ : window.jQuery;
   var elt = $('*[name="' + name + '"]');
   if(val == '*') {
     $(elt).val(randomOption(elt));
