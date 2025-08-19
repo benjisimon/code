@@ -1,0 +1,75 @@
+#!/bin/bash
+
+##
+## Help with Google Meet stuff
+##
+
+CMD=$(basename $0)
+PROFILE=default
+CONFIG_DIR=$HOME/.config/$CMD
+AUTH_SCOPES="https://www.googleapis.com/auth/meetings.space.created"
+
+usage() {
+  echo "Usage: $CMD -a new [-p profile] [-v] [-N]"
+  echo "Usage: $CMD -a init-auth [-p profile]"
+}
+
+unset ACTION V N
+while getopts ":a:hp:vN" o; do
+  case "$o" in
+    a) ACTION=$OPTARG ;;
+    p) PROFILE=$OPTARG ;;
+    v) V=yes ;;
+    N) N=yes ;;
+    *) usage ;;
+  esac
+done
+
+api_post() {
+  path="$1" ; shift
+  auth_token=$(gapi_auth -f $CONFIG_DIR/$PROFILE.auth.json -s "$AUTH_SCOPES" token)
+  curl -X "POST" -s "$@" \
+       -H "Authorization: Bearer $auth_token" \
+       "https://meet.googleapis.com/v2/$path"
+}
+
+jqf() {
+  if [ -n "$V" ] ; then
+    cat
+  else
+    jq "$@"
+  fi
+}
+
+case "$ACTION" in
+  init-auth)
+    gapi_auth -f $CONFIG_DIR/$PROFILE.auth.json -s "$AUTH_SCOPES" init
+    ;;
+
+  new)
+    if [ -z "$N" ] ; then
+      SHOULD_RECORD=ON
+    else
+      SHOULD_RECORD=OFF
+    fi
+
+    api_post spaces \
+             -H 'Content-Type: application/json' \
+             -d "{ \"config\": {
+                  \"artifactConfig\": {
+                    \"recordingConfig\": {
+                      \"autoRecordingGeneration\": \"$SHOULD_RECORD\"
+                    },
+                    \"transcriptionConfig\": {
+                      \"autoTranscriptionGeneration\": \"$SHOULD_RECORD\"
+                    },
+                    \"smartNotesConfig\": {
+                      \"autoSmartNotesGeneration\": \"$SHOULD_RECORD\"
+                    }
+                  }
+                } }" | jqf -r .meetingUri
+  ;;
+
+  '') usage ;;
+  *) echo "Unkown -a $ACTION" ; exit ;;
+esac
