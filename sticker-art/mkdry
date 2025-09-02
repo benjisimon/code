@@ -1,0 +1,32 @@
+#!/bin/bash
+
+##
+## Make the 'DRY' sticker that's in my head
+##
+
+OUT=$(dirname $0)/images
+mkdir -p $OUT
+
+
+# Create the mask with the word "DRY" (white text on a transparent background)
+convert -background none -fill white -font Courier-Bold -pointsize 200 label:"DRY" -trim +repage $OUT/mask.png
+width=$(identify -format "%w" $OUT/mask.png)
+height=$(identify -format "%h" $OUT/mask.png)
+dimen=${width}x${height}
+
+small_width=$((width / 10))
+small_height=$((height / 10))
+small_dimen=${small_width}x${small_height}
+
+convert -size $small_dimen xc: +noise Random $OUT/noise.png
+convert $OUT/noise.png -colorspace Gray -sample $dimen $OUT/bg.png
+
+# Create a white background image
+convert -size $dimen xc:white $OUT/white-bg.png
+
+# Composite the random noise where the mask "DRY" is defined
+convert $OUT/bg.png $OUT/mask.png -compose DstIn -composite $OUT/dry-background.png
+
+# Finally, composite the result over the white background
+convert $OUT/white-bg.png $OUT/dry-background.png -compose Over -composite $OUT/final.png
+#+end_src
