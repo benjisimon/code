@@ -1,0 +1,179 @@
+#!/bin/bash
+
+##
+## help access sdcards on any system
+##
+## See also:
+## https://www.blogbyben.com/2023/01/accessing-sd-card-on-windows-from-wsl2.html
+##
+
+CMD=$(basename $0)
+
+usage() {
+  echo "Usage: $CMD -a mount [-v]"
+  echo "Usage: $CMD -a umount [-v]"
+  echo "Usage: $CMD -a root [-v]"
+  exit
+}
+
+
+MINT_ROOT=/mnt/sdcard
+WSL2_ROOT=/mnt/d
+
+running_under() {
+  if [ -f /etc/linuxmint/info ]; then
+    echo 'mint'
+  fi
+
+  if [ -f /etc/wsl.conf ] ; then
+    echo 'wsl2'
+  fi
+
+  if [ "$(uname)" = "Darwin" ] ; then
+    echo 'macos'
+  fi
+
+  echo ''
+}
+
+mint_mount() {
+  root=/mnt/sdcard
+  if [ ! -d $MINT_ROOT ]  ; then
+     sudo mkdir $MINT_ROOT
+  fi
+
+  device=$(lsblk |grep mmcblk0p1)
+  if [ -z "$device" ] ; then
+    if [ -n "$V" ]  ; then
+       echo "No sdcard device detected"
+    fi
+    exit
+  fi
+
+  mounted=$(mount | grep $MINT_ROOT)
+  if [ -z "$mounted" ] ; then
+    sudo mount -o uid=ben,gid=ben /dev/mmcblk0p1  $MINT_ROOT
+
+    mounted=$(mount | grep $MINT_ROOT)
+    if [ -z "$mounted" ] ; then
+      if [ -n "$V" ] ; then
+        echo "Failed to mount /dev/mmcblk0p1  $MINT_ROOT"
+      fi
+      exit
+    fi
+  fi
+}
+
+mint_umount() {
+  mounted=$(mount | grep $MINT_ROOT)
+  if [ -n "$mounted" ] ; then
+    sudo umount $MINT_ROOT
+  fi
+}
+
+mint_root() {
+  mint_mount
+  echo $MINT_ROOT
+}
+
+wsl2_is_mounted() {
+  mount | grep ^D:
+}
+
+wsl2_mount() {
+  wsl2_umount
+  sudo mount -t drvfs 'D:' -o uid=ben,gid=ben /mnt/d
+  is_mounted=$(wsl2_is_mounted)
+  if [ -z "$is_mounted" ] ; then
+    if [ -n "$V" ] ; then
+      echo "Failed to mount the SD Card"
+    fi
+    exit
+  fi
+}
+
+wsl2_umount() {
+  is_mounted=$(wsl2_is_mounted)
+  if [ -n "$is_mounted" ] ; then
+    sudo umount $WSL2_ROOT
+  fi
+}
+
+wsl2_root() {
+  wsl2_mount
+  echo $WSL2_ROOT
+}
+
+macos_is_mounted() {
+  mount | grep '/dev/disk4'
+}
+
+macos_root() {
+  is_mounted=$(macos_is_mounted)
+  if [ -z "$is_mounted" ] ; then
+    if [ -n "$V" ] ; then
+      echo "No SD Card discovered"
+    fi
+    exit
+  fi
+
+  mount | grep /dev/disk4 | sed -e 's|/dev/disk4.. on ||' -e 's| [(].*||'
+}
+
+macos_mount() {
+  root=$($0 -a root)
+  if [ -z "$root" ] ; then
+    drive=$(diskutil list |grep disk4s1)
+    if [ -z "$drive" ] ; then
+      if [ -n "$V" ] ; then
+        echo "No sdcard detected"
+      fi
+      exit
+    fi
+
+    diskutil mount /dev/disk4s1 2>&1 > $HOME/.$CMD.message
+    if [ -n "$V" ]; then
+      cat $HOME.$CMD.message
+    fi
+  fi
+}
+
+macos_umount() {
+  root=$($0 -a root)
+  if [ -n "$root" ] ; then
+    diskutil umount "$root" 2>&1 > $HOME/.$CMD.message
+    if [ -n "$V" ]; then
+      cat $HOME.$CMD.message
+    fi
+  fi
+}
+
+unset ACTION V
+
+while getopts ":a:hv" o; do
+  case "$o" in
+    a) ACTION=$OPTARG ;;
+    v) V=yes ;;
+    * | h) usage  ;;
+  esac
+done
+
+if [ -z "$ACTION" ] ; then
+  usage
+fi
+
+os=$(running_under)
+
+if [ -z "$os" ] ; then
+  echo "Can't determine current OS"
+  exit
+fi
+
+case "$ACTION" in
+
+  umount) eval "${os}_umount" ;;
+  mount) eval "${os}_mount" ;;
+  root) eval "${os}_root" ;;
+
+  *) echo "Unkown action: [$ACTION]" ; exit ;;
+esac
