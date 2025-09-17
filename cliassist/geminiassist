@@ -1,0 +1,91 @@
+#!/bin/bash
+
+##
+## Run gemini queries
+##
+## https://ai.google.dev/gemini-api/docs/image-generation#rest
+##
+
+CMD=$(basename $0)
+TMP=$HOME/.$CMD
+mkdir -p $TMP
+
+usage() {
+  echo "Usage: $CMD -a generate-image -p prompt [-f image] [-v]"
+  echo "Usage: $CMD -a ask -p prompt [-v]"
+  exit 1
+}
+
+jqf() {
+  if [ -z "$V" ] ; then
+    jq "$@"
+  else
+    cat
+  fi
+}
+
+unset V ACTION PROMPT FILE
+
+while getopts "a:p:hf:v" o; do
+  case "$o" in
+    p) PROMPT=$OPTARG  ;;
+    a) ACTION=$OPTARG ;;
+    f) FILE=$OPTARG ;;
+    v) V=yes ;;
+    * | h) usage  ;;
+  esac
+done
+
+if [ -z "$GEMINI_API_KEY" ] ; then
+  echo "No GEMINI_API_KEY env variable set."
+  exit
+fi
+case "$ACTION" in
+  ask)
+    if [ -z "$PROMPT" ] ; then
+      echo "Missing -p prompt"
+      exit
+    fi
+
+    curl -s "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent" \
+         -H 'Content-Type: application/json' \
+         -H "X-goog-api-key: $GEMINI_API_KEY" \
+         -X POST \
+         -d "{ \"contents\": [ { \"parts\": [ { \"text\": \"$PROMPT\" } ] } ] }" |
+      jqf -r '.candidates[] | .content.parts[] | .text'
+    ;;
+
+  generate-image)
+    if [ -z "$PROMPT" ] ; then
+      echo "Missing -p prompt"
+      exit
+    fi
+
+
+    inline=""
+    if [ -n "$FILE" ] ; then
+      if [ ! -f "$FILE" ] ; then
+        echo "-f $FILE doesn't exist"
+        exit
+      fi
+
+      img=$(base64 -w0 "$FILE")
+      inline=", { \"inline_data\": { \"mime_type\":\"image/jpeg\", \"data\": \"$img\" } }"
+    fi
+
+    echo "{ \"contents\": [{ \"parts\": [ {\"text\": \"$PROMPT\"} $inline ] }] }" > $TMP/request.json
+    curl -s -X POST \
+         "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent" \
+         -H "x-goog-api-key: $GEMINI_API_KEY" \
+         -H "Content-Type: application/json" \
+         -d  @$TMP/request.json |
+      if [ -n "$V" ] ; then
+        cat
+      else
+        jq -r '.candidates[0].content.parts[] | select(.inlineData) | .inlineData.data' | base64 -d -
+      fi
+    ;;
+
+  '') usage ;;
+  *) echo "Unknown action: $ACTION" ; exit ;;
+esac

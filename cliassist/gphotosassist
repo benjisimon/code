@@ -1,0 +1,173 @@
+#!/bin/bash
+
+##
+## command line tool for working with the google photos API.
+## https://developers.google.com/photos/library/guides/overview
+##
+
+config=$HOME/.config/$(basename $0)/config
+
+if [ -f "$config" ] ; then
+  . $config
+else
+  echo "Missing config file: $config"
+  exit
+fi
+
+API_BASE=https://photoslibrary.googleapis.com/v1
+ID_COL=.id
+ALL=no
+CMD=$(basename $0)
+TMP=$HOME/.$CMD
+mkdir -p $TMP
+
+jqf() {
+  if [ -n "$VERBOSE" ] ; then
+    cat
+  else
+    jq "$@"
+  fi
+}
+
+function usage {
+  cmd="Usage: $(basename $0)"
+  echo "$cmd: -a init"
+  echo "$cmd: -a album-list [-A]"
+  echo "$cmd: -a album-create -n name [-v]"
+  echo "$cmd: -a album-get -i id [-v]"
+  echo "$cmd: -a album-add -i album-id -f image.jpg [-d description] [-v]"
+  echo "$cmd: -a media-get -i media-id [-v]"
+  echo "$cmd: -a media-list -i album-id [-v]"
+  exit
+}
+
+unset ACTION QUERY ID NAME VERBOSE ALL FILE DESCRIPTION
+while getopts ":a:q:i:n:vuAf:d:" opt; do
+  case $opt in
+    a) ACTION=$OPTARG ;;
+    q) QUERY=$OPTARG  ;;
+    i) ID=$OPTARG     ;;
+    n) NAME=$OPTARG   ;;
+    v) VERBOSE=yes    ;;
+    f) FILE=$OPTARG ;;
+    u) ID_COL=.productUrl ;;
+    A) ALL=yes ;;
+    d) DESCRIPTION=$OPTARG ;;
+    \?) usage         ;;
+  esac
+done
+
+function invoke {
+  curl -s -H "Authorization: Bearer $AUTH_TOKEN" "$@" 
+}
+
+case $ACTION in
+  init)
+    gapi_auth -i $CLIENT_ID -p $CLIENT_SECRET  -r $AUTH_REDIRECT_URI -s "$API_SCOPE" init
+    exit
+    ;;
+
+  album-list)
+    invoke -G $API_BASE/albums | jqf -r 'select(.albums) | .albums[] | .id + "|" + .title + "|" + .productUrl'
+    ;;
+
+  album-get)
+    if [ -z "$ID" ] ; then
+      echo "Missing -i album-id"
+      exit
+    fi
+    invoke -G $API_BASE/albums/$ID | jqf -r '.id + "|" + .title +  "|" + .productUrl'
+    ;;
+
+  album-create)
+    if [ -z "$NAME" ] ; then
+      echo "Missing -n album-name"
+      exit
+    fi
+
+    invoke -X POST $API_BASE/albums -H "Content-Type: application/json" -d "{\"album\" : { \"title\" : \"$NAME\" } }" | jqf -r "$ID_COL"
+    ;;
+
+
+  media-list)
+    if [ -z "$ID" ] ; then
+      echo "Missing -i album-id"
+      exit
+    fi
+
+    invoke $API_BASE/mediaItems:search \
+           -s -X POST \
+           -H "Content-Type: application/json" \
+           -d "{ \"albumId\" : \"$ID\" }" |
+      jqf -r '.mediaItems[] | .id + "|" + .filename + "|" + .productUrl'
+
+    ;;
+  
+  album-add)
+    if [ -z "$ID" ] ; then
+      echo "Missing -i album-id"
+      exit 1
+    fi
+    album_id=$ID
+    
+    if [ -z "$FILE" ] ; then
+      echo "Missing  -f file"
+      exit 1
+    fi
+
+    if [ ! -f "$FILE" ] ; then
+      echo "$FILE does not exit."
+      exit 1
+    fi
+
+    invoke -X POST \
+           -H "Content-Type: application/octet-stream" \
+           --data-binary @$FILE \
+           "https://photoslibrary.googleapis.com/v1/uploads" > $TMP/upload-token
+
+    if [ ! -s "$TMP/upload-token" ]  ; then
+      echo "Failed to generate an upload token. Giving up."
+      exit 1
+    fi
+
+    upload_token=$(cat $TMP/upload-token)
+
+    base_name=$(basename $FILE)
+    invoke -X POST \
+           -H "Content-Type: application/json" \
+           -d "{ \"newMediaItems\": [ { \"description\": \"$DESCRIPTION\", \"simpleMediaItem\": { \"fileName\" : \"$base_name\", \"uploadToken\": \"$upload_token\" } } ] }" \
+           "https://photoslibrary.googleapis.com/v1/mediaItems:batchCreate" > $TMP/media
+
+    outcome=$(cat $TMP/media | jq -r '.newMediaItemResults[0].status.message')
+    if [ "$outcome" != "Success" ] ; then
+      echo "Upload failed: $outcome"
+      exit 1
+    fi
+
+    id=$(cat $TMP/media | jq -r '.newMediaItemResults[0].mediaItem.id')
+    if [ -z "$id" ] ; then
+      echo "Can't determine the id of the image. Giving up."
+      exit
+    fi
+
+    invoke -X POST \
+           -H "Content-Type: application/json" \
+           -d "{\"mediaItemIds\": [\"$id\"] }" https://photoslibrary.googleapis.com/v1/albums/$album_id:batchAddMediaItems > $TMP/album_add
+
+    cat $TMP/media | jq -r '.newMediaItemResults[0].mediaItem | .id  + "|" + .productUrl'
+    ;;
+
+  media-get)
+    if [ -z "$ID" ] ; then
+      echo "Missing -i photo-id"
+      exit
+    fi
+    
+    invoke $API_BASE/mediaItems/$ID | jqf -r '.productUrl'
+    ;;
+
+  *)
+    usage
+    ;;
+esac
+
