@@ -58,7 +58,7 @@ while getopts ":a:q:i:n:vuAf:d:" opt; do
 done
 
 function invoke {
-  curl -s -H "Authorization: Bearer $AUTH_TOKEN" "$@" 
+  curl -s -H "Authorization: Bearer $AUTH_TOKEN" "$@"
 }
 
 case $ACTION in
@@ -102,14 +102,14 @@ case $ACTION in
       jqf -r '.mediaItems[] | .id + "|" + .filename + "|" + .productUrl'
 
     ;;
-  
+
   album-add)
     if [ -z "$ID" ] ; then
       echo "Missing -i album-id"
       exit 1
     fi
     album_id=$ID
-    
+
     if [ -z "$FILE" ] ; then
       echo "Missing  -f file"
       exit 1
@@ -162,7 +162,7 @@ case $ACTION in
       echo "Missing -i photo-id"
       exit
     fi
-    
+
     invoke $API_BASE/mediaItems/$ID | jqf -r '.productUrl'
     ;;
 
@@ -170,4 +170,3 @@ case $ACTION in
     usage
     ;;
 esac
-
