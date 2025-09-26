@@ -20,6 +20,7 @@ ALL=no
 CMD=$(basename $0)
 TMP=$HOME/.$CMD
 mkdir -p $TMP
+QUOTA_EXCEEDED_EXIT=10
 
 jqf() {
   if [ -n "$VERBOSE" ] ; then
@@ -58,7 +59,15 @@ while getopts ":a:q:i:n:vuAf:d:" opt; do
 done
 
 function invoke {
-  curl -s -H "Authorization: Bearer $AUTH_TOKEN" "$@"
+  curl -i -s -H "Authorization: Bearer $AUTH_TOKEN" "$@" > $TMP/last_full_reponse
+  http_code=$(head -1 $TMP/last_full_reponse | cut -d' ' -f2)
+  if [ "$http_code" -eq 409 ] ; then
+    if [ -n  "$VERBOSE" ] ; then
+      cat $TMP/last_full_reponse | sed '1,/^.$/d' | jq -r .error.message
+    fi
+    exit $QUOTA_EXCEEDED_EXIT
+  fi
+  cat $TMP/last_full_reponse | sed '1,/^.$/d'
 }
 
 case $ACTION in
