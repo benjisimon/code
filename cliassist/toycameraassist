@@ -1,0 +1,187 @@
+#!/bin/bash
+
+##
+## A script to work with the ESOXOFFORE camera from Amazon
+## https://www.amazon.com/dp/B0BTM72KLT?ref_=ppx_hzsearch_conn_dt_b_fed_asin_title_4&th=1
+##
+
+CMD=$(basename $0)
+TMP=$HOME/.$CMD ; mkdir -p $TMP
+
+usage() {
+  echo "Usage: $CMD [-p profile] -a archive [-v]"
+  echo "Usage: $CMD [-p profile] -a load image.jpg ..."
+  exit
+}
+
+is_toycam_root() {
+  root="$1"
+  for d in MP3 PHOTO VIDEO ; do
+    if  [  ! -d "$root/$d"  ] ; then
+      echo "no"
+    fi
+  done
+
+  echo "yes"
+}
+
+gphotos_archive_folder_id() {
+  found=$(gphotosassist -a album-list | grep "|$GPHOTOS_ARCHIVE_ALBUM_NAME|")
+  if [ -z "$found" ] ; then
+    gphotosassist -a album-create -n "$GPHOTOS_ARCHIVE_ALBUM_NAME"
+  else
+    echo $found | cut -d'|' -f1
+  fi
+}
+
+PROFILE=default
+unset ACTION V
+
+while getopts ":a:hp:v" o; do
+  case "$o" in
+    a) ACTION=$OPTARG ;;
+    p) PROFILE=$OPTARG ;;
+    v) V=yes ;;
+    * | h) usage  ;;
+  esac
+done
+shift "$((OPTIND-1))"
+
+
+if [ -z "$ACTION" ] ; then
+  usage
+fi
+
+config=$HOME/.config/$CMD/$PROFILE.config
+
+if [ ! -f "$config" ] ; then
+  echo "$config doesn't exist"
+  exit
+fi
+. $config
+
+case "$ACTION" in
+  archive)
+    sd_root=$(sdcardassist -a root)
+    if [ -z "$sd_root" ]  ; then
+      echo "Unable to access SD card"
+      exit
+    fi
+
+    sd_valid=$(is_toycam_root "$sd_root")
+    if [ "$sd_valid" != "yes" ] ; then
+      echo "$sd_root doesn't look like toycam SD card"
+      exit
+    fi
+
+    now=$(date +%Y-%m-%d.%s)
+    incoming=$STAGING_DIR/incoming
+    uploaded=$STAGING_DIR/uploaded/$now
+
+    sd_photos=$(cd $sd_root/PHOTO ; ls ; cd $sd_root/VIDEO ; ls)
+    incoming_photos=$(cd $incoming  ; ls )
+    if [ -z "$sd_photos" -a -z "$incoming_photos" ]; then
+      if [ -n "$V" ]  ; then
+        echo "No photos found on the sdcard or in $incoming."
+      fi
+      exit
+    fi
+
+    mkdir -p $incoming
+    mkdir -p $uploaded
+
+    if [ ! -d "$incoming" ] ; then
+      echo "Can't create: $incoming"
+      exit
+    fi
+
+    if [ ! -d "$uploaded" ] ; then
+      echo "Can't create: $uploaded"
+      exit
+    fi
+
+    folder_id=$(gphotos_archive_folder_id)
+    if [ -z "$folder_id" ] ; then
+      echo "Can't determine the id of $GPHOTOS_ARCHIVE_ALBUM_NAME"
+      exit
+    fi
+
+    if [ -n "$(ls $sd_rooot/PHOTO)" ] ; then
+       (cd $sd_root/PHOTO/ ; mv *.jpg $incoming)
+    fi
+
+    if [ -n "$(ls $sd_rooot/VIDEO)" ] ; then
+      (cd $sd_root/VIDEO/ ; mv *.avi $incoming)
+    fi
+
+    cd $incoming
+    for f in *; do
+      url=$(gphotosassist -a album-add -i "$folder_id" -f "$f" | tee $TMP/upload.attempt |  cut -d'|' -f2 | grep ^http)
+      if [ -z "$url" ] ; then
+        echo "Failed to upload: $f"
+        cat $TMP/upload.attempt
+        exit 1
+      fi
+      mv $f $uploaded
+      if [ -n "$V" ]  ; then
+        echo "$f:$url"
+      fi
+      sleep 3
+    done
+  ;;
+
+  load)
+    sd_root=$(sdcardassist -a root)
+    if [ -z "$sd_root" ]  ; then
+      echo "Unable to access SD card"
+      exit
+    fi
+
+    sd_valid=$(is_toycam_root "$sd_root")
+    if [ "$sd_valid" != "yes" ] ; then
+      echo "$sd_root doesn't look like toycam SD card"
+      exit
+    fi
+
+
+
+    last_photo=$(cd $sd_root/PHOTO ; ls -r1 | head -1)
+    if [ -z "$last_photo" ] ; then
+      index=0
+    else
+      current_index=$(echo $last_photo | sed -e 's|PICT||' -e 's|[.].*||')
+      index=$((current_index + 1))
+    fi
+
+    while [ -n "$1" ] ; do
+      if [ ! -f "$1" ] ; then
+        echo "$1 doesn't exist. Skipping."
+        shift
+        continue
+      fi
+
+      file=$(printf "$sd_root/PHOTO/PICT%04d.jpg" $index)
+      if [ -n "$V" ] ; then
+        echo "$1 -> $file"
+      fi
+
+      src_w=$(identify -format "%w" $1)
+      src_h=$(identify -format "%h" $1)
+
+      dimen=3840x2160
+      if [ "$src_w" -gt "$src_h" ] ; then
+        rotate=""
+      else
+        rotate="-rotate 90"
+      fi
+
+      convert "$1" $rotate -resize $dimen^ -gravity center -background white -extent $dimen -quality 70 -strip $file
+
+      shift
+      index=$((index + 1))
+    done
+
+  ;;
+
+  *) echo "Unknown -a $ACTION" ; exit ;;
+esac
