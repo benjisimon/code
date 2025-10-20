@@ -6,7 +6,7 @@
 ##
 
 CMD=$(basename $0)
-TMP=$HOME/.$CMD ; mkdir -p $TMP
+TMP=$HOME/.tmp/$CMD ; mkdir -p $TMP
 
 usage() {
   echo "Usage: $CMD [-p profile] -a archive [-v]"
@@ -75,6 +75,7 @@ case "$ACTION" in
     fi
 
     now=$(date +%Y-%m-%d.%s)
+    mkdir -p $STAGING_DIR
     incoming=$STAGING_DIR/incoming
     uploaded=$STAGING_DIR/uploaded/$now
 
@@ -106,11 +107,11 @@ case "$ACTION" in
       exit
     fi
 
-    if [ -n "$(ls $sd_rooot/PHOTO)" ] ; then
+    if [ -n "$(ls $sd_root/PHOTO)" ] ; then
        (cd $sd_root/PHOTO/ ; mv *.jpg $incoming)
     fi
 
-    if [ -n "$(ls $sd_rooot/VIDEO)" ] ; then
+    if [ -n "$(ls $sd_root/VIDEO)" ] ; then
       (cd $sd_root/VIDEO/ ; mv *.avi $incoming)
     fi
 
