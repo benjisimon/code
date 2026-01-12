@@ -1,0 +1,31 @@
+#!/bin/bash
+
+##
+## Send data to an android device using Tasker's Auto Remote
+##
+CMD=$(basename $0)
+TMP=$HOME/.tmp/$CMD ; mkdir -p $TMP
+last=$TMP/andsend.last
+base='https://autoremotejoaomgcd.appspot.com/sendmessage'
+
+config=$HOME/.config/$CMD/default.config
+if [ ! -f $config ] ; then
+  echo "No config found: $config"
+  exit 1
+fi
+. $config
+
+if [ $# -eq 0 ] ; then
+  echo "Usage: $CMD command [arg ...]"
+  exit 1
+else
+  command=$1 ; shift
+  while [ $# -gt 0 ] ; do
+    command="$command $1" ; shift
+  done
+fi
+
+echo -n "$command=:=" > $last
+cat >> $last
+
+curl -s $base -d "key=$KEY" --data-urlencode "message@$last" > /dev/null
