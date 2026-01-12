@@ -1,0 +1,139 @@
+#!/bin/bash
+
+##
+## Authenticate with Google Api
+##
+USAGE="`basename $0` {auth|refresh|token} ctx"
+CMD=$(basename $0)
+CTX_DIR=$HOME/.config/$CMD
+TMP=$HOME/.tmp/$CMD ; mkdir -p $TMP
+SCOPE_DELIM=""
+
+function usage {
+  cmd="$cmd [-c context] [-d ctx_dir] [-S scope-delimiter] -s scope"
+  echo "Usage: $cmd -i CLIENT_ID -p CLIENT_SECRET -r REDIRECT_URI init"
+  echo "Usage: $cmd -i CLIENT_ID -p CLIENT_SECRET -r REDIRECT_URI token"
+  echo "Usage: $cmd -f oauth_client.json init"
+  echo "Usage: $cmd -f oauth_client.json token"
+  exit
+}
+
+function age {
+  now=`date +%s`
+
+  if [ ! -f $1 ] ; then
+    echo $now
+  else
+    case $(uname) in
+      Darwin) modified=`stat -f %m $1` ;;
+      *) modified=`stat -c %X $1` ;;
+    esac
+    expr $now - $modified
+  fi
+}
+
+refresh_token() {
+  if [ ! -f "$TMP/$CTX.refresh_token" ]  ; then
+    cat $CTX_DIR/$CTX.init | jq -r .access_token > $TMP/$CTX.access_token
+    cat $CTX_DIR/$CTX.init | jq -r .refresh_token > $TMP/$CTX.refresh_token
+  fi
+
+  cat $TMP/$CTX.refresh_token
+}
+
+function refresh {
+  refresh_token=$(refresh_token)
+  curl -s \
+       -d client_id=$CLIENT_ID \
+       -d client_secret=$CLIENT_SECRET \
+       -d refresh_token=$refresh_token \
+       -d grant_type=refresh_token \
+       https://www.googleapis.com/oauth2/v3/token |
+    tee $TMP/$CTX.refresh |
+    jq -r .access_token > $TMP/$CTX.access_token
+}
+
+unset CLIENT_ID CLIENT_SECRET REDIRECT_URL CTX FILE
+while getopts :hc:p:s:i:r:f:d: opt ; do
+  case $opt in
+    i) CLIENT_ID=$OPTARG ;;
+    p) CLIENT_SECRET=$OPTARG ;;
+    r) REDIRECT_URI=$OPTARG ;;
+    s) SCOPE=$OPTARG ;;
+    S) SCOPE_DELIM="$OPTARG" ;;
+    c) CTX=$OPTARG ;;
+    f) FILE=$OPTARG ;;
+    d) CTX_DIR=$OPTARG ;;
+    h) usage ;;
+  esac
+done
+shift $(($OPTIND - 1))
+
+if [ -n "$SCOPE_DELIM" ] ; then
+  SCOPE=$(echo $SCOPE | sed "s/$SCOPE_DELIM/ /g")
+fi
+
+if [ -z "$CTX" ] ; then
+  CTX=$(echo $CLIENT_ID | md5sum | cut -d' ' -f1)
+fi
+
+if [ -n "$FILE" -a ! -f "$FILE" ] ; then
+  echo "$FILE not found"
+  exit
+fi
+
+if [ -n "$FILE" ] ; then
+  CLIENT_ID=$(cat $FILE | jq -r .web.client_id)
+  CLIENT_SECRET=$(cat $FILE | jq -r .web.client_secret)
+  REDIRECT_URI=$(cat $FILE | jq -r .web.redirect_uris[0])
+fi
+
+
+if [ -z "$CLIENT_ID" ] ; then
+  echo "Missing client_id"
+  exit
+fi
+
+if [ -z "$CLIENT_SECRET" ] ; then
+  echo "Missing client_secret"
+  exit
+fi
+
+if [ -z "$REDIRECT_URI" ] ; then
+  echo "Missing redirect_uri"
+  exit
+fi
+
+
+cmd=$1 ; shift
+
+mkdir -p $CTX_DIR
+case $cmd in
+  init)
+    if [ -z "$REDIRECT_URI" ] ; then
+      echo "Missing -r redirect_uri"
+      exit
+    fi
+
+    scope=$(echo "$SCOPE" | sed 's/ /%20/g')
+    url="https://accounts.google.com/o/oauth2/auth?client_id=$CLIENT_ID&redirect_uri=$REDIRECT_URI&scope=$scope&response_type=code&access_type=offline&approval_prompt=force"
+    echo $url | clipit
+    echo $url
+    cat > $CTX_DIR/$CTX.init
+    cat $CTX_DIR/$CTX.init | jq -r .access_token > $TMP/$CTX.access_token
+    cat $CTX_DIR/$CTX.init | jq -r .refresh_token > $TMP/$CTX.refresh_token
+    ;;
+  token)
+    if [ ! -f $CTX_DIR/$CTX.init ] ; then
+      echo "Unknown context: $CTX. Try initing first."
+      exit
+    fi
+    age=`age $TMP/$CTX.access_token`
+    if [ $age -gt 3600 ] ; then
+      refresh
+    fi
+    cat $TMP/$CTX.access_token
+    ;;
+  '') usage ;;
+  *) echo "Unknown command: $cmd" ; exit ;;
+esac

@@ -1,0 +1,158 @@
+#!/bin/bash
+
+##
+## A shell script to assist with gmail
+##
+
+CMD=$(basename $0)
+TMP=$HOME/.tmp/$CMD ; mkdir -p $TMP
+PROFILE=default
+CONFIG=$HOME/.config/$CMD
+API_SCOPE="https://www.googleapis.com/auth/gmail.modify_https://www.googleapis.com/auth/gmail.settings.basic"
+API_BASE=https://www.googleapis.com/gmail/v1/users/me
+
+case $(uname) in
+  Darwin) BASE64_DECODE="base64 -d  -i -" ;;
+  *) BASE64_DECODE="base64 -d -" ;;
+esac
+
+
+base64_decode() {
+  tr '_-' '/+' | $BASE64_DECODE | tr -d '\r'
+}
+
+usage() {
+  cmd="$CMD [-p profile]"
+  echo "Usage: $cmd -a init"
+  echo "Usage: $cmd -a threads -q query [-v] [-n 50|all]"
+  echo "Usage: $cmd -a messages -i thread-id [-v] [-n 50|all]"
+  echo "Usage: $cmd -a labels"
+  echo "Usage: $cmd -a update -i id -l labels-to-add -r labels-to-remove"
+  echo "Usage: $cmd -a headers -i message-id"
+  echo "Usage: $cmd -a body -i message-id [-P part-num]"
+  echo "Usage: $cmd -a parts -i message-id"
+  echo "Usage: $cmd -a url -i id"
+ exit 1
+}
+
+gmail_invoke() {
+  path="$1" ; shift
+  auth_token=$($GAPI_AUTH token)
+
+  curl -s "$@" \
+       -H "Authorization: Bearer $auth_token" \
+       $API_BASE/$path
+}
+
+jqf() {
+  if [ -n "$V" ] ; then
+    cat
+  else
+    jq "$@"
+  fi
+
+}
+
+unset ACTION ID LABELS REMOVE QUERY V NUM PART
+while getopts ":ha:p:l:r:i:n:vq:P:" o; do
+  case "$o" in
+    a) ACTION=$OPTARG  ;;
+    p) PROFILE=$OPTARG ;;
+    i) ID=$OPTARG ;;
+    n) NUM=$OPTARG ;;
+    v) V=yes ;;
+    r) REMOVE=$OPTARG ;;
+    l) LABELS=$OPTARG ;;
+    q) QUERY=$OPTARG ;;
+    P) PART=$OPTARG ;;
+    *|h) usage  ;;
+  esac
+done
+
+
+if [ -z "$PROFILE" ] ; then
+  echo "No -p profine defined"
+  exit 1
+fi
+
+config=$CONFIG/$PROFILE.config
+if [ ! -f "$config" ] ; then
+  echo "No $PROFILE.config ($config) found"
+  exit 1
+fi
+. $config
+
+GAPI_AUTH="gapi_auth -i $CLIENT_ID -p $CLIENT_SECRET -S_ -s $API_SCOPE -r $AUTH_REDIRECT_URI -c $CMD.$PROFILE"
+
+case "$ACTION" in
+  init)
+    $GAPI_AUTH init
+    ;;
+
+  labels)
+    gmail_invoke labels -G |
+      jqf -r '.labels[] | .id + "|" + .name + "|" + .type'
+    ;;
+
+  threads)
+    if [ -z "$QUERY" ] ; then
+      echo "Missing -q query"
+      exit 1
+    fi
+
+    if [ -z "$NUM" ] ;then
+      NUM=50
+    fi
+
+    gmail_invoke threads -G --data-urlencode q="$QUERY" -d maxResults="$NUM" |
+      jqf -r 'if has("threads") then .threads[] | .id + "|" + .snippet else empty end'
+
+    ;;
+
+  messages)
+    if [ -z "$ID" ] ; then
+      echo "No -i thread-id provided"
+      exit
+    fi
+
+    if [ -z "$NUM" ] ; then
+      NUM=50
+    fi
+
+    gmail_invoke threads/$ID -G -d format=full -d maxResults="$NUM" |
+      jqf -r '.messages[] | .id + "|" +
+              (.payload.headers[] | select(.name == "Date") .value) + "|" +
+              (.payload.headers[] | select(.name == "From") .value) + "|" +
+              (.payload.headers[] | select(.name == "Subject") .value) + "|" +
+              (.labelIds? | join(","))'
+    ;;
+
+  headers|parts|body)
+    if [ -z "$ID" ] ; then
+      echo "No -i message-id provided"
+      exit
+    fi
+
+    mkdir -p $TMP/messages
+    message=$TMP/messages/$ID.json
+    if [ ! -f $message ] ; then
+      gmail_invoke messages/$ID -G -d format=full > $message
+    fi
+
+    case "$ACTION" in
+      headers) cat $message | jqf -r '.payload.headers[] | .name + "|" + .value' ;;
+      parts) cat $message | jqf -r  '.payload.parts[] | .partId + "|" + .mimeType' ;;
+      body)
+        if [ -z "$PART" ] ; then
+          cat $message | jqf -r '.payload.body.data?' |  base64_decode
+        else
+        cat $message | jqf -r ".payload.parts[] | select(.partId == \"$PART\") | .body.data" | base64_decode
+        fi
+        ;;
+    esac
+
+    ;;
+
+  '') usage ;;
+  *) echo "Unkown  -a $ACTION" ; exit 1 ;;
+esac
