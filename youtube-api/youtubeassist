@@ -5,6 +5,8 @@
 ## See: https://developers.google.com/youtube/v3/docs/
 ##
 
+CMD=$(basename $0)
+TMP=$HOME/.tmp/$CMD ; mkdir -p $TMP
 API_BASE=https://www.googleapis.com/youtube/v3
 
 function usage() {
@@ -30,6 +32,7 @@ function usage() {
   echo "$cmd -a playlists-snapshot -d directory"
   echo "$cmd -a search -q query [-o output] [-F] [-s date|rating|relevance|viewCount] [-d any|long|medium|short]"
   echo "$cmd -a sync"
+  echo "$cmd -a subtitles -i id"
   exit
 }
 
@@ -142,13 +145,13 @@ search_execute() {
          -d safeSearch=none \
          -d videoDefinition=high \
          -d videoDuration=$d \
-         -d type=video > $HOME/.yt.serp
-  cat $HOME/.yt.serp | jq -r '.items[] | .id.videoId' > $HOME/.yt.serp.ids
-  cat $HOME/.yt.serp.ids | while read id ; do
+         -d type=video > $TMP/yt.serp
+  cat $TMP/yt.serp | jq -r '.items[] | .id.videoId' > $TMP/yt.serp.ids
+  cat $TMP/yt.serp.ids | while read id ; do
     found=$(grep -r ^${id}$ $history_dir/)
     if [ -z "$found" ]; then
       echo $id >> $history_file
-      cat $HOME/.yt.serp | jq "[.items[] | select(.id.videoId == \"$id\")][0]" > $SEARCH_CACHE_DIR/$id.hit
+      cat $TMP/yt.serp | jq "[.items[] | select(.id.videoId == \"$id\")][0]" > $SEARCH_CACHE_DIR/$id.hit
     fi
   done
 
@@ -232,27 +235,27 @@ function invoke_once {
 }
 
 function invoke {
-  curl -s -H "Authorization: Bearer $AUTH_TOKEN" "$@" > /tmp/yt.buffer.$$
-  next_page=`jq -r '.nextPageToken' < /tmp/yt.buffer.$$`
+  curl -s -H "Authorization: Bearer $AUTH_TOKEN" "$@" > $TMP/yt.buffer.$$
+  next_page=`jq -r '.nextPageToken' < $TMP/yt.buffer.$$`
   num_pages=1
 
   if [ "$next_page" = "null" -o -z "$next_page" ] ; then
-    cat /tmp/yt.buffer.$$
-    rm -f /tmp/yt.buffer.$$
+    cat $TMP/yt.buffer.$$
+    rm -f $TMP/yt.buffer.$$
   else
-    jq '.items'  < /tmp/yt.buffer.$$ | sed 's/^.//'> /tmp/yt.master.$$
+    jq '.items'  < $TMP/yt.buffer.$$ | sed 's/^.//'> $TMP/yt.master.$$
     while [ "$next_page" != "null" -a $num_pages -lt $MAX_PAGES ] ; do
       curl -s -H "Authorization: Bearer $AUTH_TOKEN" "$@" -d pageToken=$next_page |
-        tee /tmp/yt.buffer.$$ |
-        ( echo "," ; jq '.items' | sed 's/^.//' ) >> /tmp/yt.master.$$
-      next_page=`jq -r '.nextPageToken' < /tmp/yt.buffer.$$`
+        tee $TMP/yt.buffer.$$ |
+        ( echo "," ; jq '.items' | sed 's/^.//' ) >> $TMP/yt.master.$$
+      next_page=`jq -r '.nextPageToken' < $TMP/yt.buffer.$$`
       num_pages=$((num_pages + 1))
     done
-    rm -f /tmp/yt.buffer.$$
+    rm -f $TMP/yt.buffer.$$
     echo '{ "items" : [ '
-    cat /tmp/yt.master.$$
+    cat $TMP/yt.master.$$
     echo ' ] }'
-    rm -f /tmp/yt.master.$$
+    rm -f $TMP/yt.master.$$
   fi
 }
 
@@ -329,11 +332,11 @@ case $ACTION in
              -d playlistId=$id \
              -d part=snippet,status,contentDetails \
              -d maxResults=50
-    fi | filter -r '.items[] | .id + "|" + .contentDetails.videoId + "|" + .snippet.publishedAt + "|" + .snippet.title' > $HOME/.yt.buffer
+    fi | filter -r '.items[] | .id + "|" + .contentDetails.videoId + "|" + .snippet.publishedAt + "|" + .snippet.title' > $TMP/yt.buffer
     if [ -n "$VERBOSE" ] ; then
-       cat $HOME/.yt.buffer
+       cat $TMP/yt.buffer
     else
-      cat $HOME/.yt.buffer | while read line ; do
+      cat $TMP/yt.buffer | while read line ; do
         id=$(echo $line | cut -d'|' -f1)
         video_id=$(echo $line | cut -d'|' -f2)
         added=$(echo $line | cut -d'|' -f3)
@@ -434,9 +437,9 @@ case $ACTION in
       echo "No playlist found with the name $name"
     fi
 
-    youtubeassist -a playlist -i $playlist_id > $HOME/.yt.pl
+    youtubeassist -a playlist -i $playlist_id > $TMP/yt.pl
     while read id ; do
-         exists=$(grep "|$id|" $HOME/.yt.pl)
+         exists=$(grep "|$id|" $TMP/yt.pl)
          if [ -z "$exists" ]  ; then
            invoke -X POST "$API_BASE/playlistItems?part=snippet" \
                   -H 'Content-Type: application/json' \
@@ -625,7 +628,7 @@ case $ACTION in
       exit
     fi
 
-    cp /dev/null $HOME/.yt.aged
+    cp /dev/null $TMP/yt.aged
     youtubeassist -a playlist -i $id | while read line ; do
       id=$(echo $line | cut -d'|' -f1)
       video_id=$(echo $line | cut -d'|' -f2)
@@ -638,7 +641,7 @@ case $ACTION in
             ;;
           process)
             if [ -n "$output_id" ] ; then
-              echo "$video_id" >> $HOME/.yt.aged
+              echo "$video_id" >> $TMP/yt.aged
             fi
 
             if [ -n "$output_dir" ] ; then
@@ -651,8 +654,8 @@ case $ACTION in
       fi
     done
 
-    if [ -s $HOME/.yt.aged ] ; then
-      cat $HOME/.yt.aged | youtubeassist -a playlist-items-add -n "$output"
+    if [ -s $TMP/yt.aged ] ; then
+      cat $TMP/yt.aged | youtubeassist -a playlist-items-add -n "$output"
     fi
     ;;
 
@@ -716,14 +719,14 @@ case $ACTION in
       search_execute "$query" "$sort_by" "$duration"
     fi
 
-    search_data "$query" "$sort_by" "$duration" "$full_results" > $HOME/.yt.data
+    search_data "$query" "$sort_by" "$duration" "$full_results" > $TMP/yt.data
     if [ -n "$output_id" ] ; then
-      cat $HOME/.yt.data | jq -r '.items[] | .id.videoId' | while read video_id ; do
+      cat $TMP/yt.data | jq -r '.items[] | .id.videoId' | while read video_id ; do
         youtubeassist -a playlist-item-add -n "$output_id" -i "$video_id" > /dev/null
       done
     fi
 
-    cat $HOME/.yt.data |
+    cat $TMP/yt.data |
       filter -r '.items[] | .id.videoId + "|" + .snippet.publishTime + "|" + .snippet.channelTitle + "|" + .snippet.title'
 
     ;;
@@ -751,7 +754,7 @@ case $ACTION in
     last_dest_timestamp=$(echo $last_dest_entry | cut -d '|' -f2)
     last_dest_position=$(echo $last_dest_entry | cut -d '|' -f3)
 
-    playlist_buffer=$HOME/.yta.playlist.$source_id
+    playlist_buffer=$TMP/yta.playlist.$source_id
 
     age=10000000
     if [ -f "$playlist_buffer" ] ; then
@@ -773,6 +776,30 @@ case $ACTION in
       $0 -a playlist-item-add -n $dest_id -i $video_id -p auto
     done
 
+    ;;
+
+  subtitles)
+    YT_DLP=$(which yt-dlp)
+    if [ -z "$YT_DLP" ] ; then
+      echo "yt-dlp isn't installed."
+      exit 1
+    fi
+
+    if [ -z "$id" ] ; then
+      echo "Missing -i id"
+    fi
+    id=$(echo $id | sed 's|https://.*v=||')
+
+    url="https://www.youtube.com/watch?v=$id"
+    rm -f $TMP/yt-dlp.subtitles.en.vtt
+
+    yt-dlp --skip-download --write-auto-subs --output $TMP/yt-dlp.subtitles $url > $TMP/yt-dlp.progress 2>&1
+
+    if [ ! -f "$TMP/yt-dlp.subtitles.en.vtt" ] ; then
+      echo "No subtitles file generated"
+      exit 1
+    fi
+    cat $TMP/yt-dlp.subtitles.en.vtt
     ;;
 
   *)
