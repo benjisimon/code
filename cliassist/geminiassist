@@ -7,12 +7,11 @@
 ##
 
 CMD=$(basename $0)
-TMP=$HOME/.$CMD
-mkdir -p $TMP
+TMP=$HOME/.tmp/$CMD ; mkdir -p $TMP
 
 usage() {
-  echo "Usage: $CMD -a generate-image -p prompt [-f image] [-v]"
-  echo "Usage: $CMD -a ask -p prompt [-v]"
+  echo "Usage: $CMD -a generate-image -p prompt [-f image] [-v] [-y youtube-video-url-or-id]"
+  echo "Usage: $CMD -a ask -p prompt [-v] [-f file]"
   exit 1
 }
 
@@ -24,13 +23,22 @@ jqf() {
   fi
 }
 
+case $(uname) in
+  Darwin)
+    BASE64_DECODE="base64 -d -o -" ;;
+  *)
+    BASE64_DECODE="base64 -d" ;;
+
+esac
+
 unset V ACTION PROMPT FILE
 
-while getopts "a:p:hf:v" o; do
+while getopts "a:p:hf:vy:" o; do
   case "$o" in
     p) PROMPT=$OPTARG  ;;
     a) ACTION=$OPTARG ;;
     f) FILE=$OPTARG ;;
+    y) VIDEO_ID=$OPTARG ;;
     v) V=yes ;;
     * | h) usage  ;;
   esac
@@ -47,11 +55,40 @@ case "$ACTION" in
       exit
     fi
 
+    if [ -n "$VIDEO_ID" ] ; then
+      youtubeassist -a subtitles -i "$VIDEO_ID" > $TMP/yt.subtitles
+      if [ $? -ne 0 ] ; then
+        echo "Couldn't extract YT Subtitles"
+        exit 1
+      fi
+      FILE=$TMP/yt.subtitles
+    fi
+
+    inline=""
+    if [ -n "$FILE" ] ; then
+      if [ ! -f "$FILE" ] ; then
+        echo "-f $FILE doesn't exist"
+        exit
+      fi
+
+      stuff=$(base64 -w0 "$FILE")
+      mt=$(file --mime-type "$FILE" | sed 's/^.*: *//')
+      case "$mt" in
+        text/*) mt=text/plain ;;
+        image/*) mt=$mt ;;
+        *) echo "Unsupported mime type. Maybe. $mt" ; exit
+      esac
+
+      inline=", { \"inline_data\": { \"mime_type\":\"$mt\", \"data\": \"$stuff\" } }"
+    fi
+
+    echo "{ \"contents\": [ { \"parts\": [ { \"text\": \"$PROMPT\" } $inline ] } ] }" > $TMP/ask.contents
+
     curl -s "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent" \
          -H 'Content-Type: application/json' \
          -H "X-goog-api-key: $GEMINI_API_KEY" \
          -X POST \
-         -d "{ \"contents\": [ { \"parts\": [ { \"text\": \"$PROMPT\" } ] } ] }" |
+         -d "@$TMP/ask.contents" |
       jqf -r '.candidates[] | .content.parts[] | .text'
     ;;
 
@@ -82,7 +119,7 @@ case "$ACTION" in
       if [ -n "$V" ] ; then
         cat
       else
-        jq -r '.candidates[0].content.parts[] | select(.inlineData) | .inlineData.data' | base64 -d -
+        jq -r '.candidates[0].content.parts[] | select(.inlineData) | .inlineData.data' | $BASE64_DECODE
       fi
     ;;
 
