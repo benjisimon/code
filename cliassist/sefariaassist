@@ -1,0 +1,201 @@
+#!/bin/bash
+
+##
+## Search and retrieve Jewish texts via the Sefaria API
+## API: https://developers.sefaria.org/reference/getting-started
+##
+
+CMD=$(basename $0)
+TMP=$HOME/.tmp/$CMD ; mkdir -p $TMP
+
+BASE_URL="https://www.sefaria.org/api"
+
+usage() {
+  me=$(basename $0)
+  echo "Usage: $me -a text    -r ref [-l lang] [-v]"
+  echo "       $me -a sheet   -r id [-v]"
+  echo "       $me -a search  -q query [-c category] [-n num] [-v]"
+  echo "       $me -a links   -r ref [-v]"
+  echo "       $me -a topics  [-t topic] [-d] [-v]"
+  echo
+  echo "Actions:"
+  echo "  text      Fetch text by reference (e.g. Genesis.1.1, Berakhot.2a)"
+  echo "  sheet     Fetch a user-created sheet by numeric ID"
+  echo "  search    Full-text search across the library"
+  echo "  links     Get commentaries and related texts for a reference"
+  echo "  topics    Get info on a topic, or list all topics"
+  echo
+  echo "Options:"
+  echo "  -r ref     Text reference, e.g. Genesis.1.1 or Berakhot.2a"
+  echo "  -q query   Search terms"
+  echo "  -t topic   Topic slug, e.g. 'shabbat' or 'creation'"
+  echo "  -c cat     Category filter for search. Valid values:"
+  echo "             Tanakh, Talmud, Mishnah, Midrash, Halakhah, Kabbalah,"
+  echo "             Responsa, Liturgy, Jewish Thought, Chasidut, Musar,"
+  echo "             Tosefta, Targum, Second Temple, Reference"
+  echo "  -l lang    Language: en or he (default: en)"
+  echo "  -n num     Number of results (default: 10)"
+  echo "  -d         Include descriptions (topics listing)"
+  echo "  -v         Verbose: dump raw JSON"
+  exit 1
+}
+
+unset ACTION REF QUERY TOPIC LANG COUNT CAT DESCRIPTIONS V
+while getopts ":ha:r:q:t:l:n:c:dv" o; do
+  case "$o" in
+    a) ACTION=$OPTARG ;;
+    r) REF=$OPTARG ;;
+    q) QUERY=$OPTARG ;;
+    t) TOPIC=$OPTARG ;;
+    l) LANG=$OPTARG ;;
+    n) COUNT=$OPTARG ;;
+    c) CAT=$OPTARG ;;
+    d) DESCRIPTIONS=on ;;
+    v) V=on ;;
+    *|h) usage ;;
+  esac
+done
+
+COUNT=${COUNT:-10}
+LANG=${LANG:-en}
+
+if [ -z "$ACTION" ]; then
+  echo "Must set -a action"
+  echo
+  usage
+fi
+
+
+case "$ACTION" in
+
+  text)
+    if [ -z "$REF" ]; then
+      echo "Must set -r ref (e.g. Genesis.1.1)"
+      echo
+      usage
+    fi
+    encoded_ref=$(printf '%s' "$REF" | jq -sRr @uri)
+    lang_param=$([ "$LANG" = "he" ] && echo "hebrew" || echo "english")
+    response=$(curl -sL "${BASE_URL}/v3/texts/${encoded_ref}?version=${lang_param}")
+    if [ -n "$V" ]; then
+      echo "$response" | jq .
+    else
+      echo "$response" | jq -r '
+        (.versions[0].text) |
+        if type == "array" then .[] | select(type == "string") else . end |
+        gsub("<i class=\"footnote\">[^<]*(<[^>]+>[^<]*</[^>]+>[^<]*)*</i>"; "") |
+        gsub("<sup[^>]*>[^<]*</sup>"; "") |
+        gsub("<[^>]+>"; "")
+      '
+    fi
+    ;;
+
+  sheet)
+    if [ -z "$REF" ]; then
+      echo "Must set -r id (e.g. 713779)"
+      echo
+      usage
+    fi
+    response=$(curl -sL "${BASE_URL}/sheets/${REF}")
+    if [ -n "$V" ]; then
+      echo "$response" | jq .
+    else
+      echo "$response" | jq -r '
+        .title, .ownerName, (.summary // ""), "",
+        (.sources[] |
+          if .ref then
+            "[" + .ref + "]",
+            (.text.en // .text.he // "" |
+              gsub("<[^>]+>"; "") |
+              gsub("&lt;"; "<") | gsub("&gt;"; ">") | gsub("&amp;"; "&") |
+              gsub("\\s+$"; "")
+            ),
+            ""
+          elif .outsideText then
+            (.outsideText |
+              gsub("<[^>]+>"; "") |
+              gsub("&lt;"; "<") | gsub("&gt;"; ">") | gsub("&amp;"; "&") |
+              gsub("\\s+$"; "")
+            ),
+            ""
+          else empty
+          end
+        )
+      '
+    fi
+    ;;
+
+  search)
+    if [ -z "$QUERY" ]; then
+      echo "Must set -q query"
+      echo
+      usage
+    fi
+    payload=$(jq -n --arg q "$QUERY" --argjson size "$COUNT" \
+      '{query: $q, type: "text", size: $size}')
+    if [ -n "$CAT" ]; then
+      payload=$(echo "$payload" | jq --arg cat "$CAT" '. + {filters: [$cat]}')
+    fi
+    response=$(curl -sL -X POST \
+      -H "Content-Type: application/json" \
+      -d "$payload" \
+      "${BASE_URL}/search-wrapper")
+    if [ -n "$V" ]; then
+      echo "$response" | jq .
+    else
+      echo "$response" | jq -r '
+        .hits.hits[] |
+        (._id | split(" (") | .[0]) as $ref |
+        [$ref, (.highlight.exact[0] // "—" | gsub("<b>|</b>"; "") | gsub("&lt;"; "<") | gsub("&gt;"; ">") | gsub("&amp;"; "&"))] |
+        join("|")
+      '
+    fi
+    ;;
+
+  links)
+    if [ -z "$REF" ]; then
+      echo "Must set -r ref (e.g. Genesis.1.1)"
+      echo
+      usage
+    fi
+    encoded_ref=$(printf '%s' "$REF" | jq -sRr @uri)
+    response=$(curl -sL "${BASE_URL}/links/${encoded_ref}")
+    if [ -n "$V" ]; then
+      echo "$response" | jq .
+    else
+      echo "$response" | jq -r '
+        .[] | select(.text != "" and .text != null) |
+        [.ref, .category, (.text | if type == "array" then join(" ") else . end | gsub("<[^>]+>"; ""))] | join("|")
+      '
+    fi
+    ;;
+
+  topics)
+    if [ -n "$TOPIC" ]; then
+      response=$(curl -sL "${BASE_URL}/v2/topics/${TOPIC}?with_refs=1")
+      if [ -n "$V" ]; then
+        echo "$response" | jq .
+      else
+        echo "$response" | jq -r '
+          ((.refs.about // .refs.mention // {"refs": []}).refs[]) |
+          [.ref, (.descriptions.en.title // ""), (.descriptions.en.prompt // "" | gsub("\n"; " "))] |
+          join("|")
+        '
+      fi
+    else
+      topics_cache="$TMP/topics.json"
+      if [ ! -f "$topics_cache" ]; then
+        curl -sL "${BASE_URL}/topics?limit=99999" > "$topics_cache"
+      fi
+      if [ -n "$V" ]; then
+        jq . "$topics_cache"
+      elif [ -n "$DESCRIPTIONS" ]; then
+        jq -r '.[] | [.slug, (.primaryTitle.en // .slug), (.description.en // "")] | join("|")' "$topics_cache"
+      else
+        jq -r '.[] | [.slug, (.primaryTitle.en // .slug)] | join("|")' "$topics_cache"
+      fi
+    fi
+    ;;
+
+  *) echo "Unknown action: $ACTION"; usage ;;
+esac

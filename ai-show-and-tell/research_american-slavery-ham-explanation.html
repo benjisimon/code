@@ -1,0 +1,585 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2026-03-20 Fri 05:17 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The "Curse of Ham" — American Slavery and the Jewish Tradition</title>
+<meta name="author" content="pushthrough" />
+<meta name="description" content="Research for Passover seder discussion: how the biblical curse of Canaan was used to justify slavery, and why that argument makes no sense in traditional Jewish context." />
+<meta name="generator" content="Org Mode" />
+<style type="text/css">
+  #content { max-width: 60em; margin: auto; }
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #e6e6e6;
+    border-radius: 3px;
+    background-color: #f2f2f2;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: auto;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    padding: 3px;
+    color: #555;
+    background-color: #f2f2f299;
+  }
+  pre.src:hover:before { display: inline; margin-top: 14px;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-authinfo::before { content: 'Authinfo'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { }
+</style>
+</head>
+<body>
+<div id="content" class="content">
+<h1 class="title">The "Curse of Ham" — American Slavery and the Jewish Tradition</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#org6285c79">1. The American Argument</a></li>
+<li><a href="#orgbcab69a">2. The Biblical Text</a></li>
+<li><a href="#org3502d79">3. What the Rabbis Actually Said</a>
+<ul>
+<li><a href="#org5d96d7a">3.1. The curse is on Canaan, not Ham — and not Cush</a></li>
+<li><a href="#org6dcdebb">3.2. What Ham actually did — a matter of debate</a></li>
+<li><a href="#org5732d43">3.3. The dark skin connection — and its limits</a></li>
+<li><a href="#orge858829">3.4. Ibn Ezra directly refutes the American argument — in the 12th century</a></li>
+<li><a href="#org0882fcb">3.5. The rabbis themselves called the logic "astonishing"</a></li>
+<li><a href="#orga30efac">3.6. Sforno: it's about moral degradation, not racial hierarchy</a></li>
+</ul>
+</li>
+<li><a href="#orgdb8b93a">4. Why the American Argument Makes No Sense in Traditional Jewish Context</a></li>
+<li><a href="#org4479b26">5. Key Sources</a></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org6285c79" class="outline-2">
+<h2 id="org6285c79"><span class="section-number-2">1.</span> The American Argument</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+The dominant biblical defense of slavery in the antebellum South rested on Genesis 9:25:
+Noah curses Canaan (son of Ham) to be "a servant of servants." The argument ran:
+</p>
+
+<ol class="org-ol">
+<li>Ham sinned against Noah</li>
+<li>Ham's descendants = Africans</li>
+<li>Therefore African slavery is divinely ordained</li>
+</ol>
+
+<p>
+The most famous statement of this argument is Thornton Stringfellow's 1850 pamphlet,
+<i>A Brief Examination of Scripture Testimony on the Institution of Slavery</i>:
+</p>
+
+<blockquote>
+<p>
+The first recorded language which was ever uttered in relation to slavery, is the
+inspired language of Noah. In God's stead he says, "Cursed be Canaan;" "a servant
+of servants shall he be to his brethren." "Blessed be the Lord God of Shem; and
+Canaan shall be his servant." "God shall enlarge Japheth, and he shall dwell in the
+tents of Shem: and Canaan shall be his servant." Gen. ix. 25, 26, 27. Here language
+is used, showing the favor which God would exercise to the posterity of Shem and
+Japheth, while they were holding the posterity of Ham in a state of abject bondage.
+May it not be said in truth, that God decreed this institution before it existed: and
+has he not connected its existence, with prophetic tokens of special favor, to those
+who should be slave owners or masters?&#x2026; unless they are all dead, as well as the
+Canaanites or Africans, who descended from Ham, then it is quite possible that his
+favor may now be found with one class of men, who are holding another class in bondage.
+</p>
+</blockquote>
+
+<ul class="org-ul">
+<li>Source: <a href="https://archive.org/details/briefexamination00stri">Thornton Stringfellow, <i>A Brief Examination of Scripture Testimony on the Institution of Slavery</i> (1850), archive.org</a></li>
+</ul>
+
+<p>
+Later in the same pamphlet, Stringfellow adds the missionary gloss:
+</p>
+
+<blockquote>
+<p>
+Under the Gospel, it has brought within the range of Gospel influence, millions of
+Ham's descendants among ourselves, who, but for this institution, would have sunk
+down to eternal ruin; knowing not God, and strangers to the Gospel. In their bondage
+here on earth, they have been much better provided for, and great multitudes of them
+have been made the freemen of the Lord Jesus Christ.
+</p>
+</blockquote>
+
+<p>
+Rabbi Morris Raphall (New York) made essentially the same argument in a widely-reprinted
+sermon on January 4, 1861 — the only prominent American rabbi to do so, and widely
+attacked for it by Rabbi David Einhorn and others.
+</p>
+</div>
+</div>
+<div id="outline-container-orgbcab69a" class="outline-2">
+<h2 id="orgbcab69a"><span class="section-number-2">2.</span> The Biblical Text</h2>
+<div class="outline-text-2" id="text-2">
+<p>
+<a href="https://www.sefaria.org/Genesis.9.20-27">Genesis 9:20–27</a>:
+</p>
+
+<blockquote>
+<p>
+Noah, the tiller of the soil, was the first to plant a vineyard. He drank of the wine
+and became drunk, and he uncovered himself within his tent. Ham, the father of Canaan,
+saw his father's nakedness and told his two brothers outside. But Shem and Japheth took
+a cloth, placed it against both their backs and, walking backward, they covered their
+father's nakedness&#x2026;
+</p>
+
+<p>
+When Noah woke up from his wine and learned what his youngest son had done to him,
+he said, "Cursed be Canaan; the lowest of slaves shall he be to his brothers."
+And he said, "Blessed be the Eternal, the God of Shem; let Canaan be a slave to them.
+May God enlarge Japheth, and let him dwell in the tents of Shem; and let Canaan be
+a slave to them."
+</p>
+</blockquote>
+</div>
+</div>
+<div id="outline-container-org3502d79" class="outline-2">
+<h2 id="org3502d79"><span class="section-number-2">3.</span> What the Rabbis Actually Said</h2>
+<div class="outline-text-2" id="text-3">
+</div>
+<div id="outline-container-org5d96d7a" class="outline-3">
+<h3 id="org5d96d7a"><span class="section-number-3">3.1.</span> The curse is on Canaan, not Ham — and not Cush</h3>
+<div class="outline-text-3" id="text-3-1">
+<p>
+<a href="https://www.sefaria.org/Rashi_on_Genesis.9.25">Rashi on Genesis 9:25</a> (11th c., France):
+</p>
+
+<blockquote>
+<p>
+Cursed be Canaan — You have brought it about that I cannot beget a fourth son to
+serve me; cursed, therefore, be your fourth son to serve under the descendants of
+these elder ones upon whom the duty of serving me will devolve from now on.
+</p>
+</blockquote>
+
+<p>
+Rashi explains this as a bounded, specific curse: Ham (by castrating or assaulting
+Noah) prevented Noah from having a fourth son, so Noah cursed <i>Ham's</i> fourth son.
+That fourth son is Canaan — ancestor of the Canaanites, not of Africans.
+</p>
+</div>
+</div>
+<div id="outline-container-org6dcdebb" class="outline-3">
+<h3 id="org6dcdebb"><span class="section-number-3">3.2.</span> What Ham actually did — a matter of debate</h3>
+<div class="outline-text-3" id="text-3-2">
+<p>
+<a href="https://www.sefaria.org/Sanhedrin.70a">Sanhedrin 70a</a>:
+</p>
+
+<blockquote>
+<p>
+Rav and Shmuel disagreed: One says that Ham castrated Noah and one says that Ham
+sodomized him&#x2026; This Sage holds that both this offense and that offense were committed.
+</p>
+</blockquote>
+
+<p>
+The rabbis understood Ham's act as a violent sexual crime against his father, and
+Noah's curse as a proportional legal response — not a sweeping racial decree.
+</p>
+</div>
+</div>
+<div id="outline-container-org5732d43" class="outline-3">
+<h3 id="org5732d43"><span class="section-number-3">3.3.</span> The dark skin connection — and its limits</h3>
+<div class="outline-text-3" id="text-3-3">
+<p>
+<a href="https://www.sefaria.org/Sanhedrin.108b">Sanhedrin 108b</a>:
+</p>
+
+<blockquote>
+<p>
+Three violated that directive [against intercourse in the ark]&#x2026; Ham, son of Noah.
+The dog was punished in that it is bound; the raven was punished in that it spits,
+and Ham was afflicted in that his skin turned black.
+</p>
+</blockquote>
+
+<p>
+This is the one Talmudic passage that links Ham to dark skin. But:
+</p>
+<ul class="org-ul">
+<li>It is framed as punishment for <i>sexual sin in the ark</i>, not as racial destiny</li>
+<li>It applies to Ham personally, not to all his descendants</li>
+<li>It says nothing about slavery — the slave curse falls specifically on Canaan</li>
+</ul>
+
+<p>
+<a href="https://www.sefaria.org/Bereishit_Rabbah.36">Bereishit Rabbah 36</a> (Midrash, ~500 CE) elaborates:
+</p>
+
+<blockquote>
+<p>
+Rabbi Ḥiyya bar Abba said: Both Ham and the dog engaged in sexual relations in the
+ark. That is why Ham emerged darkened, and the dog is exposed when mating.
+</p>
+
+<p>
+Rav Huna said in the name of Rav Yosef: [Noah said:] "You prevented me from
+performing an act that is done in darkness; therefore, that man [Canaan] will be
+ugly and darkened."
+</p>
+</blockquote>
+</div>
+</div>
+<div id="outline-container-orge858829" class="outline-3">
+<h3 id="orge858829"><span class="section-number-3">3.4.</span> Ibn Ezra directly refutes the American argument — in the 12th century</h3>
+<div class="outline-text-3" id="text-3-4">
+<p>
+<a href="https://www.sefaria.org/Ibn_Ezra_on_Genesis.9.25.2">Ibn Ezra on Genesis 9:25</a> (12th c., Spain):
+</p>
+
+<blockquote>
+<p>
+There are some who say that the Cushites are enslaved because Noah cursed Ham.
+However, they have forgotten that the first king to rule after the flood was a Cushite.
+Thus it is written, "and Cush begot Nimrod… and the beginning of his kingdom was
+Babel, and Erech, and Accad, and Calneh, in the land of Shinar" (Gen. 10:8–10).
+Thus the curse was put on the Canaanites and not on all of Ham's descendants.
+</p>
+</blockquote>
+
+<p>
+Ibn Ezra is already arguing, 700 years before the Civil War, against the same
+misreading. His refutation is decisive: Nimrod (Cush's grandson) was an <i>empire-builder</i>,
+the first king after the flood. The idea that Cush's line was destined for slavery
+is directly contradicted by the very next chapter of Genesis.
+</p>
+</div>
+</div>
+<div id="outline-container-org0882fcb" class="outline-3">
+<h3 id="org0882fcb"><span class="section-number-3">3.5.</span> The rabbis themselves called the logic "astonishing"</h3>
+<div class="outline-text-3" id="text-3-5">
+<p>
+<a href="https://www.sefaria.org/Bereishit_Rabbah.36">Bereishit Rabbah 36</a>:
+</p>
+
+<blockquote>
+<p>
+Ham committed the sin and Canaan was cursed? This is astonishing.
+</p>
+</blockquote>
+
+<p>
+The Midrash poses this as an open problem requiring explanation — the rabbis knew
+this was not a simple divine decree, and gave multiple answers (Canaan saw and told
+Ham; God couldn't curse Ham because he'd already blessed Noah's sons). The point is
+that the traditional reader came to this text knowing it was puzzling and bounded,
+not a universal racial mandate.
+</p>
+</div>
+</div>
+<div id="outline-container-orga30efac" class="outline-3">
+<h3 id="orga30efac"><span class="section-number-3">3.6.</span> Sforno: it's about moral degradation, not racial hierarchy</h3>
+<div class="outline-text-3" id="text-3-6">
+<p>
+<a href="https://www.sefaria.org/Sforno_on_Genesis.9.25">Sforno on Genesis 9:25</a> (16th c., Italy):
+</p>
+
+<blockquote>
+<p>
+His being in a position of dependence to his senior brothers, i.e. a plain slave,
+was merely natural, and would not have been a special curse, especially in view of
+his disgraceful conduct. Solomon paraphrased this in Proverbs 11:29: "a fool is a
+slave to the wise-hearted."
+</p>
+</blockquote>
+
+<p>
+Sforno spiritualizes the curse almost entirely — it's about moral degradation from
+disgraceful behavior, not ethnic destiny.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-orgdb8b93a" class="outline-2">
+<h2 id="orgdb8b93a"><span class="section-number-2">4.</span> Why the American Argument Makes No Sense in Traditional Jewish Context</h2>
+<div class="outline-text-2" id="text-4">
+<ol class="org-ol">
+<li><b>Wrong person.</b> The curse is on <i>Canaan</i>, Ham's fourth son — ancestor of the
+Canaanites (ancient inhabitants of the Land of Israel), not of Africans. Cush
+(Ethiopia/sub-Saharan Africa) is a different son, explicitly excluded by Ibn Ezra.</li>
+
+<li><b>Nimrod demolishes it.</b> Cush's grandson Nimrod was the first king after the flood —
+builder of Babylon and Nineveh. The very next chapter of Genesis directly contradicts
+the idea that Cush was destined for slavery.</li>
+
+<li><b>Already fulfilled.</b> Traditional Jewish interpretation held the prophecy was fulfilled
+when the Israelites conquered Canaan. The Gibeonites in Joshua 9 become "hewers of
+wood and drawers of water" — that's the fulfillment the rabbis pointed to. It was not
+an open-ended mandate for all time.</li>
+
+<li><b>Ham's dark skin is about sin, not race.</b> The Talmudic passage connecting Ham to
+dark skin frames it as punishment for sexual sin during the ark — not a permanent
+racial hierarchy for all descendants.</li>
+
+<li><b>The rabbis called the logic astonishing.</b> They openly flagged the puzzle that Canaan
+is cursed for Ham's act, and gave explanations. It was not read as a transparent
+divine decree about African peoples.</li>
+
+<li><b>Jewish slave law is nothing like American chattel slavery.</b> Hebrew slaves were freed
+after seven years. Even Canaanite slaves could earn freedom if a master struck out a
+tooth (Exodus 21:27). The permanent, hereditary, race-based chattel slavery of the
+antebellum South had no parallel in halakhic law.</li>
+
+<li><b>The Passover irony.</b> The entire theological framework of Jewish life rests on the
+Exodus — God liberating slaves from Egypt. "You shall not oppress the stranger because
+you were strangers in Egypt" (Exodus 22:20) appears 36 times in the Torah. A rabbi
+making Stringfellow's argument at a Passover Seder would be doing so against the
+explicit testimony of the text being celebrated.</li>
+</ol>
+</div>
+</div>
+<div id="outline-container-org4479b26" class="outline-2">
+<h2 id="org4479b26"><span class="section-number-2">5.</span> Key Sources</h2>
+<div class="outline-text-2" id="text-5">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Source</th>
+<th scope="col" class="org-left">Date</th>
+<th scope="col" class="org-left">Link</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Genesis 9:20–27 (the text)</td>
+<td class="org-left">—</td>
+<td class="org-left"><a href="https://www.sefaria.org/Genesis.9.20-27">Sefaria</a></td>
+</tr>
+
+<tr>
+<td class="org-left">Rashi on Genesis 9:25</td>
+<td class="org-left">11th c.</td>
+<td class="org-left"><a href="https://www.sefaria.org/Rashi_on_Genesis.9.25">Sefaria</a></td>
+</tr>
+
+<tr>
+<td class="org-left">Sanhedrin 70a (what Ham did)</td>
+<td class="org-left">Talmud</td>
+<td class="org-left"><a href="https://www.sefaria.org/Sanhedrin.70a">Sefaria</a></td>
+</tr>
+
+<tr>
+<td class="org-left">Sanhedrin 108b (dark skin)</td>
+<td class="org-left">Talmud</td>
+<td class="org-left"><a href="https://www.sefaria.org/Sanhedrin.108b">Sefaria</a></td>
+</tr>
+
+<tr>
+<td class="org-left">Bereishit Rabbah 36 (Midrash)</td>
+<td class="org-left">~500 CE</td>
+<td class="org-left"><a href="https://www.sefaria.org/Bereishit_Rabbah.36">Sefaria</a></td>
+</tr>
+
+<tr>
+<td class="org-left">Ibn Ezra on Genesis 9:25</td>
+<td class="org-left">12th c.</td>
+<td class="org-left"><a href="https://www.sefaria.org/Ibn_Ezra_on_Genesis.9.25.2">Sefaria</a></td>
+</tr>
+
+<tr>
+<td class="org-left">Sforno on Genesis 9:25</td>
+<td class="org-left">16th c.</td>
+<td class="org-left"><a href="https://www.sefaria.org/Sforno_on_Genesis.9.25">Sefaria</a></td>
+</tr>
+
+<tr>
+<td class="org-left">Stringfellow, <i>Brief Examination</i> (1850)</td>
+<td class="org-left">1850</td>
+<td class="org-left"><a href="https://archive.org/details/briefexamination00stri">archive.org</a></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="date">Date: 2026-03-19</p>
+<p class="author">Author: pushthrough</p>
+<p class="date">Created: 2026-03-20 Fri 05:17</p>
+<p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>
