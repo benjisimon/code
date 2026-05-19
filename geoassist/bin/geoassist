@@ -1,0 +1,521 @@
+#!/bin/bash
+
+##
+## Script to wrap geo/routing APIs (OpenRouteService + Overpass/OSM)
+##
+## File formats accepted by -f:
+##   .pois  — one point per line: [marker] address or lat,lng [# label]
+##            X = waypoint       (named stop; shown on map and routed to)
+##            V = routing hint   (shapes route; not shown on map)
+##            @ = point of interest (shown on map; not routed)
+##            blank lines and lines starting with # are comments
+##   .csv   — name,lat,lng,type  where type is: waypoint | hint | poi
+##            (type defaults to waypoint; use -a export -t csv to produce one)
+##
+
+verbose=no
+CMD=$(basename $0)
+TMP=$HOME/.tmp/$CMD ; mkdir -p $TMP
+
+usage() {
+  cmd=$CMD
+  echo "Usage: $cmd -a geocode  -n <address> [-v]"
+  echo "Usage: $cmd -a route    -f <file> [-v]"
+  echo "Usage: $cmd -a distance -f <file>"
+  echo "Usage: $cmd -a map-url  -f <file>"
+  echo "Usage: $cmd -a export   -t [kml|gpx|csv|image|streetview] -f <file>"
+  echo "Usage: $cmd -a pois     -n <query> -l <lat,lng> [-r <radius_m>] [-v]"
+  echo ""
+  echo "  <file> may be a .pois file or a .csv file"
+  echo "  Waypoints alt: -w lat,lng|lat,lng|... (instead of -f)"
+  exit 1
+}
+
+unset action csv_file waypoints name location radius type
+profile=foot-walking
+route_color=ff0000ff
+
+while getopts ":a:f:w:n:l:r:t:p:c:vh" o; do
+  case "${o}" in
+    a) action=$OPTARG      ;;
+    f) csv_file=$OPTARG    ;;
+    w) waypoints=$OPTARG   ;;
+    n) name=$OPTARG        ;;
+    l) location=$OPTARG    ;;
+    r) radius=$OPTARG      ;;
+    t) type=$OPTARG        ;;
+    p) profile=$OPTARG     ;;
+    c) route_color=$OPTARG ;;
+    v) verbose=yes         ;;
+    *|h) usage             ;;
+  esac
+done
+
+config=$HOME/.config/geoassist/config
+
+if [ -f "$config" ] ; then
+  . "$config"
+else
+  echo "Config not found: $config"
+  echo "Create $config with: ORS_API_KEY=your_key_here"
+  echo "Get a free key at: https://openrouteservice.org/dev/#/signup"
+  exit 3
+fi
+
+## ---- helpers ---------------------------------------------------------------
+
+# Detect .pois format by content: any line starting with X, V, or @ is a poi file.
+is_pois_file() { grep -qm1 '^[@XxVv]' "$1" ; }
+
+# Geocode an address string, using a local cache.
+# Outputs: lat,lng|Label  (one line per result, best match first)
+geocode_address() {
+  local addr=$1
+  local cache_dir="$TMP/geocoding" ; mkdir -p "$cache_dir"
+  local cache_key cache_file
+  cache_key=$(echo "$addr" | md5sum | cut -d' ' -f1)
+  cache_file="$cache_dir/$cache_key"
+
+  if [ -f "$cache_file" ] ; then
+    cat "$cache_file"
+  else
+    local encoded
+    encoded=$(jq -rn --arg s "$addr" '$s|@uri')
+    curl -s \
+      "https://api.openrouteservice.org/geocode/search?api_key=${ORS_API_KEY}&text=${encoded}&size=5" \
+      | jq -r '.features[] | (.geometry.coordinates[1] | tostring) + "," +
+                              (.geometry.coordinates[0] | tostring) + "|" +
+                              .properties.label' \
+      | tee "$cache_file"
+  fi
+}
+
+# Parse a .pois file into tab-separated rows: name TAB lat TAB lng TAB type
+# Line format:
+#   blank / # comment       - ignored
+#   X addr [# Label]        - waypoint (named stop; shown on map and routed to)
+#   V addr [# Label]        - routing hint (shapes route; not shown on map)
+#   @ addr [# Label]        - point of interest (shown on map; not routed)
+# Geocodes address lines on the fly (cached). Emits nothing for failed lines.
+parse_pois() {
+  local file=$1
+  while IFS= read -r line || [ -n "$line" ] ; do
+    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+
+    local type_char rest address label pt_type
+    type_char="${line:0:1}"
+    rest="${line:2}"
+
+    case "$type_char" in
+      X|x) pt_type="waypoint" ;;
+      V|v) pt_type="hint"     ;;
+      @)   pt_type="poi"      ;;
+      *)   continue            ;;
+    esac
+
+    if [[ "$rest" == *"#"* ]]; then
+      address=$(echo "$rest" | sed 's/#.*//' | sed 's/[[:space:]]*$//')
+      label=$(echo "$rest"   | sed 's/.*#[[:space:]]*//')
+    else
+      address="$rest"
+      label="$rest"
+    fi
+
+    local lat lng
+    if [[ "$address" =~ ^[[:space:]]*-?[0-9]+\.[0-9]+,[[:space:]]*-?[0-9]+\.[0-9]+[[:space:]]*$ ]]; then
+      lat=$(echo "$address" | cut -d',' -f1 | tr -d ' ')
+      lng=$(echo "$address" | cut -d',' -f2 | tr -d ' ')
+    else
+      local result latlon
+      result=$(geocode_address "$address" | head -1)
+      if [ -z "$result" ] ; then
+        echo "FAILED to geocode: $address" >&2
+        continue
+      fi
+      latlon=$(echo "$result" | cut -d'|' -f1)
+      lat=$(echo "$latlon" | cut -d',' -f1)
+      lng=$(echo "$latlon" | cut -d',' -f2)
+    fi
+
+    printf '%s\t%s\t%s\t%s\n' "$label" "$lat" "$lng" "$pt_type"
+  done < "$file"
+}
+
+# Return pipe-delimited lat,lng coords from -f or -w
+get_coords() {
+  if [ -n "$csv_file" ] ; then
+    if is_pois_file "$csv_file" ; then
+      parse_pois "$csv_file" | awk -F'\t' '$4 != "poi" {print $2","$3}' | tr '\n' '|' | sed 's/|$//'
+    else
+      awk -F',' 'NR>1 && $4!="poi" {print $2","$3}' "$csv_file" | tr '\n' '|' | sed 's/|$//'
+    fi
+  elif [ -n "$waypoints" ] ; then
+    echo "$waypoints"
+  else
+    echo "Need -f <file> or -w <waypoints>" >&2
+    exit 1
+  fi
+}
+
+# Convert pipe-delimited lat,lng to ORS JSON coordinates array [[lng,lat],...]
+coords_to_ors_json() {
+  local pts
+  pts=$(echo "$1" | tr '|' '\n' | awk -F',' '{printf "[%s,%s]\n", $2, $1}' | tr '\n' ',' | sed 's/,$//')
+  echo "[$pts]"
+}
+
+# Call ORS walking directions, return GeoJSON (cached by coords+profile)
+ors_route() {
+  local ors_coords cache_dir cache_key cache_file
+  ors_coords=$(coords_to_ors_json "$1")
+  cache_dir="$TMP/routes" ; mkdir -p "$cache_dir"
+  cache_key=$(echo "${ors_coords}${profile}" | md5sum | cut -d' ' -f1)
+  cache_file="$cache_dir/$cache_key"
+  if [ -f "$cache_file" ] ; then
+    cat "$cache_file"
+  else
+    local response http_code
+    response=$(curl -s -w '\n%{http_code}' \
+      -X POST \
+      -H "Authorization: $ORS_API_KEY" \
+      -H "Content-Type: application/json; charset=utf-8" \
+      -d "{\"coordinates\":$ors_coords,\"units\":\"mi\"}" \
+      "https://api.openrouteservice.org/v2/directions/${profile}/geojson")
+    http_code=$(echo "$response" | tail -n1)
+    response=$(echo "$response" | sed '$d')
+    if [ "$http_code" = "200" ] ; then
+      echo "$response" | tee "$cache_file"
+    else
+      echo "$response" >&2
+      return 1
+    fi
+  fi
+}
+
+# Build a Google Maps walking directions URL from pipe-delimited lat,lng coords.
+build_map_url() {
+  local coords=$1
+  local pts=()
+  while IFS= read -r pt ; do
+    pts+=("$pt")
+  done < <(echo "$coords" | tr '|' '\n')
+
+  local n=${#pts[@]}
+  local origin=${pts[0]}
+  local dest=${pts[$((n-1))]}
+  local url="https://www.google.com/maps/dir/?api=1&travelmode=walking&origin=${origin}&destination=${dest}"
+
+  if [ $n -gt 2 ] ; then
+    local wps
+    wps=$(printf '%s|' "${pts[@]:1:$((n-2))}" | sed 's/|$//')
+    url="${url}&waypoints=${wps}"
+  fi
+
+  echo "$url"
+}
+
+## ---- actions ---------------------------------------------------------------
+
+case "$action" in
+
+  geocode)
+    if [ -z "$name" ] ; then echo "Missing -n address" ; exit 1 ; fi
+    if [ "$verbose" = "yes" ] ; then
+      encoded=$(jq -rn --arg s "$name" '$s|@uri')
+      curl -s "https://api.openrouteservice.org/geocode/search?api_key=${ORS_API_KEY}&text=${encoded}&size=5"
+    else
+      geocode_address "$name"
+    fi
+    ;;
+
+  route)
+    coords=$(get_coords)
+    ors_route "$coords" | (
+      if [ "$verbose" = "yes" ] ; then
+        cat
+      else
+        jq -r '.features[0].properties.segments[].steps[] |
+               [(.distance | tostring),
+                (.duration | tostring),
+                .instruction,
+                (if .name == "-" then "" else .name end)] |
+               join("|")'
+      fi
+    )
+    ;;
+
+  distance)
+    coords=$(get_coords)
+    ors_route "$coords" | jq -r '.features[0].properties.summary.distance'
+    ;;
+
+  map-url)
+    coords=$(get_coords)
+    build_map_url "$coords"
+    ;;
+
+  export)
+    fmt=${type:-kml}
+
+    # Parse points once; reuse for both route coords and placemark names
+    local_data=""
+    if [ -n "$csv_file" ] ; then
+      if is_pois_file "$csv_file" ; then
+        local_data=$(parse_pois "$csv_file")
+        coords=$(echo "$local_data" | awk -F'\t' '$4 != "poi" {print $2","$3}' | tr '\n' '|' | sed 's/|$//')
+      else
+        coords=$(get_coords)
+        local_data=$(tail -n +2 "$csv_file" | awk -F',' '{
+          name=$1; lat=$2; lng=$3; pt_type=(NF>=4 ? $4 : "waypoint")
+          printf "%s\t%s\t%s\t%s\n", name, lat, lng, pt_type
+        }')
+        coords=$(echo "$local_data" | awk -F'\t' '$4 != "poi" {print $2","$3}' | tr '\n' '|' | sed 's/|$//')
+      fi
+    else
+      coords=$(get_coords)
+    fi
+
+    [[ "$fmt" != "csv" ]] && route_json=$(ors_route "$coords")
+
+    # Derive a human-readable route name from the filename (day1.pois -> day1)
+    route_name=$(basename "${csv_file%.*}")
+
+    # Number unlabeled X waypoints; drop V routing hints (they only shape the route line)
+    waypoint_placemarks=""
+    if [ -n "$local_data" ] ; then
+      stop_num=0
+      while IFS=$'\t' read -r pt_name lat lng pt_type ; do
+        [ "$pt_type" = "hint" ] && continue  # routing hints: skip
+        if [ "$pt_type" = "waypoint" ] ; then
+          stop_num=$((stop_num + 1))
+          [ -z "$pt_name" ] && pt_name="Stop ${stop_num}"
+        fi
+        waypoint_placemarks+="${pt_type}	${pt_name}	${lat}	${lng}"$'\n'
+      done <<< "$local_data"
+    fi
+
+    case "$fmt" in
+      kml|folder)
+        folder_name=${name:-$route_name}
+        id_prefix=$(echo "$folder_name" | tr '[:upper:] ' '[:lower:]-')
+
+        kml_inner() {
+          local pfx=$1
+          echo "  <Style id=\"${pfx}-waypoint\"><IconStyle><Icon><href>http://maps.google.com/mapfiles/ms2/micons/green-dot.png</href></Icon></IconStyle></Style>"
+          echo "  <Style id=\"${pfx}-poi\"><IconStyle><Icon><href>http://maps.google.com/mapfiles/ms2/micons/yellow-dot.png</href></Icon></IconStyle></Style>"
+          echo "  <Style id=\"${pfx}-route\"><LineStyle><color>${route_color}</color><width>5</width></LineStyle></Style>"
+
+          if [ -n "$waypoint_placemarks" ] ; then
+            while IFS=$'\t' read -r pt_type pt_name lat lng ; do
+              [ -z "$lat" ] && continue
+              echo "  <Placemark>"
+              echo "    <name><![CDATA[$pt_name]]></name>"
+              echo "    <styleUrl>#${pfx}-${pt_type}</styleUrl>"
+              echo "    <Point><coordinates>$lng,$lat,0</coordinates></Point>"
+              echo "  </Placemark>"
+            done <<< "$waypoint_placemarks"
+          fi
+
+          echo "  <Placemark>"
+          echo "    <name>${route_name}</name>"
+          echo "    <styleUrl>#${pfx}-route</styleUrl>"
+          echo "    <LineString><coordinates>"
+          echo "$route_json" | jq -r '.features[0].geometry.coordinates[] | "\(.[0]),\(.[1]),0"'
+          echo "    </coordinates></LineString>"
+          echo "  </Placemark>"
+        }
+
+        if [ "$fmt" = "kml" ] ; then
+          echo '<?xml version="1.0" encoding="UTF-8"?>'
+          echo '<kml xmlns="http://www.opengis.net/kml/2.2"><Document>'
+          kml_inner "$id_prefix"
+          echo '</Document></kml>'
+        else
+          echo "<Folder><name>${folder_name}</name>"
+          kml_inner "$id_prefix"
+          echo "</Folder>"
+        fi
+        ;;
+
+      gpx)
+        echo '<?xml version="1.0" encoding="UTF-8"?>'
+        echo '<gpx version="1.1" creator="geoassist" xmlns="http://www.topografix.com/GPX/1/1">'
+
+        if [ -n "$waypoint_placemarks" ] ; then
+          while IFS=$'\t' read -r pt_type pt_name lat lng ; do
+            [ -z "$lat" ] && continue
+            echo "  <wpt lat=\"$lat\" lon=\"$lng\">"
+            echo "    <name><![CDATA[$pt_name]]></name>"
+            echo "  </wpt>"
+          done <<< "$waypoint_placemarks"
+        fi
+
+        echo "  <trk>"
+        echo "    <name>${route_name}</name>"
+        echo "    <trkseg>"
+        echo "$route_json" | jq -r '.features[0].geometry.coordinates[] | "      <trkpt lat=\"\(.[1])\" lon=\"\(.[0])\"></trkpt>"'
+        echo "    </trkseg>"
+        echo "  </trk>"
+        echo "</gpx>"
+        ;;
+
+      csv)
+        echo "name,lat,lng,type"
+        echo "$local_data" | awk -F'\t' '{
+          name=$1; gsub(/,/, " ", name)
+          printf "%s,%s,%s,%s\n", name, $2, $3, $4
+        }'
+        ;;
+
+      image)
+        if [ -z "$MAPBOX_TOKEN" ] ; then
+          echo "MAPBOX_TOKEN not set in $config" >&2
+          echo "Get a free token at: https://account.mapbox.com/access-tokens/" >&2
+          exit 1
+        fi
+
+        # Build comma-separated Mapbox pin markers (lng,lat order for Mapbox)
+        markers=$(echo "$local_data" | while IFS=$'\t' read -r pt_name lat lng pt_type ; do
+            case "$pt_type" in
+              (waypoint) color="00aa00" ;;
+              (poi)      color="ffcc00" ;;
+              (hint)     continue ;;
+              (*)        color="cc0000" ;;
+            esac
+            echo "pin-s+${color}(${lng},${lat})"
+          done | tr '\n' ',' | sed 's/,$//')
+
+        # Simplify route geometry (every 5th point) to stay under URL length limits
+        line_geojson=$(echo "$route_json" | jq -c '{
+          type: "Feature",
+          properties: { "stroke": "#4a90d9", "stroke-width": 3 },
+          geometry: {
+            type: "LineString",
+            coordinates: [ .features[0].geometry.coordinates | .[range(0; length; 20)] ]
+          }
+        }')
+        encoded_line=$(jq -rn --arg g "$line_geojson" '$g|@uri')
+
+        if [ -n "$markers" ] ; then
+          overlay="${markers},geojson(${encoded_line})"
+        else
+          overlay="geojson(${encoded_line})"
+        fi
+
+        curl -s \
+          "https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/${overlay}/auto/1280x1280?padding=50&access_token=${MAPBOX_TOKEN}"
+        ;;
+
+      streetview)
+        if [ -z "$GOOGLE_MAPS_KEY" ] ; then
+          echo "GOOGLE_MAPS_KEY not set in $config" >&2
+          exit 1
+        fi
+
+        # Sample route coordinates every 0.5 miles
+        sampled=$(echo "$route_json" | jq -r '.features[0].geometry.coordinates[] | "\(.[1]),\(.[0])"' | awk -F',' '
+          function hav(a,b,c,d,    pi,r,x,y) {
+            pi=3.14159265358979; r=3958.8
+            x=(c-a)*pi/180; y=(d-b)*pi/180
+            z=sin(x/2)^2+cos(a*pi/180)*cos(c*pi/180)*sin(y/2)^2
+            return r*2*atan2(sqrt(z),sqrt(1-z))
+          }
+          function brng(a,b,c,d,    pi,r1,r2,dl,x,y) {
+            pi=3.14159265358979
+            r1=a*pi/180; r2=c*pi/180; dl=(d-b)*pi/180
+            x=sin(dl)*cos(r2); y=cos(r1)*sin(r2)-sin(r1)*cos(r2)*cos(dl)
+            return (atan2(x,y)*180/pi+360)%360
+          }
+          BEGIN { interval=0.5; since=0; total=0 }
+          NR==1 { plat=$1; plng=$2; printf "%s,%s,0,0.00\n",$1,$2; next }
+          {
+            d=hav(plat+0,plng+0,$1+0,$2+0); total+=d; since+=d
+            if (since>=interval) {
+              printf "%s,%s,%.1f,%.2f\n",$1,$2,brng(plat+0,plng+0,$1+0,$2+0),total
+              since-=interval
+            }
+            plat=$1; plng=$2
+          }
+          END { printf "%s,%s,0,%.2f\n",plat,plng,total }
+        ')
+
+        count=$(echo "$sampled" | wc -l)
+        total_mi=$(echo "$sampled" | tail -1 | cut -d',' -f4)
+        day=$([ -n "$csv_file" ] && basename "${csv_file%.pois}" || echo "route")
+
+        cat <<'HTMLEOF'
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: sans-serif; background: #111; color: #ddd; margin: 0; padding: 16px; }
+  h1   { font-size: 1.1em; color: #888; margin-bottom: 16px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .pt  { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 4px; overflow: hidden; }
+  .meta { padding: 5px 10px; font-size: 0.75em; color: #666; }
+  .mi  { font-weight: bold; color: #bbb; }
+  img  { width: 100%; display: block; }
+</style>
+</head>
+<body>
+HTMLEOF
+        echo "<h1>Route Preview — ${day} &nbsp;·&nbsp; ${total_mi} mi &nbsp;·&nbsp; ${count} samples</h1>"
+        echo "<div class='grid'>"
+
+        sv_cache_dir="$TMP/streetview" ; mkdir -p "$sv_cache_dir"
+        while IFS=',' read -r lat lng hdg miles ; do
+          sv_key=$(echo "${lat},${lng},${hdg}" | md5sum | cut -d' ' -f1)
+          sv_cache="$sv_cache_dir/$sv_key"
+          if [ ! -f "$sv_cache" ] ; then
+            curl -s "https://maps.googleapis.com/maps/api/streetview?size=640x360&location=${lat},${lng}&heading=${hdg}&pitch=5&fov=90&key=${GOOGLE_MAPS_KEY}" > "$sv_cache"
+          fi
+          img_b64=$(base64 -w 0 < "$sv_cache")
+          sv_url="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}&heading=${hdg}"
+          maps_url="https://www.google.com/maps/@${lat},${lng},18z"
+          echo "<div class='pt'>"
+          echo "  <img src='data:image/jpeg;base64,${img_b64}' />"
+          echo "  <div class='meta'><span class='mi'>${miles} mi</span> &nbsp;·&nbsp; ${lat}, ${lng} &nbsp;·&nbsp; <a href='${sv_url}' target='_blank' style='color:#4a9'>street view</a> &nbsp;·&nbsp; <a href='${maps_url}' target='_blank' style='color:#4a9'>map</a></div>"
+          echo "</div>"
+        done <<< "$sampled"
+
+        echo "</div></body></html>"
+        ;;
+
+      *)
+        echo "Unknown export type: $fmt (use kml, gpx, csv, image, or streetview)" >&2
+        exit 1
+        ;;
+    esac
+    ;;
+
+  pois)
+    if [ -z "$name" ]     ; then echo "Missing -n query"   ; exit 1 ; fi
+    if [ -z "$location" ] ; then echo "Missing -l lat,lng" ; exit 1 ; fi
+
+    r=${radius:-1000}
+    lat=$(echo "$location" | cut -d',' -f1)
+    lng=$(echo "$location" | cut -d',' -f2)
+
+    query="[out:json];(node[\"name\"~\"$name\",i](around:$r,$lat,$lng);way[\"name\"~\"$name\",i](around:$r,$lat,$lng););out center;"
+
+    curl -s \
+      --data-urlencode "data=$query" \
+      "https://overpass-api.de/api/interpreter" | (
+        if [ "$verbose" = "yes" ] ; then
+          cat
+        else
+          jq -r '.elements[] |
+                 (if .type == "way" then .center else . end) |
+                 (.lat | tostring) + "," + (.lon | tostring) + "|" + .tags.name'
+        fi
+      )
+    ;;
+
+  '') usage ;;
+
+  *)
+    echo "Unknown action: [$action]"
+    exit 1
+    ;;
+esac
