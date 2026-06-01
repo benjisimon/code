@@ -1,0 +1,804 @@
+#!/usr/bin/env python3
+"""
+pocketmap — Full-sheet printable nav map with UTM grid.
+
+Usage:
+  pocketmap [-c config.json] <file.pois|file.csv>           # 2-page PDF to stdout
+  pocketmap [-c config.json] <file.pois|file.csv> out.pdf   # 2-page PDF to file
+
+Page 1: route map + waypoint distance table
+Page 2: distance conversion tables + field formulas
+
+Orientation (portrait/landscape) is chosen automatically from the route
+bounding box.  Grid scale is the finest "nice" value (0.1, 0.2, 0.25, 0.5, 1, 2, 2.5, 5, …
+km per cm) that fits the route, so a ruler gives easy mental arithmetic and
+small routes fill the page rather than sitting in a corner.
+
+Requires: matplotlib  (pip install matplotlib)
+"""
+
+import csv, io, json, math, os, subprocess, sys
+
+try:
+    import matplotlib
+    matplotlib.use('PDF')
+    import matplotlib.pyplot as plt
+    from matplotlib.ticker import FuncFormatter
+    from matplotlib.backends.backend_pdf import PdfPages
+except ImportError as e:
+    sys.exit(f"pocketmap: {e}  —  pip install matplotlib")
+
+# ── page geometry ─────────────────────────────────────────────────────────────
+PW, PH        = 8.5, 11.0   # letter paper, inches
+MARGIN        = 0.75         # 3/4-inch all sides — room to jot notes
+TITLE_H       = 0.30         # top strip for title
+TABLE_ROW_H   = 0.175        # physical inches per row-unit in waypoint table axes
+
+def _scale_seq(min_scale=0.0):
+    """Yield scale candidates (km/cm) in ascending order, starting at >= min_scale.
+    Sub-km: snap to 0.1 / 0.25 / 0.5.  1 km and above: every integer."""
+    for s in (0.1, 0.25, 0.5):
+        if s >= min_scale:
+            yield s
+    for i in range(max(1, math.ceil(min_scale)), 10000):
+        yield float(i)
+
+def page_wh(landscape):
+    """(figure_width, figure_height) in inches."""
+    return (PH, PW) if landscape else (PW, PH)
+
+def map_rect(landscape):
+    """Map area (x, y, w, h) in inches — full page minus margins and title."""
+    W, H = (PH, PW) if landscape else (PW, PH)
+    return (MARGIN, MARGIN, W - 2*MARGIN, H - 2*MARGIN - TITLE_H)
+
+def to_frac(rect_in, fw, fh):
+    """Convert inch rect to figure-fraction rect for add_axes."""
+    x, y, w, h = rect_in
+    return [x/fw, y/fh, w/fw, h/fh]
+
+# ── UTM conversion ─────────────────────────────────────────────────────────────
+def latlon_to_utm(lat, lon, zone=None):
+    """(easting_m, northing_m, zone) for WGS84 lat/lon.
+
+    Pass zone to force a specific UTM zone (keeps all points in the same
+    coordinate system when a route straddles a zone boundary).
+    """
+    a, f = 6_378_137.0, 1/298.257223563
+    b = a*(1-f); e2 = 1-(b/a)**2; ep2 = e2/(1-e2); k0 = 0.9996
+    if zone is None:
+        zone = int((lon+180)/6)+1
+    lon0 = math.radians((zone-1)*6-180+3)
+    lr, nr = math.radians(lat), math.radians(lon)
+    N = a/math.sqrt(1-e2*math.sin(lr)**2)
+    T = math.tan(lr)**2; C = ep2*math.cos(lr)**2; A = math.cos(lr)*(nr-lon0)
+    M = a*((1-e2/4-3*e2**2/64-5*e2**3/256)*lr
+           -(3*e2/8+3*e2**2/32+45*e2**3/1024)*math.sin(2*lr)
+           +(15*e2**2/256+45*e2**3/1024)*math.sin(4*lr)
+           -(35*e2**3/3072)*math.sin(6*lr))
+    easting = k0*N*(A+(1-T+C)*A**3/6+(5-18*T+T**2+72*C-58*ep2)*A**5/120)+500_000
+    northing = k0*(M+N*math.tan(lr)*(A**2/2+(5-T+9*C+4*C**2)*A**4/24
+                  +(61-58*T+T**2+600*C-330*ep2)*A**6/720))
+    if lat < 0: northing += 10_000_000
+    return easting, northing, zone
+
+# ── distance helpers ──────────────────────────────────────────────────────────
+def haversine_km(lat1, lon1, lat2, lon2):
+    R = 6371.0
+    dlat = math.radians(lat2-lat1); dlon = math.radians(lon2-lon1)
+    a = (math.sin(dlat/2)**2
+         + math.cos(math.radians(lat1))*math.cos(math.radians(lat2))*math.sin(dlon/2)**2)
+    return R*2*math.asin(math.sqrt(a))
+
+def cum_dist_along_route(route_latlon):
+    d = [0.0]
+    for i in range(1, len(route_latlon)):
+        d.append(d[-1] + haversine_km(*route_latlon[i-1], *route_latlon[i]))
+    return d
+
+def nearest_route_dist_from(route_latlon, cum, lat, lon, search_from=0):
+    """Nearest route point to (lat,lon) at or after index search_from.
+    Returns (cum_km, index).  Using search_from enforces forward progression
+    so near-coincident waypoints (e.g. a loop start/end) don't get assigned
+    the same point, which would produce negative segment distances.
+    """
+    best = min(range(search_from, len(route_latlon)),
+               key=lambda i: haversine_km(lat, lon, *route_latlon[i]))
+    return cum[best], best
+
+# ── layout / scale ────────────────────────────────────────────────────────────
+def choose_layout(e_span_m, n_span_m):
+    """Return (landscape:bool, scale_km:int).
+
+    Picks the orientation that needs the smaller scale_km.  When tied,
+    picks the orientation whose map aspect ratio best matches the route's
+    aspect ratio — this ensures a wide E-W route goes landscape even when
+    both orientations happen to need the same scale.
+    """
+    e_km = e_span_m/1000; n_km = n_span_m/1000
+    def scale_needed(ls):
+        _, _, w, h = map_rect(ls)
+        wc, hc = w*2.54, h*2.54
+        needed = max(e_km/wc, n_km/hc)
+        return next(_scale_seq(needed))
+    ps, ls = scale_needed(False), scale_needed(True)
+    if ls != ps:
+        return (True, ls) if ls < ps else (False, ps)
+    # Tiebreaker: orientation whose map aspect ratio is closest to route's
+    route_aspect = e_span_m / max(n_span_m, 1e-6)
+    _, _, pw, ph = map_rect(False)
+    _, _, lw, lh = map_rect(True)
+    p_diff = abs(math.log((pw/ph) / route_aspect))
+    l_diff = abs(math.log((lw/lh) / route_aspect))
+    return (True, ls) if l_diff < p_diff else (False, ps)
+
+# ── geoassist wrappers ────────────────────────────────────────────────────────
+def run(args):
+    r = subprocess.run(['geoassist']+args, capture_output=True, text=True)
+    if r.returncode != 0:
+        sys.exit(f"pocketmap: geoassist: {r.stderr.strip()}")
+    return r.stdout
+
+def _clean_name(name):
+    """Strip address suffix: geoassist uses double-spaces as field separators."""
+    return name.split('  ')[0].strip()
+
+POI_STYLES = {}   # populated at runtime from -c config.json pois.categories
+POI_FALLBACK = ('#888888', None, False)  # color/label/index for unknown codes
+
+def _poi_style(sub):
+    """Return (color, label, do_index) for a category code."""
+    return POI_STYLES.get(sub, POI_FALLBACK)
+
+def load_points(csv_text):
+    pts = []
+    for row in csv.DictReader(io.StringIO(csv_text)):
+        pts.append({'name': _clean_name(row['name']), 'lat': float(row['lat']),
+                    'lon': float(row['lng']), 'type': row.get('type','hint'),
+                    'subtype': row.get('subtype', '').strip()})
+    return pts
+
+def load_route(geojson_text):
+    gj = json.loads(geojson_text)
+    return [(c[1], c[0]) for c in gj['features'][0]['geometry']['coordinates']]
+
+# ── conversion table ──────────────────────────────────────────────────────────
+def draw_dist_table(ax, scale_km):
+    """Combined cm/km/mi table at 0.5 cm and 0.5 mi increments, merged by km."""
+    ax.axis('off'); ax.set_xlim(0, 1); ax.set_ylim(0, 1)
+
+    mi_per_cm = scale_km * 0.621371
+    ax.text(0.5, 0.99,
+            f'Distance  ·  1 cm = {scale_km:g} km = {mi_per_cm:.2f} mi',
+            ha='center', va='top', fontsize=6, fontweight='bold', color='#111111')
+
+    # cm-anchored rows in 0.5 cm steps, out to ~10 mi (cap at 20 rows)
+    n_rows = max(2, min(20, math.ceil(10.0 / (mi_per_cm * 0.5))))
+    merged = [[i * 0.5 * scale_km, i * 0.5, None] for i in range(1, n_rows + 1)]
+
+    n = len(merged)
+    header_y = 0.93
+    col = {'cm': 0.15, 'km': 0.50, 'mi': 0.82}
+
+    for lbl, x in [('cm', col['cm']), ('km', col['km']), ('mi', col['mi'])]:
+        ax.text(x, header_y, lbl, ha='center', va='top', fontsize=7,
+                fontweight='bold', color='#333333')
+    ax.axhline(header_y - 0.06, color='#888888', lw=0.5)
+
+    row_top = header_y - 0.12
+    dy = row_top / n
+    fs = 6.5
+    for i, (km, cm, mi) in enumerate(merged):
+        y = row_top - i * dy - dy / 2
+        if i % 2 == 0:
+            ax.axhspan(y - dy / 2, y + dy / 2, color='#f0f0f0', alpha=0.6)
+        ax.text(col['cm'], y, f'{cm:.1f}',            ha='center', va='center', fontsize=fs, fontweight='bold')
+        ax.text(col['km'], y, f'{km:.2f}',            ha='center', va='center', fontsize=fs)
+        ax.text(col['mi'], y, f'{km*0.621371:.2f}',   ha='center', va='center', fontsize=fs)
+
+# ── waypoint table ────────────────────────────────────────────────────────────
+def draw_waypoint_table(ax, rows, scale_km):
+    """rows: [(num, name, cum_km, delta_km_or_None), …]
+
+    Columns: #  Name  ↑km  ↑mi  →cm  →km  →mi
+    ↑ = cumulative from start,  → = segment to next waypoint
+    """
+    n_data = len(rows)
+    n_rows = n_data + 1   # +1 header
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, n_rows + 0.6)
+    ax.axis('off')
+
+    fs  = 7.0
+
+    cx = {'#':0.00,'name':0.05,'ckm':0.44,'cmi':0.55,'scm':0.65,'skm':0.75,'smi':0.87}
+
+    # Section title
+    ax.text(0.5, n_rows+0.35,
+            f'Waypoints  ·  1 cm = {scale_km:g} km = {scale_km * 0.621371:.1f} mi',
+            ha='center', va='center', fontsize=fs+1,
+            fontweight='bold', color='#111111')
+
+    # Header
+    y = n_rows - 0.5
+    for lbl, x in [('#',cx['#']),('Name',cx['name']),
+                   ('↑km',cx['ckm']),('↑mi',cx['cmi']),
+                   ('→cm',cx['scm']),('→km',cx['skm']),('→mi',cx['smi'])]:
+        ax.text(x, y, lbl, ha='left', va='center', fontsize=fs-1,
+                fontweight='bold', color='#555555')
+    ax.axhline(n_rows-1, color='#999999', lw=0.5)
+
+    # Data rows
+    for i, (num, name, cum_km, delta_km) in enumerate(rows):
+        y = n_rows - 1 - i - 0.5
+        if i % 2 == 0:
+            ax.axhspan(y-0.5, y+0.5, color='#f4f4f4', alpha=0.8)
+
+        cum_mi  = cum_km * 0.621371
+        seg_cm  = delta_km / scale_km if delta_km is not None else None
+        seg_mi  = delta_km * 0.621371 if delta_km is not None else None
+
+        def _f(v): return f'{v:.1f}' if v is not None else '—'
+
+        MAX = 28
+        display = name[:MAX] + '…' if len(name) > MAX + 1 else name
+        ax.text(cx['#'],   y, str(num), ha='left', va='center', fontsize=fs)
+        ax.text(cx['name'],y, display,  ha='left', va='center', fontsize=fs)
+        ax.text(cx['ckm'], y, _f(cum_km),      ha='left', va='center', fontsize=fs)
+        ax.text(cx['cmi'], y, _f(cum_mi),      ha='left', va='center', fontsize=fs)
+        ax.text(cx['scm'], y, _f(seg_cm),      ha='left', va='center', fontsize=fs)
+        ax.text(cx['skm'], y, _f(delta_km),    ha='left', va='center', fontsize=fs)
+        ax.text(cx['smi'], y, _f(seg_mi),      ha='left', va='center', fontsize=fs)
+        ax.axhline(y-0.5, color='#eeeeee', lw=0.3)
+
+# ── POI table ────────────────────────────────────────────────────────────────
+def draw_poi_table(ax, poi_rows):
+    """poi_rows: [(letter, name), …]"""
+    n_data = len(poi_rows)
+    n_rows = n_data + 1   # +1 header
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, n_rows + 0.6)
+    ax.axis('off')
+
+    fs = 7.0
+    cx_ltr, cx_name = 0.00, 0.12
+
+    ax.text(0.5, n_rows + 0.35, 'Points of Interest',
+            ha='center', va='center', fontsize=fs+1, fontweight='bold', color='#111111')
+
+    y = n_rows - 0.5
+    ax.text(cx_name, y, 'Name', ha='left', va='center',
+            fontsize=fs-1, fontweight='bold', color='#555555')
+    ax.axhline(n_rows - 1, color='#999999', lw=0.5)
+
+    MAX = 42
+    for i, (letter, name) in enumerate(poi_rows):
+        y = n_rows - 1 - i - 0.5
+        if i % 2 == 0:
+            ax.axhspan(y - 0.5, y + 0.5, color='#f4f4f4', alpha=0.8)
+        display = name[:MAX] + '…' if len(name) > MAX + 1 else name
+        ax.text(cx_ltr,  y, letter,  ha='left', va='center', fontsize=fs,
+                fontweight='bold', color='#7a5c00')
+        ax.text(cx_name, y, display, ha='left', va='center', fontsize=fs)
+        ax.axhline(y - 0.5, color='#eeeeee', lw=0.3)
+
+# ── front page ────────────────────────────────────────────────────────────────
+def render_front(fig, points, route_latlon, title, landscape, scale_km, ref_zone):
+    FW, FH = fig.get_size_inches()
+
+    mid_lat = sum(p['lat'] for p in points)/len(points)
+    hemi = 'N' if mid_lat >= 0 else 'S'
+    zone = ref_zone
+
+    def to_utm(lat, lon):
+        e, n, _ = latlon_to_utm(lat, lon, zone=ref_zone)
+        return e, n
+
+    pt_utm    = [(to_utm(p['lat'],p['lon']), p) for p in points]
+    route_utm = [to_utm(la, lo) for la, lo in route_latlon]
+
+    all_e = [e for (e,n),_ in pt_utm] + [e for e,n in route_utm]
+    all_n = [n for (e,n),_ in pt_utm] + [n for e,n in route_utm]
+
+    # ── scale + full-page grid ─────────────────────────────────────────────
+    # Grid cells are exactly 1 cm each. The grid fills floor(page_cm) cells
+    # so it nearly covers the printable area, with the route centred inside.
+    mx, my, mw, mh = map_rect(landscape)
+    n_e_full = math.floor(mw * 2.54)  # cells across page width
+    n_n_full = math.floor(mh * 2.54)  # cells down  page height
+
+    # Find finest scale that fits route + padding in the full-page grid.
+    for scale_km in _scale_seq(scale_km):
+        interval = scale_km * 1000
+        pad = interval * 0.6
+        if (max(all_e) - min(all_e) + 2*pad <= n_e_full * interval and
+                max(all_n) - min(all_n) + 2*pad <= n_n_full * interval):
+            break
+
+    # Centre the route inside the full-page grid, snapped to km boundaries.
+    e_ctr = (min(all_e) + max(all_e)) / 2
+    n_ctr = (min(all_n) + max(all_n)) / 2
+    e_min = math.floor((e_ctr - n_e_full/2 * interval) / interval) * interval
+    n_min = math.floor((n_ctr - n_n_full/2 * interval) / interval) * interval
+    e_max = e_min + n_e_full * interval
+    n_max = n_min + n_n_full * interval
+
+    e_ticks = [e_min + i*interval for i in range(n_e_full + 1)]
+    n_ticks = [n_min + i*interval for i in range(n_n_full + 1)]
+
+    # ── map axes: 1 cm per cell, centred on page ──
+    ax_w_in = n_e_full / 2.54
+    ax_h_in = n_n_full / 2.54
+    ax_x = mx + (mw - ax_w_in) / 2
+    ax_y = my + (mh - ax_h_in) / 2
+    map_ax = fig.add_axes([ax_x/FW, ax_y/FH, ax_w_in/FW, ax_h_in/FH])
+    map_ax.set_xlim(e_min, e_max)
+    map_ax.set_ylim(n_min, n_max)
+    map_ax.set_facecolor('#f5f5f0')
+
+    for e in e_ticks:
+        map_ax.axvline(e, color='#bbbbbb', lw=0.35, zorder=1)
+    for n in n_ticks:
+        map_ax.axhline(n, color='#bbbbbb', lw=0.35, zorder=1)
+
+    # ── pre-compute zone boundary (needed for tick labels) ──────────────────
+    bdry_info = None  # (e_bdry_m, e_new_m, west_z, east_z) or None
+    for bdry_lon, west_z, east_z in [
+            (ref_zone * 6 - 180,       ref_zone,     ref_zone + 1),
+            ((ref_zone - 1) * 6 - 180, ref_zone - 1, ref_zone),
+    ]:
+        e_bdry_m = latlon_to_utm(mid_lat, bdry_lon, zone=ref_zone)[0]
+        if e_min < e_bdry_m < e_max:
+            e_new_m = latlon_to_utm(mid_lat, bdry_lon, zone=east_z)[0]
+            bdry_info = (e_bdry_m, e_new_m, west_z, east_z)
+            break
+
+    # ── USGS-style abbreviated tick labels ──────────────────────────────────
+    def _pfx_len(vals):
+        if len(vals) < 2:
+            return 0
+        strs = [str(v) for v in vals]
+        for i, chars in enumerate(zip(*strs)):
+            if len(set(chars)) > 1:
+                return i
+        return min(len(s) for s in strs)
+
+    def _tick_label(km_val, pfx_len, is_first):
+        s = str(km_val)
+        if is_first:
+            pfx = s[:pfx_len]
+            uniq = s[pfx_len:]
+            return (f'{pfx} {uniq} 000' if pfx else f'{uniq} 000')
+        return s[pfx_len:]
+
+    sub_km = scale_km < 1
+
+    if sub_km:
+        # Grid lines at fine interval; labels only on whole-km ticks — same
+        # USGS-abbreviated km style as the ≥1 km/cm path, just less frequent.
+        km_n = [(t, int(round(t / 1000))) for t in n_ticks if int(round(t)) % 1000 == 0]
+        np_ = _pfx_len([k for _, k in km_n])
+        n_lkp = {t: _tick_label(k, np_, i == 0) for i, (t, k) in enumerate(km_n)}
+        e_lkp = {}
+        if bdry_info:
+            e_bdry_m, e_new_m, _, _ = bdry_info
+            w_ticks      = [t for t in e_ticks if t <= e_bdry_m and int(round(t)) % 1000 == 0]
+            e_ticks_east = [t for t in e_ticks if t >  e_bdry_m and int(round(t)) % 1000 == 0]
+            w_km      = [int(round(t / 1000)) for t in w_ticks]
+            e_km_east = [int(round((e_new_m + (t - e_bdry_m)) / 1000)) for t in e_ticks_east]
+            ep_w = _pfx_len(w_km)
+            ep_e = _pfx_len(e_km_east)
+            for i, (t, k) in enumerate(zip(w_ticks, w_km)):
+                e_lkp[t] = _tick_label(k, ep_w, i == 0)
+            for i, (t, k) in enumerate(zip(e_ticks_east, e_km_east)):
+                e_lkp[t] = _tick_label(k, ep_e, i == 0)
+            ep = ep_w
+        else:
+            km_e = [(t, int(round(t / 1000))) for t in e_ticks if int(round(t)) % 1000 == 0]
+            ep = _pfx_len([k for _, k in km_e])
+            e_lkp = {t: _tick_label(k, ep, i == 0) for i, (t, k) in enumerate(km_e)}
+    else:
+        # Labels in whole kilometres — existing USGS-abbreviated style.
+        n_km_vals = [int(round(t / 1000)) for t in n_ticks]
+        np_ = _pfx_len(n_km_vals)
+        n_lkp = {t: _tick_label(k, np_, i == 0)
+                 for i, (t, k) in enumerate(zip(n_ticks, n_km_vals))}
+        e_lkp = {}
+        if bdry_info:
+            e_bdry_m, e_new_m, _, _ = bdry_info
+            w_ticks     = [t for t in e_ticks if t <= e_bdry_m]
+            e_ticks_east = [t for t in e_ticks if t >  e_bdry_m]
+            w_km      = [int(round(t / 1000)) for t in w_ticks]
+            e_km_east = [int(round((e_new_m + (t - e_bdry_m)) / 1000)) for t in e_ticks_east]
+            ep_w = _pfx_len(w_km)
+            ep_e = _pfx_len(e_km_east)
+            for i, (t, k) in enumerate(zip(w_ticks, w_km)):
+                e_lkp[t] = _tick_label(k, ep_w, i == 0)
+            for i, (t, k) in enumerate(zip(e_ticks_east, e_km_east)):
+                e_lkp[t] = _tick_label(k, ep_e, i == 0)
+            ep = ep_w
+        else:
+            e_km_vals = [int(round(t / 1000)) for t in e_ticks]
+            ep = _pfx_len(e_km_vals)
+            e_lkp = {t: _tick_label(k, ep, i == 0)
+                     for i, (t, k) in enumerate(zip(e_ticks, e_km_vals))}
+
+    def fmt_e(v, _): return e_lkp.get(v, '')
+    def fmt_n(v, _): return n_lkp.get(v, '')
+
+    map_ax.set_xticks(e_ticks)
+    map_ax.set_yticks(n_ticks)
+    map_ax.xaxis.set_major_formatter(FuncFormatter(fmt_e))
+    map_ax.yaxis.set_major_formatter(FuncFormatter(fmt_n))
+
+    tick_kw = dict(labelsize=7, length=4, pad=2,
+                   color='#555555', labelcolor='#222222')
+    map_ax.tick_params(axis='x', which='both',
+                       bottom=True, top=True, labelbottom=True, labeltop=True,
+                       **tick_kw)
+    map_ax.tick_params(axis='y', which='both',
+                       left=True, right=True, labelleft=True, labelright=True,
+                       **tick_kw)
+
+    zone_labels_used = {zone}
+    if bdry_info:
+        _, _, west_z, east_z = bdry_info
+        zone_labels_used.add(east_z); zone_labels_used.add(west_z)
+
+    zones_str = '/'.join(str(z) for z in sorted(zone_labels_used))
+    map_ax.set_xlabel(f'UTM Zone {zones_str}{hemi}  ·  1 cm = {scale_km:g} km',
+                      fontsize=5, labelpad=4, color='#555555')
+    map_ax.set_ylabel('')
+    for sp in map_ax.spines.values():
+        sp.set_linewidth(0.5); sp.set_edgecolor('#888888')
+
+    # route
+    if route_utm:
+        rx, ry = zip(*route_utm)
+        map_ax.plot(rx, ry, color='#2166ac', lw=1.2, zorder=3, solid_capstyle='round')
+
+    # ── collect points, separate waypoints for clustering ──
+    wp_num     = 0
+    wp_rows    = []   # (num, name, cum_km, delta_km)
+    wp_latlons = []   # (lat, lon) for distance calc
+    wp_utm_seq = []   # (e, n, num) in route order
+    poi_num    = 0
+    poi_rows   = []   # (letter, name)
+    poi_utm_seq = []  # (e, n, letter) — annotated in clustering pass below
+
+    for (e, n), p in pt_utm:
+        t = p['type']
+        if t == 'hint':
+            continue   # routing hint — informs route engine only, not shown
+        if t == 'waypoint':
+            map_ax.plot(e, n, 'o', color='#1a9641', markersize=8, zorder=5,
+                        markeredgewidth=0.3, markeredgecolor='white')
+            wp_num += 1
+            wp_rows.append((wp_num, p['name'], 0.0, None))
+            wp_latlons.append((p['lat'], p['lon']))
+            wp_utm_seq.append((e, n, wp_num))
+        elif t == 'poi':
+            sub = p.get('subtype', '')
+            if sub:
+                color, _, _idx = _poi_style(sub)
+                map_ax.plot(e, n, 'o', color=color, markersize=5, zorder=5,
+                            markeredgewidth=0.3, markeredgecolor='white')
+                # typed POIs: no label, no index entry
+            else:
+                letter = chr(ord('A') + poi_num) if poi_num < 26 else f'#{poi_num+1}'
+                map_ax.plot(e, n, 'o', color='#e69c00', markersize=5, zorder=5,
+                            markeredgewidth=0.3, markeredgecolor='white')
+                poi_rows.append((letter, p['name']))
+                poi_utm_seq.append((e, n, letter))
+                poi_num += 1
+
+    # Cluster nearby waypoints and untyped POIs only
+    CLOSE_THRESH = interval * 0.10
+    clusters = []
+    for e, n, num in wp_utm_seq:
+        placed = False
+        for c in clusters:
+            if math.hypot(e - c[0], n - c[1]) < CLOSE_THRESH:
+                c[2].append(str(num))
+                placed = True
+                break
+        if not placed:
+            clusters.append([e, n, [str(num)]])
+    for e, n, letter in poi_utm_seq:
+        placed = False
+        for c in clusters:
+            if math.hypot(e - c[0], n - c[1]) < CLOSE_THRESH:
+                c[2].append(letter)
+                placed = True
+                break
+        if not placed:
+            clusters.append([e, n, [letter]])
+
+    for e, n, labels in clusters:
+        map_ax.annotate(','.join(labels), (e, n), fontsize=7, fontweight='bold',
+                        color='#111111', xytext=(3, 3),
+                        textcoords='offset points', zorder=6)
+
+    seen = dict.fromkeys(p.get('subtype') for _, p in pt_utm if p.get('subtype'))
+    used_subtypes = list(seen)
+
+    # scale bar
+    sb_e  = e_min + (e_max-e_min)*0.03
+    sb_n  = n_min + (n_max-n_min)*0.03
+    tick  = (n_max-n_min)*0.007
+    map_ax.plot([sb_e, sb_e+interval], [sb_n, sb_n], 'k-', lw=1.5,
+                solid_capstyle='butt', zorder=7)
+    for x in (sb_e, sb_e+interval):
+        map_ax.plot([x,x],[sb_n-tick,sb_n+tick],'k-',lw=0.8,zorder=7)
+    map_ax.text(sb_e+interval/2, sb_n+tick*2.5,
+                f'{scale_km:g} km', ha='center', va='bottom',
+                fontsize=5, color='#111111', zorder=7)
+
+    # compute waypoint cumulative distances — forward-only search prevents
+    # near-coincident waypoints (loop start/end) from getting the same index
+    if wp_latlons and route_latlon:
+        cum = cum_dist_along_route(route_latlon)
+        dists = []
+        search_from = 0
+        for la, lo in wp_latlons:
+            d, idx = nearest_route_dist_from(route_latlon, cum, la, lo, search_from)
+            dists.append(d)
+            search_from = idx
+        for i in range(len(wp_rows)):
+            num, name = wp_rows[i][0], wp_rows[i][1]
+            c = dists[i]
+            d = dists[i+1]-dists[i] if i+1 < len(dists) else None
+            wp_rows[i] = (num, name, c, d)
+
+    # title
+    fig.text(0.5, 1 - MARGIN*0.35/FH,
+             f'{title}  ·  UTM {zone}{hemi}  ·  1 cm = {scale_km:g} km',
+             ha='center', va='top', fontsize=8, fontweight='bold', color='#111111')
+
+    return wp_rows, poi_rows, scale_km, used_subtypes
+
+# ── POI index ─────────────────────────────────────────────────────────────────
+def draw_poi_index(ax, points, ref_zone):
+    """List indexed-category POIs with UTM grid coords in a 2-column layout."""
+    ax.axis('off')
+    ax.set_xlim(0, 1)
+
+    groups = []
+    for code, style in POI_STYLES.items():
+        color, label, do_index = style
+        if not do_index:
+            continue
+        members = sorted([p for p in points if p.get('subtype') == code],
+                         key=lambda p: p['name'])
+        if members:
+            groups.append((label, color, members))
+    if not groups:
+        return
+
+    def utm_label(lat, lon):
+        e, n, _ = latlon_to_utm(lat, lon, zone=ref_zone)
+        return f"E{int(e/1000)%100:02d} N{int(n/1000)%1000:03d}"
+
+    # Flatten into linear row list
+    flat = []
+    for label, color, members in groups:
+        flat.append(('header', label, color, len(members), None))
+        for p in members:
+            flat.append(('poi', None, None, None, p))
+
+    n_cols = 3
+    col_h = math.ceil(len(flat) / n_cols)
+    ax.set_ylim(0, col_h)
+    col_w = 1.0 / n_cols
+    cols = [(i * col_w, (i + 1) * col_w) for i in range(n_cols)]
+    for i in range(1, n_cols):
+        ax.axvline(i * col_w, color='#cccccc', lw=0.5)
+
+    row_fs = 6.0
+    pad = 0.012
+
+    for i, row in enumerate(flat):
+        col = min(i // col_h, n_cols - 1)
+        row_in_col = i - col * col_h
+        y = col_h - row_in_col - 0.5
+        x0, x1 = cols[col]
+
+        if row[0] == 'header':
+            label, color, count = row[1], row[2], row[3]
+            ax.axhspan(y - 0.5, y + 0.5, xmin=x0, xmax=x1, color='#e8e8e8', alpha=1.0)
+            ax.plot(x0 + pad, y, 'o', color=color, markersize=5,
+                    markeredgewidth=0.2, markeredgecolor='white')
+            ax.text(x0 + pad + 0.02, y, f'{label}  ({count})',
+                    ha='left', va='center', fontsize=6.5, fontweight='bold', color='#111111')
+        else:
+            p = row[4]
+            if row_in_col % 2 == 0:
+                ax.axhspan(y - 0.5, y + 0.5, xmin=x0, xmax=x1, color='#f4f4f4', alpha=0.8)
+            name = p['name'][:28] + '…' if len(p['name']) > 29 else p['name']
+            grid = utm_label(p['lat'], p['lon'])
+            ax.text(x0 + pad, y, name,
+                    ha='left', va='center', fontsize=row_fs, color='#111111')
+            ax.text(x1 - pad, y, grid,
+                    ha='right', va='center', fontsize=row_fs, color='#555555',
+                    fontfamily='monospace')
+
+# ── back page ─────────────────────────────────────────────────────────────────
+def render_back(fig, scale_km, title, landscape, wp_rows, poi_rows, used_subtypes=None, points=None, ref_zone=None):
+    FW, FH = fig.get_size_inches()
+
+    fig.text(0.5, 1 - MARGIN*0.35/FH,
+             f'{title}  ·  Navigation Reference',
+             ha='center', va='top', fontsize=8, fontweight='bold', color='#111111')
+
+    # Usable area below title
+    ul = MARGIN/FW
+    ur = 1 - MARGIN/FW
+    ub = MARGIN/FH
+    ut = 1 - (MARGIN + TITLE_H)/FH
+    uw = ur - ul
+    uh = ut - ub
+
+    col_gap = uw * 0.04
+    left_w  = uw * 0.54
+    right_w = uw - left_w - col_gap
+    right_x = ul + left_w + col_gap
+
+    has_index = any(style[2] for style in POI_STYLES.values()) and bool(points) and bool(ref_zone)
+
+    # Waypoints — always top-left
+    n_wp = len(wp_rows)
+    wp_h = min((n_wp + 2.2) * TABLE_ROW_H / FH, uh)
+    wp_ax = fig.add_axes([ul, ut - wp_h, left_w, wp_h])
+    draw_waypoint_table(wp_ax, wp_rows, scale_km)
+
+    # Map key — right of waypoints when index mode, else stacked below
+    leg_h = 0.0
+    if used_subtypes:
+        n_leg = len(used_subtypes)
+        leg_h = min((n_leg + 1.5) * TABLE_ROW_H / FH, uh)
+
+        if has_index:
+            leg_ax = fig.add_axes([right_x, ut - leg_h, right_w, leg_h])
+        else:
+            row_gap = 0.012
+            leg_top = ut - wp_h - row_gap
+            leg_h = min(leg_h, leg_top - ub)
+            leg_ax = fig.add_axes([ul, leg_top - leg_h, left_w, leg_h])
+
+        leg_ax.axis('off')
+        leg_ax.set_xlim(0, 1)
+        leg_ax.set_ylim(0, n_leg + 0.8)
+        leg_ax.text(0.5, n_leg + 0.5, 'Map Key',
+                    ha='center', va='center', fontsize=8,
+                    fontweight='bold', color='#111111')
+        for i, k in enumerate(used_subtypes):
+            color, label, _idx = _poi_style(k)
+            if label is None:
+                label = k
+            y = n_leg - i - 0.5
+            if i % 2 == 0:
+                leg_ax.axhspan(y - 0.5, y + 0.5, color='#f4f4f4', alpha=0.8)
+            leg_ax.plot(0.04, y, 'o', color=color, markersize=7,
+                        markeredgewidth=0.3, markeredgecolor='white')
+            leg_ax.text(0.10, y, label, ha='left', va='center', fontsize=8)
+
+        if not has_index:
+            wp_h += 0.012 + leg_h  # advance anchor for tables below
+
+    if has_index:
+        # Full-width index below the top row, separated by a rule
+        top_h = max(wp_h, leg_h)
+        row_gap = 0.012
+        idx_top = ut - top_h - row_gap
+        idx_h = idx_top - ub
+        if idx_h > 0.05:
+            fig.add_artist(plt.Line2D([ul, ur], [idx_top, idx_top],
+                                       transform=fig.transFigure,
+                                       color='#cccccc', lw=0.5))
+            idx_ax = fig.add_axes([ul, ub, uw, idx_h])
+            draw_poi_index(idx_ax, points, ref_zone)
+    else:
+        # POI table stacked below waypoints + key
+        if poi_rows:
+            row_gap = 0.012
+            n_poi = len(poi_rows)
+            poi_h = min((n_poi + 2.2) * TABLE_ROW_H / FH, uh - wp_h - row_gap)
+            poi_top = ut - wp_h - row_gap
+            if poi_h > 0 and poi_top - poi_h >= ub:
+                poi_ax = fig.add_axes([ul, poi_top - poi_h, left_w, poi_h])
+                draw_poi_table(poi_ax, poi_rows)
+
+        # Vertical separator + distance table
+        sep_x = ul + left_w + col_gap / 2
+        fig.add_artist(plt.Line2D([sep_x, sep_x], [ub, ut],
+                                   transform=fig.transFigure, color='#cccccc', lw=0.5))
+        mi_per_cm = scale_km * 0.621371
+        n_dist = max(2, min(20, math.ceil(10.0 / (mi_per_cm * 0.5))))
+        dist_h = min((n_dist + 2.2) * TABLE_ROW_H / FH, uh)
+        dist_ax = fig.add_axes([right_x, ut - dist_h, right_w, dist_h])
+        draw_dist_table(dist_ax, scale_km)
+
+# ── top-level render ──────────────────────────────────────────────────────────
+def render(points, route_latlon, title, outfile):
+    # Pin a single UTM zone from the geographic centre so zone-boundary routes
+    # don't produce incoherent eastings.
+    all_lats = [p['lat'] for p in points] + [la for la,lo in route_latlon]
+    all_lons = [p['lon'] for p in points] + [lo for la,lo in route_latlon]
+    ref_zone = int((sum(all_lons)/len(all_lons)+180)/6)+1
+
+    def to_utm(lat, lon):
+        e, n, _ = latlon_to_utm(lat, lon, zone=ref_zone)
+        return e, n
+
+    all_e = ([to_utm(p['lat'],p['lon'])[0] for p in points]
+             + [to_utm(la,lo)[0] for la,lo in route_latlon])
+    all_n = ([to_utm(p['lat'],p['lon'])[1] for p in points]
+             + [to_utm(la,lo)[1] for la,lo in route_latlon])
+
+    e_span = max(all_e)-min(all_e)
+    n_span = max(all_n)-min(all_n)
+
+    landscape, scale_km = choose_layout(e_span, n_span)
+    FW, FH = page_wh(landscape)
+
+    def save_pages(pdf):
+        fig1 = plt.figure(figsize=(FW, FH))
+        wp_rows, poi_rows, final_scale_km, used_subtypes = render_front(fig1, points, route_latlon, title, landscape, scale_km, ref_zone)
+        pdf.savefig(fig1, dpi=300); plt.close(fig1)
+
+        fig2 = plt.figure(figsize=(FW, FH))
+        render_back(fig2, final_scale_km, title, landscape, wp_rows, poi_rows, used_subtypes, points, ref_zone)
+        pdf.savefig(fig2, dpi=300); plt.close(fig2)
+
+    if outfile == '-':
+        buf = io.BytesIO()
+        with PdfPages(buf) as pdf:
+            save_pages(pdf)
+        sys.stdout.buffer.write(buf.getvalue())
+    else:
+        with PdfPages(outfile) as pdf:
+            save_pages(pdf)
+
+# ── CLI ───────────────────────────────────────────────────────────────────────
+def main():
+    args = sys.argv[1:]
+    if not args or args[0] in ('-h', '--help'):
+        print(__doc__); sys.exit(0)
+
+    if '-c' in args:
+        i = args.index('-c')
+        if i + 1 >= len(args):
+            sys.exit('pocketmap: -c requires a config file argument')
+        config_path = args[i + 1]
+        args = args[:i] + args[i + 2:]
+        try:
+            with open(config_path) as f:
+                cfg = json.load(f)
+        except (OSError, json.JSONDecodeError) as e:
+            sys.exit(f'pocketmap: config: {e}')
+        for code, spec in (cfg.get('pois') or {}).get('categories', {}).items():
+            POI_STYLES[code.upper()] = (spec['color'], spec['label'], bool(spec.get('index', False)))
+
+    if not args:
+        sys.exit('pocketmap: no input file specified')
+    infile  = args[0]
+    outfile = args[1] if len(args) > 1 else '-'
+
+    if not os.path.exists(infile):
+        sys.exit(f'pocketmap: not found: {infile}')
+
+    title = (os.path.splitext(os.path.basename(infile))[0]
+             .replace('-',' ').replace('_',' '))
+
+    csv_text   = run(['-a','export','-t','csv','-f',infile])
+    route_text = run(['-a','route', '-v',       '-f',infile])
+
+    points = load_points(csv_text)
+    route  = load_route(route_text)
+    if not points:
+        sys.exit('pocketmap: no points resolved')
+
+    render(points, route, title, outfile)
+
+if __name__ == '__main__':
+    main()
